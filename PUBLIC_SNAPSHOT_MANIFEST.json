@@ -393,8 +393,8 @@
     },
     {
       "path": "tests/test_cli.py",
-      "sha256": "2af832fe93d4eaa059c1f650ee05ad67f28826a4abc23edb90ed79980f910bad",
-      "size": 11143
+      "sha256": "c6b9b927759078457ccbd2f4938bbe89b6192341aecbabff743ed592c3541b40",
+      "size": 11044
     },
     {
       "path": "tests/test_contracts.py",
@@ -438,8 +438,8 @@
     },
     {
       "path": "tests/test_retrieval.py",
-      "sha256": "4f9f945e7e165720343c8104f291270b955e3e082f464ea5212ad182fb3f1f7b",
-      "size": 10956
+      "sha256": "c6df93739b0d5c443a3f179dcbb16a75efb7dd6ca31e334d4be8ce2e624041f5",
+      "size": 11049
     },
     {
       "path": "tests/test_schema_export.py",

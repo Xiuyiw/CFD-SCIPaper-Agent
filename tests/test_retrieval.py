@@ -160,7 +160,9 @@ def test_fts_handles_more_than_sqlite_default_candidate_limit(
     @contextmanager
     def limited_connection():
         with original_connect() as connection:
-            connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 999)
+            setlimit = getattr(connection, "setlimit", None)
+            if setlimit is not None:
+                setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 999)
             yield connection
 
     monkeypatch.setattr(store, "connect", limited_connection)

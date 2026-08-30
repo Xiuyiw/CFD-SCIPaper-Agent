@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -11,6 +12,11 @@ from cfdpaper.state import initialize_project
 from cfdpaper.storage import ProjectStore
 
 runner = CliRunner()
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def _plain_cli_text(value: str) -> str:
+    return ANSI_ESCAPE.sub("", value)
 
 
 def test_init_creates_project_state_without_api_key(tmp_path: Path) -> None:
@@ -82,7 +88,7 @@ def test_top_level_help_labels_unavailable_commands_as_roadmap() -> None:
     result = runner.invoke(app, ["--help"], terminal_width=120)
 
     assert result.exit_code == 0, result.stdout
-    normalized = " ".join(result.stdout.split())
+    normalized = " ".join(_plain_cli_text(result.stdout).split())
     for command in ("analyze", "figure", "write", "review", "revise", "export"):
         assert f"{command} Roadmap command; not available in v0.1.0." in normalized
 
@@ -135,9 +141,10 @@ def test_plan_help_exposes_real_inputs() -> None:
     result = runner.invoke(app, ["plan", "--help"])
 
     assert result.exit_code == 0
-    assert "--candidates" in result.stdout
-    assert "--approve-topic" in result.stdout
-    assert "--author" in result.stdout
+    help_text = _plain_cli_text(result.stdout)
+    assert "--candidates" in help_text
+    assert "--approve-topic" in help_text
+    assert "--author" in help_text
 
 
 def test_plan_cli_writes_report_and_prints_fast_inspection_boundary(
@@ -182,9 +189,8 @@ def test_plan_cli_requires_paired_approval_options(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert "--approve-topic and --author must be supplied together" in (
-        result.stdout + result.stderr
-    )
+    error_text = _plain_cli_text(result.stdout + result.stderr)
+    assert "--approve-topic and --author must be supplied together" in error_text
 
 
 def test_plan_cli_reports_defensible_topic_approval(tmp_path: Path) -> None:
