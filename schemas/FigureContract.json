@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "figure_id": {
+      "title": "Figure Id",
+      "type": "string"
+    },
+    "panels": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Panels",
+      "type": "array"
+    },
+    "primary_claim_id": {
+      "title": "Primary Claim Id",
+      "type": "string"
+    },
+    "prohibited_inferences": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Prohibited Inferences",
+      "type": "array"
+    },
+    "source_data_uri": {
+      "title": "Source Data Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "figure_id",
+    "primary_claim_id",
+    "evidence_ids",
+    "panels",
+    "source_data_uri"
+  ],
+  "title": "FigureContract",
+  "type": "object"
+}

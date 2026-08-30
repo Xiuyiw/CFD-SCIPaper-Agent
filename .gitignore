@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+.cfdpaper/
+.worktrees/
+private-fixtures/**
+!private-fixtures/README.md

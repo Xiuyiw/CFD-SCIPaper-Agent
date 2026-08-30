@@ -1,0 +1,30 @@
+name: Solver adapter request
+description: Propose support for a solver or neutral result format
+title: "[Adapter]: "
+labels: [adapter]
+body:
+  - type: input
+    id: solver
+    attributes:
+      label: Solver or format and version
+    validations:
+      required: true
+  - type: textarea
+    id: objects
+    attributes:
+      label: Required read-only objects and quantities
+    validations:
+      required: true
+  - type: textarea
+    id: export
+    attributes:
+      label: Available neutral exports or automation interface
+    validations:
+      required: true
+  - type: checkboxes
+    id: public-data-boundary
+    attributes:
+      label: Public-data confirmation
+      options:
+        - label: I have not attached confidential solver projects, proprietary meshes, or unpublished results.
+          required: true

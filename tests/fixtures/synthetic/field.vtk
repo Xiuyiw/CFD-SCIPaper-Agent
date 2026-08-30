@@ -1,0 +1,10 @@
+# vtk DataFile Version 3.0
+synthetic fixture
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 1 float
+0 0 0
+POINT_DATA 1
+SCALARS temperature float 1
+LOOKUP_TABLE default
+1200

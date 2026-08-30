@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "ClaimRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "ceiling": {
+          "default": "observation",
+          "enum": [
+            "observation",
+            "association",
+            "mechanism",
+            "validation",
+            "engineering"
+          ],
+          "title": "Ceiling",
+          "type": "string"
+        },
+        "claim_id": {
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus",
+          "default": "draft"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "text"
+      ],
+      "title": "ClaimRecord",
+      "type": "object"
+    },
+    "ClaimStatus": {
+      "enum": [
+        "draft",
+        "supported",
+        "rejected",
+        "needs-evidence"
+      ],
+      "title": "ClaimStatus",
+      "type": "string"
+    },
+    "EvidenceRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "case",
+            "boundary",
+            "mesh",
+            "field",
+            "qoi",
+            "convergence",
+            "conservation",
+            "literature",
+            "decision",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "maturity": {
+          "default": "raw",
+          "enum": [
+            "raw",
+            "screened",
+            "verified",
+            "author-approved"
+          ],
+          "title": "Maturity",
+          "type": "string"
+        },
+        "source_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Hash"
+        },
+        "source_uri": {
+          "minLength": 1,
+          "title": "Source Uri",
+          "type": "string"
+        },
+        "stale": {
+          "default": false,
+          "title": "Stale",
+          "type": "boolean"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_uri",
+        "locator",
+        "evidence_id",
+        "kind",
+        "summary"
+      ],
+      "title": "EvidenceRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/ClaimRecord"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "constraints": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Constraints",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRecord"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "exclusions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "task": {
+      "title": "Task",
+      "type": "string"
+    },
+    "token_budget": {
+      "maximum": 200000,
+      "minimum": 128,
+      "title": "Token Budget",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "task",
+    "token_budget"
+  ],
+  "title": "TaskContextPacket",
+  "type": "object"
+}

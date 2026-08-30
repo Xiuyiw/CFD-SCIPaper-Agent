@@ -1,0 +1,43 @@
+name: Feature request
+description: Propose a bounded workflow, scientific-assurance, or adapter capability
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Research workflow problem
+      description: Describe the user need and the decision or artifact it should support.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed capability
+      description: Define expected inputs, outputs, and command or API behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: scientific-boundaries
+    attributes:
+      label: Scientific and data boundaries
+      description: Identify units, provenance, missing-data, validation, or author-approval constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include current workarounds or neutral interchange formats where relevant.
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope-confirmation
+    attributes:
+      label: Scope confirmation
+      options:
+        - label: This request does not claim autonomous scientific validation or guaranteed publication.
+          required: true
+        - label: I have not attached confidential solver files, unpublished results, or proprietary data.
+          required: true

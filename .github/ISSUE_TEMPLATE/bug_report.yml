@@ -1,0 +1,72 @@
+name: Bug report
+description: Report a reproducible software or scientific-assurance defect
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for providing a minimal reproduction. Use only synthetic, sanitized, or
+        redistributable inputs.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Include the exact command and the smallest input needed to reproduce the defect.
+      placeholder: |
+        1. Install ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      placeholder: Windows 11 24H2 or Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: Output of python --version
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: CFD-Paper-Agent version or commit
+      placeholder: 0.1.0 or a commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and output
+      description: Redact credentials, usernames, private paths, and project identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add relevant logs or screenshots after sanitizing them.
+    validations:
+      required: false
+  - type: checkboxes
+    id: public-data-boundary
+    attributes:
+      label: Public-data confirmation
+      options:
+        - label: I have not attached confidential solver files, unpublished results, or proprietary data.
+          required: true
+        - label: I have removed credentials, personal identifiers, and private absolute paths.
+          required: true

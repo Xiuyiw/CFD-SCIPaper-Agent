@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "author_checkpoints": {
+      "const": 3,
+      "default": 3,
+      "title": "Author Checkpoints",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "project_id": {
+      "minLength": 1,
+      "title": "Project Id",
+      "type": "string"
+    },
+    "root": {
+      "format": "path",
+      "title": "Root",
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_id",
+    "root"
+  ],
+  "title": "ProjectManifest",
+  "type": "object"
+}

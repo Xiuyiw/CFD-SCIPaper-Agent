@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "cases": [
+    {
+      "case_id": "duct-reference",
+      "cell_count": 12000,
+      "minimum_orthogonal_quality": 0.31
+    },
+    {
+      "case_id": "duct-insert",
+      "cell_count": 12500,
+      "minimum_orthogonal_quality": 0.29
+    }
+  ],
+  "note": "Invented values for software demonstration only; no mesh-independence claim."
+}

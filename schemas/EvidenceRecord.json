@@ -1,0 +1,76 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "evidence_id": {
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "case",
+        "boundary",
+        "mesh",
+        "field",
+        "qoi",
+        "convergence",
+        "conservation",
+        "literature",
+        "decision",
+        "other"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "locator": {
+      "minLength": 1,
+      "title": "Locator",
+      "type": "string"
+    },
+    "maturity": {
+      "default": "raw",
+      "enum": [
+        "raw",
+        "screened",
+        "verified",
+        "author-approved"
+      ],
+      "title": "Maturity",
+      "type": "string"
+    },
+    "source_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Hash"
+    },
+    "source_uri": {
+      "minLength": 1,
+      "title": "Source Uri",
+      "type": "string"
+    },
+    "stale": {
+      "default": false,
+      "title": "Stale",
+      "type": "boolean"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_uri",
+    "locator",
+    "evidence_id",
+    "kind",
+    "summary"
+  ],
+  "title": "EvidenceRecord",
+  "type": "object"
+}

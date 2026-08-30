@@ -1,0 +1,138 @@
+name: ci
+
+"on":
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install project and development gates
+        run: python -m pip install -e ".[dev]"
+      - name: Run tests
+        run: python -m pytest
+
+  release-package:
+    name: public snapshot and package (Windows, Python 3.12)
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project and release gates
+        run: python -m pip install -e ".[dev]"
+      - name: Export and check the curated public snapshot
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $snapshot = Join-Path $env:RUNNER_TEMP "cfdpaper-public-snapshot"
+          python scripts/export_public_snapshot.py --output $snapshot
+          python scripts/check_public_release.py $snapshot
+      - name: Test, lint, format-check, and build the public snapshot
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $snapshot = Join-Path $env:RUNNER_TEMP "cfdpaper-public-snapshot"
+          $dist = Join-Path $env:RUNNER_TEMP "cfdpaper-dist"
+          Push-Location $snapshot
+          try {
+            python -m pytest
+            python -m ruff check --no-cache .
+            python -m ruff format --check --no-cache .
+            python -m build --outdir $dist
+          }
+          finally {
+            Pop-Location
+          }
+          $wheels = @(Get-ChildItem -LiteralPath $dist -Filter "*.whl" -File)
+          $sdists = @(Get-ChildItem -LiteralPath $dist -Filter "*.tar.gz" -File)
+          if ($wheels.Count -ne 1 -or $sdists.Count -ne 1) {
+            throw "expected one wheel and one sdist; found $($wheels.Count) wheel(s) and $($sdists.Count) sdist(s)"
+          }
+      - name: Install the wheel in isolation and smoke-test the CLI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $dist = Join-Path $env:RUNNER_TEMP "cfdpaper-dist"
+          $smoke = Join-Path $env:RUNNER_TEMP "cfdpaper-wheel-smoke"
+          $project = Join-Path $env:RUNNER_TEMP "cfdpaper-cli-project"
+          $candidates = Join-Path $env:RUNNER_TEMP "cfdpaper-candidates.json"
+          $wheels = @(Get-ChildItem -LiteralPath $dist -Filter "*.whl" -File)
+          if ($wheels.Count -ne 1) {
+            throw "expected one wheel for smoke testing; found $($wheels.Count)"
+          }
+          $wheel = $wheels[0]
+          python -m venv $smoke
+          $smokePython = Join-Path $smoke "Scripts\python.exe"
+          $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
+          & $smokePython -m pip install --no-cache-dir $wheel.FullName
+          Set-Location $env:RUNNER_TEMP
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.1.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $cfdpaper --help
+          New-Item -ItemType Directory -Path $project | Out-Null
+          [IO.File]::WriteAllText(
+            (Join-Path $project "synthetic.csv"),
+            "case,value`nreference,1.0`n",
+            [Text.UTF8Encoding]::new($false)
+          )
+          $candidatePayload = @{
+            schema_version = 1
+            candidates = @(
+              @{
+                topic_id = "ci-smoke-topic"
+                title = "Synthetic screening topic"
+                research_question = "What can be concluded from the synthetic screening case?"
+              }
+            )
+          } | ConvertTo-Json -Depth 5
+          [IO.File]::WriteAllText(
+            $candidates,
+            $candidatePayload,
+            [Text.UTF8Encoding]::new($false)
+          )
+          & $cfdpaper init $project --project-id ci-smoke
+          & $cfdpaper inspect $project
+          & $cfdpaper plan $project --candidates $candidates
+          & $cfdpaper status $project
+      - name: Upload release distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfd-paper-agent-0.1.0-distributions
+          path: ${{ runner.temp }}/cfdpaper-dist/*
+          if-no-files-found: error

@@ -1,0 +1,12 @@
+CFD-Paper-Agent
+Copyright 2026 CFD-Paper-Agent contributors
+
+This product is licensed under the Apache License, Version 2.0.
+
+The project declares third-party Python packages as installation, optional,
+development, or build dependencies. Those packages are obtained separately and
+remain subject to their respective licenses; they are not relicensed by this
+NOTICE.
+
+No proprietary solver output, unpublished manuscript, confidential project data,
+or company-owned dataset is part of the public distribution.

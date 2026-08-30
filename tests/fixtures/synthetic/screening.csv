@@ -1,0 +1,3 @@
+case,temperature [K],pressure_drop (Pa)
+A,1120,18.2
+B,,20.1

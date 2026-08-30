@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "ClaimStatus": {
+      "enum": [
+        "draft",
+        "supported",
+        "rejected",
+        "needs-evidence"
+      ],
+      "title": "ClaimStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "ceiling": {
+      "default": "observation",
+      "enum": [
+        "observation",
+        "association",
+        "mechanism",
+        "validation",
+        "engineering"
+      ],
+      "title": "Ceiling",
+      "type": "string"
+    },
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/ClaimStatus",
+      "default": "draft"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim_id",
+    "text"
+  ],
+  "title": "ClaimRecord",
+  "type": "object"
+}

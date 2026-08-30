@@ -1,0 +1,3 @@
+case_id,configuration,inlet_bulk_velocity_m_s,outlet_pressure_loss_pa,outlet_velocity_uniformity
+duct-reference,empty duct,10.0,42.0,0.91
+duct-insert,synthetic insert,10.0,58.0,0.95

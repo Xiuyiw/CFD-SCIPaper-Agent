@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: >-
+  If you use CFD-Paper-Agent, please cite the software metadata for the version you used.
+title: CFD-Paper-Agent
+type: software
+version: "0.1.0"
+date-released: 2026-08-30
+authors:
+  - name: bluesarrow
+    email: 727197749@qq.com
+repository-code: https://github.com/Xiuyiw/CFD-SCIPaper-Agent
+url: https://github.com/Xiuyiw/CFD-SCIPaper-Agent
+license: Apache-2.0

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "candidates": [
+    {
+      "topic_id": "pressure-loss-screening",
+      "title": "Pressure-loss response across two synthetic duct cases",
+      "research_question": "How does the synthetic insert case differ from the reference case in reported pressure loss?",
+      "supporting_evidence_ids": ["demo-qoi-pressure-loss", "demo-mesh-quality"],
+      "required_evidence_kinds": ["qoi", "mesh"],
+      "required_maturity": "verified",
+      "minimum_verified_evidence": 2,
+      "significance": 0.7,
+      "novelty": 0.4
+    },
+    {
+      "topic_id": "uniformity-screening",
+      "title": "Outlet velocity-uniformity response in a synthetic duct",
+      "research_question": "How does the synthetic insert case differ from the reference case in reported outlet velocity uniformity?",
+      "supporting_evidence_ids": ["demo-qoi-uniformity", "demo-mesh-quality"],
+      "required_evidence_kinds": ["qoi", "mesh"],
+      "required_maturity": "verified",
+      "minimum_verified_evidence": 2,
+      "significance": 0.6,
+      "novelty": 0.4
+    }
+  ]
+}
