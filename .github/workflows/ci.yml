@@ -40,7 +40,7 @@ jobs:
         run: python -m pytest
 
   release-package:
-    name: public snapshot and package (Windows, Python 3.12)
+    name: package smoke (Windows, Python 3.12)
     needs: test
     runs-on: windows-latest
     timeout-minutes: 25
@@ -54,31 +54,15 @@ jobs:
           cache: pip
       - name: Install project and release gates
         run: python -m pip install -e ".[dev]"
-      - name: Export and check the curated public snapshot
+      - name: Lint, format-check, and build
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $PSNativeCommandUseErrorActionPreference = $true
-          $snapshot = Join-Path $env:RUNNER_TEMP "cfdpaper-public-snapshot"
-          python scripts/export_public_snapshot.py --output $snapshot
-          python scripts/check_public_release.py $snapshot
-      - name: Test, lint, format-check, and build the public snapshot
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $PSNativeCommandUseErrorActionPreference = $true
-          $snapshot = Join-Path $env:RUNNER_TEMP "cfdpaper-public-snapshot"
           $dist = Join-Path $env:RUNNER_TEMP "cfdpaper-dist"
-          Push-Location $snapshot
-          try {
-            python -m pytest
-            python -m ruff check --no-cache .
-            python -m ruff format --check --no-cache .
-            python -m build --outdir $dist
-          }
-          finally {
-            Pop-Location
-          }
+          python -m ruff check --no-cache .
+          python -m ruff format --check --no-cache .
+          python -m build --outdir $dist
           $wheels = @(Get-ChildItem -LiteralPath $dist -Filter "*.whl" -File)
           $sdists = @(Get-ChildItem -LiteralPath $dist -Filter "*.tar.gz" -File)
           if ($wheels.Count -ne 1 -or $sdists.Count -ne 1) {
@@ -94,7 +78,6 @@ jobs:
           $project = Join-Path $env:RUNNER_TEMP "cfdpaper-cli-project"
           $generatedProject = Join-Path $env:RUNNER_TEMP "cfdpaper-generated-topic-project"
           $candidates = Join-Path $env:RUNNER_TEMP "cfdpaper-candidates.json"
-          $snapshot = Join-Path $env:RUNNER_TEMP "cfdpaper-public-snapshot"
           $wheels = @(Get-ChildItem -LiteralPath $dist -Filter "*.whl" -File)
           if ($wheels.Count -ne 1) {
             throw "expected one wheel for smoke testing; found $($wheels.Count)"
@@ -132,7 +115,7 @@ jobs:
           & $cfdpaper inspect $project
           & $cfdpaper plan $project --candidates $candidates
           & $cfdpaper status $project
-          & $smokePython (Join-Path $snapshot "examples\generated-topic\prepare_project.py") $generatedProject
+          & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\generated-topic\prepare_project.py") $generatedProject
           & $cfdpaper plan $generatedProject --provider offline
       - name: Upload release distributions
         uses: actions/upload-artifact@v4

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "cfd-paper-agent"
 version = "0.2.0"
-description = "Author-in-the-loop CFD evidence, analysis, figure, and manuscript workflow"
+description = "Author-in-the-loop planning from mature CFD evidence to defensible paper topics"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -30,6 +30,8 @@ dependencies = [
 Homepage = "https://github.com/Xiuyiw/CFD-SCIPaper-Agent"
 Repository = "https://github.com/Xiuyiw/CFD-SCIPaper-Agent.git"
 Issues = "https://github.com/Xiuyiw/CFD-SCIPaper-Agent/issues"
+Documentation = "https://github.com/Xiuyiw/CFD-SCIPaper-Agent/tree/main/docs"
+Changelog = "https://github.com/Xiuyiw/CFD-SCIPaper-Agent/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -47,21 +49,6 @@ cfdpaper = "cfdpaper.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cfdpaper"]
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-  "/docs/architecture/legacy-migration.md",
-  "/docs/architecture/V2_REFACTOR_PLAN.md",
-  "/docs/architecture/workstream-protocol.md",
-  "/docs/quality",
-  "/docs/releases/v0.1.0-alpha_RELEASE_PLAN.md",
-  "/docs/releases/v0.1.0_RELEASE_PLAN.md",
-  "/docs/superpowers",
-  "/docs/workstreams",
-  "/private-fixtures",
-  "/quality_reports",
-  "/RELEASE_STATUS.json",
-]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

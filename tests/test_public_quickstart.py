@@ -116,11 +116,12 @@ def test_public_docs_match_the_v020_capability_contract() -> None:
         assert overclaim not in readme.casefold()
 
     linked_targets = (
+        "docs/README.md",
         "docs/architecture/overview.md",
         "docs/ROADMAP.md",
         "docs/releases/v0.2.0.md",
         "docs/releases/v0.1.0.md",
-        "LIMITATIONS.md",
+        "docs/limitations.md",
         "CONTRIBUTING.md",
         "CITATION.cff",
     )
@@ -135,7 +136,7 @@ def test_public_docs_match_the_v020_capability_contract() -> None:
     assert "inspect` alone does not create those records" in release_notes
     assert "Development pauses after v0.2.0" in release_notes
 
-    limitations = (REPOSITORY_ROOT / "LIMITATIONS.md").read_text(encoding="utf-8")
+    limitations = (REPOSITORY_ROOT / "docs" / "limitations.md").read_text(encoding="utf-8")
     assert "v0.1.0-alpha" not in limitations
     assert "author-supplied" in limitations
     assert "generate provisional candidates" in limitations

@@ -86,11 +86,12 @@ command reports success in v0.2.0.
 
 ## Public documentation
 
+- [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
 - [v0.2.0 release notes](docs/releases/v0.2.0.md)
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
-- [Limitations](LIMITATIONS.md)
+- [Limitations](docs/limitations.md)
 - [Contributing and issue-reporting guidance](CONTRIBUTING.md)
 - [Citation metadata](CITATION.cff)
 

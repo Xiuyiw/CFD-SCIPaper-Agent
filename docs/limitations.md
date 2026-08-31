@@ -22,3 +22,4 @@ a general v0.2.0 capability; optional adapters and provider interfaces remain ex
 Discrete CFD screening must not be presented as an experimental operating window, continuous
 optimum, safety boundary, or validation claim. Topic approval remains an author action and does
 not authorize manuscript production, journal submission, appeals, or external communication.
+

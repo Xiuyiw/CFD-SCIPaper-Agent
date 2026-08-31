@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Consolidated public documentation under `docs/` and added a documentation index.
+- Simplified release CI to test, build, install, and smoke-test the public repository directly.
+- Removed internal snapshot-export artifacts from the public source tree.
+
 ## [0.2.0] — 2026-08-31
 
 ### Added
