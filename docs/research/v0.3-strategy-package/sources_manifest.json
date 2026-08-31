@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-31T15:16:55+08:00",
+  "generated_at": "2026-08-31T23:48:53+08:00",
   "sources": [
     {
       "id": "src-pyvista-pyvista",
@@ -22,10 +22,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/pyvista__pyvista.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 81d0fec2f62b3090f8a41857f9a8c63f924a55e0; README.md; pyvista/core/utilities/fileio.py::read; pyvista/core/filters/data_set.py::DataSetFilters.integrate_data; pyvista/plotting/plotter.py::BasePlotter.save_graphic"
     },
     {
       "id": "src-ansys-pydpf-core",
@@ -46,10 +51,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/ansys__pydpf-core.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 3a2eaf2b4ccd84e4f18e43e309df3f21ccfbff1f; README.md; src/ansys/dpf/core/model.py::Model; field.py::Field; fields_container.py::FieldsContainer; workflow.py::Workflow"
     },
     {
       "id": "src-pydata-xarray",
@@ -70,10 +80,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/pydata__xarray.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 8ea7c88504730ec16c0620e88b4f10d2068d1a31; README.md; xarray/core/dataarray.py::DataArray; core/dataset.py::Dataset; structure/alignment.py::Aligner; backends/api.py::open_dataset"
     },
     {
       "id": "src-hgrecco-pint",
@@ -93,10 +108,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/hgrecco__pint.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 6fc05335ef2820736efec7c5b9d55433acfb6aad; README.md; pint/registry.py::UnitRegistry; pint/facets/plain/quantity.py::PlainQuantity.to; pint/facets/numpy/quantity.py"
     },
     {
       "id": "src-salib-salib",
@@ -116,10 +136,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/SALib__SALib.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit aa2c5545b3bfd0a982e9fad7625070a8ea340d38; README.md; src/SALib/util/problem.py::ProblemSpec; sample/sobol.py::sample; analyze/sobol.py::analyze"
     },
     {
       "id": "src-garrettj403-scienceplots",
@@ -140,10 +165,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/garrettj403__SciencePlots.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit b9b16959570bd2fbc9ff5118bacc423c3bddd592; README.md; src/scienceplots/__init__.py; src/scienceplots/styles/science.mplstyle; src/scienceplots/tests/test_scienceplots_matplotlib_3_11_and_3_12.py; src/scienceplots/tests/test_scienceplots_matplotlib_le_3_10.py; examples/plot-examples.py"
     },
     {
       "id": "src-matplotlib-matplotlib",
@@ -164,10 +194,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/matplotlib__matplotlib.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 522cfa3000de008daddec8a6f6b0d6ce3056177f; README.md; lib/matplotlib/figure.py::Figure.savefig; backend_bases.py::FigureCanvasBase.print_figure; backends/backend_svg.py::FigureCanvasSVG.print_svg; units.py::ConversionInterface"
     },
     {
       "id": "src-technion-kishony-lab-data-to-paper",
