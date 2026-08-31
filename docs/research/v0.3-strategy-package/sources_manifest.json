@@ -1,1 +1,802 @@
-{"schema_version":1,"generated_at":"2026-08-31T00:00:00+08:00","sources":[]}
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T15:16:55+08:00",
+  "sources": [
+    {
+      "id": "src-pyvista-pyvista",
+      "url": "https://github.com/pyvista/pyvista",
+      "source_type": "open-source",
+      "title": "PyVista official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "cfd-adapters",
+        "scientific-analysis",
+        "figures"
+      ],
+      "candidate_ids": [
+        "pyvista/pyvista"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-ansys-pydpf-core",
+      "url": "https://github.com/ansys/pydpf-core",
+      "source_type": "open-source",
+      "title": "PyDPF-Core official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "cfd-adapters",
+        "scientific-analysis"
+      ],
+      "candidate_ids": [
+        "ansys/pydpf-core"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-pydata-xarray",
+      "url": "https://github.com/pydata/xarray",
+      "source_type": "open-source",
+      "title": "xarray official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Apache-2.0",
+      "tracks": [
+        "cfd-adapters",
+        "scientific-analysis"
+      ],
+      "candidate_ids": [
+        "pydata/xarray"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-hgrecco-pint",
+      "url": "https://github.com/hgrecco/pint",
+      "source_type": "open-source",
+      "title": "Pint official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "BSD-3-Clause",
+      "tracks": [
+        "scientific-analysis"
+      ],
+      "candidate_ids": [
+        "hgrecco/pint"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-salib-salib",
+      "url": "https://github.com/SALib/SALib",
+      "source_type": "open-source",
+      "title": "SALib official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "scientific-analysis"
+      ],
+      "candidate_ids": [
+        "SALib/SALib"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-garrettj403-scienceplots",
+      "url": "https://github.com/garrettj403/SciencePlots",
+      "source_type": "open-source",
+      "title": "SciencePlots official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "figures",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "garrettj403/SciencePlots"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-matplotlib-matplotlib",
+      "url": "https://github.com/matplotlib/matplotlib",
+      "source_type": "open-source",
+      "title": "Matplotlib official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Matplotlib License (PSF-based)",
+      "tracks": [
+        "figures",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "matplotlib/matplotlib"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-technion-kishony-lab-data-to-paper",
+      "url": "https://github.com/Technion-Kishony-lab/data-to-paper",
+      "source_type": "academic-code",
+      "title": "data-to-paper official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "scientific-analysis",
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "Technion-Kishony-lab/data-to-paper"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-future-house-paper-qa",
+      "url": "https://github.com/Future-House/paper-qa",
+      "source_type": "academic-code",
+      "title": "PaperQA2 official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Apache-2.0",
+      "tracks": [
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "Future-House/paper-qa"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-stanford-oval-storm",
+      "url": "https://github.com/stanford-oval/storm",
+      "source_type": "academic-code",
+      "title": "STORM official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "stanford-oval/storm"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-langchain-ai-langgraph",
+      "url": "https://github.com/langchain-ai/langgraph",
+      "source_type": "open-source",
+      "title": "LangGraph official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "agent-rag",
+        "skills"
+      ],
+      "candidate_ids": [
+        "langchain-ai/langgraph"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-run-llama-llama-index",
+      "url": "https://github.com/run-llama/llama_index",
+      "source_type": "open-source",
+      "title": "LlamaIndex official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "run-llama/llama_index"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-openmodelingfoundation-skills",
+      "url": "https://github.com/openmodelingfoundation/skills",
+      "source_type": "open-source",
+      "title": "OMF Skills official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "skills",
+        "scientific-analysis",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "openmodelingfoundation/skills"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-vudknguyen-openskill",
+      "url": "https://github.com/vudknguyen/openskill",
+      "source_type": "open-source",
+      "title": "OpenSkill official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "skills",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "vudknguyen/openskill"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-quarto-dev-quarto-cli",
+      "url": "https://github.com/quarto-dev/quarto-cli",
+      "source_type": "open-source",
+      "title": "Quarto official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "writing",
+        "figures",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "quarto-dev/quarto-cli"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-python-openxml-python-docx",
+      "url": "https://github.com/python-openxml/python-docx",
+      "source_type": "open-source",
+      "title": "python-docx official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "python-openxml/python-docx"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-kitware-vtk",
+      "url": "https://github.com/Kitware/VTK",
+      "source_type": "open-source",
+      "title": "VTK official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "BSD-3-Clause",
+      "tracks": [
+        "cfd-adapters",
+        "figures"
+      ],
+      "candidate_ids": [
+        "Kitware/VTK"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-kitware-paraview",
+      "url": "https://github.com/Kitware/ParaView",
+      "source_type": "open-source",
+      "title": "ParaView official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "BSD-3-Clause",
+      "tracks": [
+        "cfd-adapters",
+        "scientific-analysis",
+        "figures"
+      ],
+      "candidate_ids": [
+        "Kitware/ParaView"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-nschloe-meshio",
+      "url": "https://github.com/nschloe/meshio",
+      "source_type": "open-source",
+      "title": "meshio official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "cfd-adapters"
+      ],
+      "candidate_ids": [
+        "nschloe/meshio"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-ansys-pyfluent",
+      "url": "https://github.com/ansys/pyfluent",
+      "source_type": "open-source",
+      "title": "PyFluent official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "cfd-adapters"
+      ],
+      "candidate_ids": [
+        "ansys/pyfluent"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-openturns-openturns",
+      "url": "https://github.com/openturns/openturns",
+      "source_type": "open-source",
+      "title": "OpenTURNS official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "GPL-3.0",
+      "tracks": [
+        "scientific-analysis"
+      ],
+      "candidate_ids": [
+        "openturns/openturns"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-mwaskom-seaborn",
+      "url": "https://github.com/mwaskom/seaborn",
+      "source_type": "open-source",
+      "title": "seaborn official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "BSD-3-Clause",
+      "tracks": [
+        "figures"
+      ],
+      "candidate_ids": [
+        "mwaskom/seaborn"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-sakanaai-ai-scientist",
+      "url": "https://github.com/SakanaAI/AI-Scientist",
+      "source_type": "academic-code",
+      "title": "The AI Scientist official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "AI Scientist Source Code License 1.0",
+      "tracks": [
+        "scientific-analysis",
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "SakanaAI/AI-Scientist"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-samuelschmidgall-agentlaboratory",
+      "url": "https://github.com/SamuelSchmidgall/AgentLaboratory",
+      "source_type": "academic-code",
+      "title": "Agent Laboratory official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "MIT",
+      "tracks": [
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "SamuelSchmidgall/AgentLaboratory"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "source_type": "open-source",
+      "title": "Anthropic Skills official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Per-skill licenses; no repository-wide license verified",
+      "tracks": [
+        "skills",
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "anthropics/skills"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-agentskills-agentskills",
+      "url": "https://github.com/agentskills/agentskills",
+      "source_type": "standard",
+      "title": "Agent Skills specification official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Apache-2.0 code; CC-BY-4.0 documentation",
+      "tracks": [
+        "skills"
+      ],
+      "candidate_ids": [
+        "agentskills/agentskills"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+    },
+    {
+      "id": "src-product-elicit",
+      "url": "https://support.elicit.com/en/articles/14758189-export-your-data-from-elicit",
+      "source_type": "commercial-public",
+      "title": "Elicit official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary hosted service under Elicit Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/elicit"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-product-scispace",
+      "url": "https://scispace.com/search",
+      "source_type": "commercial-public",
+      "title": "SciSpace official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary hosted service under SciSpace Terms",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scispace"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-product-paperpal",
+      "url": "https://paperpal.com/",
+      "source_type": "commercial-public",
+      "title": "Paperpal official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary service under CACTUS Terms of Use",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/paperpal"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-product-scite",
+      "url": "https://scite.ai/terms",
+      "source_type": "commercial-public",
+      "title": "scite official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary hosted service under scite Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scite"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-product-jenni",
+      "url": "https://docs.jenni.ai/docs/export-and-import/exporting/",
+      "source_type": "commercial-public",
+      "title": "Jenni AI official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary hosted service under Jenni Terms of Service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/jenni"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-product-consensus",
+      "url": "https://consensus.app/home/resources/consensus-responsible-ai/",
+      "source_type": "commercial-public",
+      "title": "Consensus official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary hosted service under Consensus Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/consensus"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-product-overleaf",
+      "url": "https://docs.overleaf.com/",
+      "source_type": "commercial-public",
+      "title": "Overleaf official source",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Proprietary hosted service under Overleaf Terms; open-source editor core not analyzed here",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/overleaf"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
+          "section": "候选覆盖与来源层级",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Official workflow page sections listed in discovery_evidence"
+    }
+  ]
+}
