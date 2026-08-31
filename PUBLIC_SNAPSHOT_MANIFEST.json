@@ -408,7 +408,7 @@
     },
     {
       "path": "tests/fixtures/planning/author_plan_report_golden.py",
-      "sha256": "07ded184a19ea79f9e3b3ada3f233e5c242b7cd8c9668919e9724b31fdcf1cbf",
+      "sha256": "bb4c0dea8376520119bb422bc687f52be5307760b7b2a6be3b6e3df1c43e3725",
       "size": 3219
     },
     {
@@ -468,8 +468,8 @@
     },
     {
       "path": "tests/test_cli.py",
-      "sha256": "ed675ce2eb139c553c3165f67bc99e12bc99c82ebd6aa645c89b5aed43a0f581",
-      "size": 12790
+      "sha256": "8aa13ee0a91d66af04a42fb2888a10f4cbbe6c7ca2faabc571fcf385e8f37ff8",
+      "size": 12854
     },
     {
       "path": "tests/test_contracts.py",
@@ -498,8 +498,8 @@
     },
     {
       "path": "tests/test_planning.py",
-      "sha256": "acfa0f657bbd3197959fe9934d5af78eadfb2d4045d5e5e1d91471576e584b86",
-      "size": 145743
+      "sha256": "509a62bf6c191b93148505ae31d5afaf667b5b80d7afaab02519c78312fab395",
+      "size": 145711
     },
     {
       "path": "tests/test_public_quickstart.py",

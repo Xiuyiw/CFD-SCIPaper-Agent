@@ -214,7 +214,8 @@ def test_plan_cli_rejects_regenerate_for_author_candidates_without_generation(
     result = runner.invoke(app, ["plan", str(tmp_path), "--regenerate"])
 
     assert result.exit_code == 2
-    assert "--regenerate requires generated candidates" in result.stdout + result.stderr
+    error_text = " ".join(_plain_cli_text(result.stdout + result.stderr).split())
+    assert "--regenerate requires generated candidates" in error_text
 
 
 def test_plan_cli_requires_paired_approval_options(tmp_path: Path) -> None:

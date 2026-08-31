@@ -105,7 +105,7 @@ def prepared_project(
     tmp_path.mkdir(parents=True, exist_ok=True)
     initialize_project(tmp_path, project_id)
     source = tmp_path / "results.csv"
-    source.write_text("case,dp\nA,12\n", encoding="utf-8")
+    source.write_bytes(b"case,dp\nA,12\n")
     store = ProjectStore.open(tmp_path)
     ProjectIndexer(store).inspect()
     stored = store.get_source("results.csv")
@@ -607,7 +607,7 @@ def test_fast_plan_does_not_claim_same_size_same_mtime_detection(tmp_path: Path)
     store, _candidates = prepared_project(tmp_path)
     source = tmp_path / "results.csv"
     original = store.get_source("results.csv")
-    source.write_text("case,dp\nA,10\n", encoding="utf-8")
+    source.write_bytes(b"case,dp\nA,10\n")
     stat = source.stat()
     os.utime(source, ns=(stat.st_atime_ns, original.mtime_ns))
 
