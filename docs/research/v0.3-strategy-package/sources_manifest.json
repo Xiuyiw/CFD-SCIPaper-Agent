@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-31T23:48:53+08:00",
+  "generated_at": "2026-09-01T02:04:40+08:00",
   "sources": [
     {
       "id": "src-pyvista-pyvista",
@@ -225,10 +225,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/Technion-Kishony-lab__data-to-paper.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 81df14c4b9600466e645c3b2b336cc54daa3df3a; steps_runner.py::HypothesisTestingStepsRunner; scientific_stage.py::ScientificStage; ref_numeric_values.py::ReferencedValue; latex_doc.py::LatexDocument"
     },
     {
       "id": "src-future-house-paper-qa",
@@ -249,10 +254,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/Future-House__paper-qa.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 57e89f7223b0960d5ee5ea048c69e3c47e088572; docs.py::Docs.aadd; types.py::PQASession; agents/search.py::get_directory_index; tests/test_agents.py::test_resuming_crashed_index_build"
     },
     {
       "id": "src-stanford-oval-storm",
@@ -273,10 +283,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/stanford-oval__storm.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit fb951af7744dab086e34962e9bc6fe878e145f83; storm_wiki/engine.py::STORMWikiRunner; modules/storm_dataclass.py::StormInformationTable; modules/article_generation.py::StormArticleGenerationModule"
     },
     {
       "id": "src-langchain-ai-langgraph",
@@ -297,10 +312,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/langchain-ai__langgraph.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 11ee185999b86bfea2d8c0e69cef9a5e37acf686; pregel/main.py::Pregel; checkpoint/base/__init__.py::BaseCheckpointSaver; types.py::Command/interrupt; tests/test_interruption.py"
     },
     {
       "id": "src-run-llama-llama-index",
@@ -320,10 +340,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/run-llama__llama_index.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 7b80927de149bfef0c7d1e178d311154ea0b4d03; core/schema.py::BaseNode; ingestion/pipeline.py::IngestionPipeline; storage/storage_context.py::StorageContext; vector_store/base.py::VectorStoreIndex"
     },
     {
       "id": "src-openmodelingfoundation-skills",
@@ -345,10 +370,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/openmodelingfoundation__skills.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit f2a7fd5413f0035af6a83e074cbbf3fad28bb6c5; docs/SKILL-TEMPLATE.md; skills/peer-review/SKILL.md; skills/peer-review/evals.json; scripts/validate_individual_skills.py"
     },
     {
       "id": "src-vudknguyen-openskill",
@@ -369,10 +399,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/vudknguyen__openskill.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit 7d6db16479cbaa7186b408516bfd09b72054bcba; core/skill.ts::discoverSkills; core/manifest.ts::InstalledSkillRecord; cli/install.ts::installFromGitHub; cli/update.ts::checkGitUpdates"
     },
     {
       "id": "src-quarto-dev-quarto-cli",
@@ -394,10 +429,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/quarto-dev__quarto-cli.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit eb126f9811981e59e8165d3da9641d92c77b9e3e; command/render/render.ts::renderPandoc; format/docx/format-docx.ts::docxFormat; project/types/manuscript/manuscript-render.ts::manuscriptRenderer; tests/smoke/render/render-docx.test.ts"
     },
     {
       "id": "src-python-openxml-python-docx",
@@ -418,10 +458,15 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/python-openxml__python-docx.md",
+          "section": "完整报告",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Repository landing page, README, license metadata, and current activity metadata"
+      "locator": "Commit e45454602b53e8e572b179ccf1c91093ec9f4ed7; src/docx/api.py::Document; src/docx/document.py::Document.add_picture/add_table/add_section/save; tests/test_document.py; features/doc-add-picture.feature"
     },
     {
       "id": "src-kitware-vtk",
@@ -832,6 +877,79 @@
       ],
       "claim_type": "fact",
       "locator": "Official workflow page sections listed in discovery_evidence"
+    },
+    {
+      "id": "src-paper-data-to-paper-arxiv",
+      "url": "https://arxiv.org/abs/2404.17605",
+      "source_type": "academic-code",
+      "title": "data-to-paper original paper",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Public paper landing page; reuse terms not assessed in this task",
+      "tracks": [
+        "scientific-analysis",
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "Technion-Kishony-lab/data-to-paper"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/Technion-Kishony-lab__data-to-paper.md",
+          "section": "来源",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Original paper landing page; paper body not read in Task 5"
+    },
+    {
+      "id": "src-paper-paperqa2-arxiv",
+      "url": "https://arxiv.org/abs/2409.13740",
+      "source_type": "academic-code",
+      "title": "PaperQA2 original paper",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Public paper landing page; reuse terms not assessed in this task",
+      "tracks": [
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "Future-House/paper-qa"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/Future-House__paper-qa.md",
+          "section": "来源",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Original paper landing page; paper body not read in Task 5"
+    },
+    {
+      "id": "src-paper-storm-naacl",
+      "url": "https://aclanthology.org/2024.naacl-long.347/",
+      "source_type": "academic-code",
+      "title": "STORM original paper",
+      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "license_or_terms": "Public paper landing page; reuse terms not assessed in this task",
+      "tracks": [
+        "writing",
+        "agent-rag"
+      ],
+      "candidate_ids": [
+        "stanford-oval/storm"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/open-source/stanford-oval__storm.md",
+          "section": "来源",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Original paper landing page; paper body not read in Task 5"
     }
   ]
 }
