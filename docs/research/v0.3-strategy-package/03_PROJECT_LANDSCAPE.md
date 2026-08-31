@@ -1,8 +1,8 @@
 # V0.3 项目景观：候选发现与组合筛选
 
-日期：2026-08-31  
-适用基线：CFD-Paper-Agent v0.2.0  
-研究阶段：Task 2 宽口径发现
+日期：2026-08-31
+适用基线：CFD-Paper-Agent v0.2.0
+研究阶段：Task 2–3 候选发现与深读组合筛选
 
 ## 1. 发现边界
 
@@ -103,3 +103,60 @@ release或测试。`tests_present=false`本轮未使用，以避免把“根目�
 
 商业对象只进入公开工作流与UX组合；标准不标为`selected-open-source`。未进入组合的项目保留
 为`discovery-only`，原因是机制重复、场景偏离、许可证/维护风险或本轮没有新增机制。
+
+
+## 8. Task 3 入选组合
+
+组合按轨道的独立机制筛选，不作统一stars总分。当前状态表示“已锁定、待后续Task深读”，
+`metadata-verified`不表示代码已经深读，`official-workflow`也不表示商业内部实现得到验证。
+
+### 8.1 开源与学术代码：16项
+
+| 机制组 | 入选对象 | 入选理由 |
+|---|---|---|
+| CFD与科学数据 | PyVista；PyDPF-Core；xarray；Pint；SALib | 分别代表中性网格/可视化、求解器结果对象、带标签数据、单位量和敏感性分析；避免用一个大型项目替代全部科学机制。 |
+| 科研绘图 | SciencePlots；Matplotlib；PyVista | 分别覆盖期刊样式、底层artist/布局/导出和三维科学可视化；后续需核查source data与视觉QA边界。 |
+| 论文/研究Agent | data-to-paper；PaperQA2；STORM | 分别覆盖数值后向追溯、科学文献RAG和多视角长文编排；三者的目标任务和风险不同。 |
+| RAG与状态编排 | LangGraph；LlamaIndex；PaperQA2 | 分别代表可恢复状态图、摄取/索引/检索抽象和科学文献证据上下文。 |
+| Skill与科学工作流 | OMF Skills；OpenSkill；LangGraph；data-to-paper | 分别提供领域Skill/evals、跨宿主管理、工具节点编排和可核验科学工作流；后续只深读各自独立机制。 |
+| 质量与真实交付 | Quarto；python-docx；Matplotlib；SciencePlots | 分别代表多格式科学出版、WordprocessingML、可编辑图件导出和出版样式。 |
+
+组成满足最低要求：CFD/科学数据不少于2项，科研绘图不少于2项，论文/研究Agent不少于3项，
+RAG/编排不少于2项，Skill/科学工作流不少于3项；七轨在入选组合中均非空。部分对象跨组出现
+只表示跨轨覆盖，不重复计算候选。
+
+### 8.2 商业公开工作流：7项
+
+| 对象 | 只对标的公开UX |
+|---|---|
+| Elicit | 文献检索、系统综述筛选/抽取、报告与表格/引用导出 |
+| SciSpace | 文献表格比较、论文问答、筛选与导出 |
+| Paperpal | 作者逐项接受的学术写作、语言/一致性和提交前检查 |
+| scite | 引用上下文、支持/反驳/提及分类和来源核查 |
+| Jenni AI | DOCX/LaTeX、原生Word引用、BibTeX/RIS与评论保留 |
+| Consensus | 问题驱动检索、来源跳转、研究总结和列表导出 |
+| Overleaf | 协作LaTeX、编译预览、模板和出版社提交 |
+
+这些对象标为`selected-commercial`仅表示后续读取官方公开工作流。登录后、付费功能或内部
+模型、RAG、数据库、分类器和Agent架构均不从公开营销材料反推。
+
+## 9. 仅发现对象与明确原因
+
+| 对象 | 保留为 discovery-only 的原因 |
+|---|---|
+| VTK | 底层数据/可视化机制已由PyVista覆盖；官方镜像不增加本轮独立迁移问题。 |
+| ParaView | 应用体量大；pipeline和可视化机制已由更轻的PyVista/VTK生态代表。 |
+| meshio | 主要增加格式数量，不能保留全部求解器语义，且维护活动弱于已选适配对象。 |
+| PyFluent | 依赖商业Fluent且侧重求解器控制；本轮只读结果适配由PyDPF-Core代表。 |
+| OpenTURNS | UQ机制与SALib部分重叠，GPL与C++/Python依赖提高直接复用成本。 |
+| seaborn | 统计绘图语法与Matplotlib/SciencePlots重叠，不覆盖CFD场图和交付QA。 |
+| The AI Scientist | 自定义非OSI许可证；从零全自动科研与成熟CFD、作者在环定位冲突。 |
+| Agent Laboratory | 端到端研究Agent机制与data-to-paper重叠，活动较弱且场景偏离。 |
+| Agent Skills specification | 保留官方规范事实；标准对象按契约不使用开源选择状态。 |
+| Anthropic Skills | 示例集合与Agent Skills/OMF Skills重叠，且无仓库级统一许可证。 |
+
+## 10. 组合边界
+
+后续每份报告只回答其入选机制所需的入口、核心对象、一个代表性实现、测试/示例和许可证。
+报告路径已经在候选目录中确定，但本Task不创建空项目报告，也不把待验证功能写成implemented。
+若后续入口材料表明没有新增机制或不适合本项目，应停止读取并降级，而不是为满足数量完成长报告。
