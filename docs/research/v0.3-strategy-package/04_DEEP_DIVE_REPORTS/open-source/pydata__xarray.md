@@ -89,7 +89,7 @@ source data。适配条件是锁定维度词典、使用`join="exact"`默认策�
 选择兼容Python版本。收益高、集成成本中等；验证应覆盖坐标顺序变化、缺case、不同单位、不同
 采样截面和NetCDF往返，而不是只测试数组shape。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
 明确case/section/variable坐标可降低工况编号与聚合错配；但若允许默认outer alignment或`skipna`，
 仍可能复现“缺失数据被包装成趋势”的失败。因此可比性gate必须先于任何combine/reduce。

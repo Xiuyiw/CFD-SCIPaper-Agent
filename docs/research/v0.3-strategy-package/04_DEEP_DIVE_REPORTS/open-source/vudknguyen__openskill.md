@@ -78,10 +78,11 @@ OpenSkill本体为MIT；被安装Skill的许可证各自独立，不能由管理
 内置专用Skills，不建设marketplace或全局registry。若未来有真实跨宿主安装需求，再考虑把OpenSkill
 作为外部推荐工具，而非复制其管理平台。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-固定Skill来源可避免不同电脑使用了不一致规则；但Gate 5表明，Skill“安装成功”并不意味着它会
-正确理解求解器和数据。产品验收必须继续关注实际CFD任务，而非安装/审计数量。
+固定 Skill 来源可避免不同电脑使用不一致规则；但 `authorized internal negative scientific-gate regression`
+表明，Skill“安装成功”并不意味着它会正确理解求解器和数据。产品验收必须继续关注实际 CFD
+任务，而非安装/审计数量。
 
 ## 15. 未验证项
 

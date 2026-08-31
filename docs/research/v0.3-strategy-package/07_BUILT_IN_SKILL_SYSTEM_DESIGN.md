@@ -40,7 +40,7 @@ marketplace 条目或审批状态。宿主成功加载 Skill、脚本成功运�
 - 不把求解器 adapter、RAG、checkpoint runtime 或文档导出器伪装成 Skill；
 - 不要求 Skill 自行重新求解、发明缺失数据、提升 claim ceiling 或代表作者批准；
 - 不创建实际 `SKILL.md`、脚本、schema、fixture 或宿主插件；这些属于后续获批实现；
-- 不把 P04、公司案例或未发表材料写入公开 Skill 包。私有资产只能在授权的内部回归中使用。
+- 不把公司案例、未发表材料或其他私有资产写入公开 Skill 包。私有资产只能在授权的内部回归中使用。
 
 这与 [Task 7 目录](06_REUSABLE_PATTERNS_AND_ANTI_PATTERNS.md)中的 AU02、AP04、AP08 和 AP12
 一致：渐进披露有价值，但安装、持久化和治理对象不能替代真实 CFD 任务成功。
@@ -510,8 +510,9 @@ checkpoint/真实 interrupt 也属于宿主/项目状态能力，不包装成 Sk
    等价；
 5. **真实任务成功标准**：关键数值、单位、case、locator和claim边界无硬错误，而非“文件存在”。
 
-公开 fixture 应至少覆盖稳态单相内流、换热和瞬态/多相三类通用场景。P04可作为脱敏正向内部
-回归，Gate 5/SG_Baffle 可作为私有负向内部回归，但两者不得进入公开 Skill 包或外部评审材料。
+公开 fixture 应至少覆盖稳态单相内流、换热和瞬态/多相三类通用场景。另可使用角色化的
+`authorized internal positive regression` 与 `authorized internal negative scientific-gate regression`
+补充内部回归，但不包含原始资产，也不进入公开 Skill 包或外部评审材料。
 
 ### 9.2 评价维度
 

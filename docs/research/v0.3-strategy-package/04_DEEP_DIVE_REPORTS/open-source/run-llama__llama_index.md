@@ -79,10 +79,11 @@ MIT核心可复用；大量集成包、provider和外部数据库各有依赖及
 过滤再全文/可选语义召回、变换cache key和stale标志；不引入LlamaIndex核心。未来只有在连接多种
 文档源成为明确用户需求时，再评估适配其Node/reader接口。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-其来源关系和metadata过滤可帮助避免引用错误版本；但Gate 5类错误说明，检索到“正确文件”仍不
-代表工况可比或趋势正确。RAG只能找到材料，scientific gate必须另行计算。
+其来源关系和 metadata 过滤可帮助避免引用错误版本；但 `authorized internal negative scientific-gate regression`
+表明，检索到“正确文件”仍不代表工况可比或趋势正确。RAG 只能找到材料，scientific gate
+必须另行计算。
 
 ## 15. 未验证项
 

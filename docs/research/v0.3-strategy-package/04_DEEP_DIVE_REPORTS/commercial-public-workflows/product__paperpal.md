@@ -83,10 +83,11 @@ inference**：建议只能作用于已锁定claim的表达层；涉及数值、�
 必须标明影响范围；数值、单位、引用和claim强度变更自动升级为作者确认。验证用真实DOCX往返，
 检查非目标内容、引用字段和图表关系不被静默改写。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-对应P04人工逐条批准语言修订的有效模式；Gate 5提醒我们，格式与语言PASS不能掩盖证据缺失或
-趋势错误。因此提交检查只能在科学门之后运行。
+`authorized internal positive regression` 支持由作者逐条批准语言修订；
+`authorized internal negative scientific-gate regression` 表明，格式与语言 PASS 不能掩盖证据缺失
+或趋势错误。因此，提交检查只能在科学门之后运行。
 
 ## 15. 未验证项
 

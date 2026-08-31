@@ -84,10 +84,11 @@ scite分类标签。
 应作为可选信号源，保存来源和时间，并要求作者打开原文确认。验证包括故意放入无DOI、撤稿或
 相互矛盾文献，确保系统输出缺口而非虚假全通过。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-对应P04中证据型引用必须跟随关键论断、作者最终核查来源的经验；Gate 5说明分类或报告不能替代
-CFD数据证据。引用信号只能提高审查优先级，不能让claim越过科学门。
+`authorized internal positive regression` 表明证据型引用必须跟随关键论断，并由作者最终核查来源；
+`authorized internal negative scientific-gate regression` 表明分类或报告不能替代 CFD 数据证据。
+引用信号只能提高审查优先级，不能让 claim 越过科学门。
 
 ## 15. 未验证项
 

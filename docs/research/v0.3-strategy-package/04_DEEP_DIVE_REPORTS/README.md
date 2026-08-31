@@ -66,7 +66,7 @@
 只使用`direct reuse`、`reimplement`、`idea-only`或`reject`之一，并写明目标问题、
 适配条件、预期收益、成本、风险和验证方法。
 
-### 14. P04 / Gate 5 对应关系
+### 14. Internal regression relevance
 
 只使用公开基线中已经抽象的正向写作/返修模式和负面科学阻断模式，说明该机制能验证或防止
 什么；不得包含私有路径、案例数值、论文原文或归档内容。

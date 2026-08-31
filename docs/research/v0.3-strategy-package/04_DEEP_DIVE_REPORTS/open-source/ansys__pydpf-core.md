@@ -91,7 +91,7 @@ Python客户端为MIT，但运行需要兼容的Ansys版本或`ansys-dpf-server`
 重实现成本中等；风险是复制过重远程框架或把server可用性当成科学有效性。验证应使用同一QoI在
 CSV/VTK和DPF adapter间的单位、location、zone及数值一致性测试。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
 自描述field与scoping能减少“聚合定义不清”的失败；但没有跨case gate时仍会放行不可比结果。
 因此只迁移数据对象和operator契约，不迁移“workflow成功即证据成熟”的隐含假设。

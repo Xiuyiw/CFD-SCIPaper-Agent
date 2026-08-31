@@ -48,7 +48,7 @@
 - **风险：** xarray自动broadcast、outer alignment或默认`skipna`仍可能掩盖错误。
 - **验证方式：** 打乱坐标顺序、删除case/截面、重复标签、不同采样网格和NaN负向测试。
 - **进入版本建议：** `conditional enabler`。
-- **历史回归对应：** Gate 5抽象教训中的错误聚合与缺失数据包装。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 中的错误聚合与缺失数据包装。
 
 ### S03 单位感知的QoI计算
 
@@ -94,10 +94,10 @@
 - **适配条件：** 以Boundary/Mesh/Physics/Sampling/QoI版本形成显式比较合同，差异分为允许、需解释和阻断。
 - **预期收益：** 在趋势、图件和写作之前阻止不可辩护的case比较。
 - **开发成本：** 中至高，需领域可扩展规则而非燃烧器专用字段。
-- **风险：** 规则过硬会误拒绝合理比较；规则过松会复现Gate 5错误。
+- **风险：** 规则过硬会误拒绝合理比较；规则过松会复现内部负向科学门回归已暴露的错误。
 - **验证方式：** 单相内流、换热、瞬态/多相fixture分别覆盖允许差异与阻断差异。
 - **进入版本建议：** `V0.3 minimum-slice must-consider`。
-- **历史回归对应：** Gate 5负面回归的首要阻断点。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 的首要阻断点。
 
 ### S06 QoI定义合同
 
@@ -131,7 +131,7 @@
 - **风险：** 容差、噪声和采样稀疏会改变分类；必须由分析计划声明。
 - **验证方式：** 反转中间点、平台、缺点、重复横坐标、噪声容差和非均匀采样fixture。
 - **进入版本建议：** `V0.3 minimum-slice must-consider`。
-- **历史回归对应：** Gate 5错误单调趋势的直接负向回归。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 对错误单调趋势的直接回放。
 
 ### S08 收敛与守恒证据资格
 
@@ -147,7 +147,7 @@
 - **风险：** 不同求解器与物理问题阈值不能硬编码为一套数字。
 - **验证方式：** 残差好但守恒差、监测量稳但窗口短、瞬态未达统计稳定、证据缺失fixture。
 - **进入版本建议：** `V0.3 minimum-slice must-consider`。
-- **历史回归对应：** Gate 5弱收敛证据被错误晋升的阻断要求。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 对弱收敛证据被错误晋升的阻断要求。
 
 ### S09 设计约束的敏感性分析
 
@@ -180,7 +180,7 @@
 - **风险：** 若实现为复杂promotion registry会恢复V1过度治理；保持少量明确状态与作者决定。
 - **验证方式：** 文件存在、引用存在、图导出、审查通过等事件均不能自行提升claim的负向测试。
 - **进入版本建议：** `V0.3 minimum-slice must-consider`。
-- **历史回归对应：** Gate 5虚假批准与P04跨文件主张传播经验。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 的虚假批准教训，以及 `authorized internal positive regression` 的跨文件主张传播经验。
 
 ### S11 显示量、派生量与严格物理量分层
 
@@ -196,7 +196,7 @@
 - **风险：** 分类过细会增加作者负担；仅覆盖会改变解释的类别。
 - **验证方式：** 同一字段构造显示图、局部采样、积分QoI和辅助指标，检查其允许表述不同。
 - **进入版本建议：** `conditional enabler`。
-- **历史回归对应：** P04公开抽象中的图件—指标—正文边界。
+- **Internal regression relevance：** `authorized internal positive regression` 中的图件—指标—正文边界。
 
 ### PW01 FigureContract先于绘图
 
@@ -213,7 +213,7 @@
 - **风险：** 合同变成冗长表单；只要求影响科学读法和交付的字段。
 - **验证方式：** 合同—source data—脚本—图注—正文引用一致性测试。
 - **进入版本建议：** `V0.3 minimum-slice must-consider`。
-- **历史回归对应：** P04复杂图件形成的首要成功模式。
+- **Internal regression relevance：** `authorized internal positive regression` 中复杂图件形成的首要成功模式。
 
 ### PW02 数据、叙事与视觉三重QA
 
@@ -248,7 +248,7 @@
 - **风险：** 语义召回与商业分类被误当证据；embedding只能用于找材料。
 - **验证方式：** 相互矛盾、范围不一致、撤稿、无DOI和错误版本文献fixture。
 - **进入版本建议：** `defer to V0.4+`。
-- **历史回归对应：** P04手工核对引用角色与外部AI意见回到原文的经验。
+- **Internal regression relevance：** `authorized internal positive regression` 中手工核对引用角色、并将外部 AI 意见回到原文的经验。
 
 ### PW04 Paper spine、阶段产物与数值反链
 
@@ -263,10 +263,10 @@
 - **预期收益：** 形成“发现—证据—机制—工程含义”的连贯论文，并降低跨章节数值漂移。
 - **开发成本：** 高。
 - **风险：** 自动并行写作制造长而空泛的文本；写作阶段不得发明研究问题或修改锁定证据。
-- **验证方式：** P04脱敏回放检查数值、术语、图号与claim传播；外部盲审检查自然学术语言。
+- **验证方式：** `authorized internal positive regression` 检查数值、术语、图号与 claim 传播；外部盲审检查自然学术语言。
 - **进入版本建议：** `V0.3 minimum-slice must-consider`。
 - **范围限定：** 只候选一个受证据约束的文本产物；完整paper spine延期。
-- **历史回归对应：** P04论文逐节写作与跨文件传播的核心正向资产。
+- **Internal regression relevance：** `authorized internal positive regression` 中逐节写作与跨文件传播的核心正向资产。
 
 ### PW05 真实文档导出、损失披露与页面预览
 
@@ -285,7 +285,7 @@
 - **风险：** 工具链体积、字体/TeX差异、Zotero域和修订保真。
 - **验证方式：** 含公式、图表、引用、批注、分节和动态域的公开fixture往返及页面比较。
 - **进入版本建议：** `defer to V0.4+`。
-- **历史回归对应：** P04最终Word/PDF逐页QA与版本混淆教训。
+- **Internal regression relevance：** `authorized internal positive regression` 中最终 Word/PDF 逐页 QA 与版本混淆教训。
 
 ### AU01 分层的求解器适配器
 
@@ -302,7 +302,7 @@
 - **风险：** “能读取”被宣传成“理解求解器/科学有效”；必须把语义资格留给科学层。
 - **验证方式：** 至少两种求解器或求解器+中性格式的同QoI一致性与缺失字段合同测试。
 - **进入版本建议：** `conditional enabler`。
-- **历史回归对应：** Gate 5表明只回传文件清单不足，也不能把对象存在当科学证据。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 表明只回传文件清单不足，也不能把对象存在当科学证据。
 
 ### AU02 渐进披露、可测试的内置Skill包
 
@@ -319,7 +319,7 @@
 - **风险：** Skill数量堆积或安装状态被误当科学质量；采用shrink-to-fit和真实任务回放。
 - **验证方式：** 跨Codex/Claude/其他宿主解析、错误触发、工具缺失、证据不足和正常任务fixture。
 - **进入版本建议：** `conditional enabler`。
-- **历史回归对应：** P04经验转化为gotcha/template，Gate 5失败转化为adversarial eval。
+- **Internal regression relevance：** 将 `authorized internal positive regression` 经验转化为 gotcha/template，将 `authorized internal negative scientific-gate regression` 失败转化为 adversarial eval。
 
 ### RP01 版本化、本地优先的检索上下文
 
@@ -336,7 +336,7 @@
 - **风险：** 检索平台膨胀；embedding绝不能证明数值或claim。
 - **验证方式：** 同名多版本、删除/替换文件、跨电脑恢复、关闭embedding和过期索引负向测试。
 - **进入版本建议：** `conditional enabler`。
-- **历史回归对应：** P04权威文件锁定与多轮版本混淆的直接经验。
+- **Internal regression relevance：** `authorized internal positive regression` 中权威文件锁定与多轮版本混淆的直接经验。
 
 ### RP02 可恢复阶段与真实作者中断
 
@@ -353,7 +353,7 @@
 - **风险：** 复制完整图运行时或新增多层审批；只保留项目恢复和三个作者检查点。
 - **验证方式：** 崩溃恢复、输入变更失效、错误身份、状态报告伪装批准和重复执行测试。
 - **进入版本建议：** `conditional enabler`。
-- **历史回归对应：** Gate 5虚假`master acceptance`和P04真实作者确认模式。
+- **Internal regression relevance：** `authorized internal negative scientific-gate regression` 中虚假 `master acceptance`，以及 `authorized internal positive regression` 中真实作者确认模式。
 
 ## 3. 资源分配核对
 

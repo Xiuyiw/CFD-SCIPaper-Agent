@@ -84,10 +84,11 @@
 实现时综合必须链接到EvidenceRecord，且作者确认原文角色。验证用相互矛盾和范围不一致的论文，
 确保系统暴露分歧而不是生成虚假统一结论。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-对应P04中外部AI意见必须回到原文和作者判断的经验；Gate 5提醒，即使检索有来源，也不能替代
-案例可比性和数据正确性。文献综合应帮助提出问题，而不是替CFD结果背书。
+`authorized internal positive regression` 表明，外部 AI 意见必须回到原文和作者判断；
+`authorized internal negative scientific-gate regression` 表明，即使检索有来源，也不能替代案例
+可比性和数据正确性。文献综合应帮助提出问题，而不是替 CFD 结果背书。
 
 ## 15. 未验证项
 

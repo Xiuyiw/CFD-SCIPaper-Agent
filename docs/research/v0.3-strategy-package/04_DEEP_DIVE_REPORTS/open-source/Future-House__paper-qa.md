@@ -81,7 +81,7 @@ Apache-2.0允许带通知复用。完整包依赖较多、服务配置复杂；V
 和“无法映射则删除/失败”的做法；不直接采用整套Agent与索引抽象。CFD-Paper-Agent应先结构化
 过滤项目/case/版本，再做全文和可选语义召回。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
 其正向价值对应“引用和关键判断必须有可定位来源”；其不足对应“有检索上下文仍可能生成不受
 物理证据支持的说法”。因此文献RAG不能绕过CFD evidence record和claim ceiling。

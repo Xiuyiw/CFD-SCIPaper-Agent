@@ -82,7 +82,7 @@ Matplotlib License允许分发和修改，需保留相应许可与版权通知�
 导出、数据/叙事/视觉QA和矢量文本检查。预期收益高、集成成本中等；主要风险是无约束API导致图形
 与证据脱节。验证必须覆盖数据哈希、轴单位、NaN、bbox、字体、SVG/PDF文本和PNG/TIFF输出。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
 可迁移的是脚本化绘图、可编辑输出和双重视觉QA；必须保留的教训是，只做渲染成功或样式统一不能
 证明QoI、趋势和case比较正确。科学门控必须在绘图之前，source data闭环必须与导出同时完成。

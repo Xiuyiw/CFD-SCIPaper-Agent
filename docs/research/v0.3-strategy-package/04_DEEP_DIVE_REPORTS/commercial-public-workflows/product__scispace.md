@@ -82,10 +82,11 @@ CSV结果表；XLSX/BibTeX等精确导出组合标为 **not independently verifi
 交互；输出必须写回本地EvidenceRecord而非仅保存在聊天。验证应检查每个表格答案有来源、作者
 决定可恢复、导出后仍可定位原文。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-对应P04中“外部AI建议先形成候选，再由作者筛选”的正向模式；同时吸收Gate 5教训：矩阵看似
-完整不等于数据可比或结论成立，缺少CFD证据时必须停在文献辅助层。
+`authorized internal positive regression` 支持“外部 AI 建议先形成候选，再由作者筛选”的模式；
+`authorized internal negative scientific-gate regression` 表明，矩阵看似完整不等于数据可比或结论
+成立，缺少 CFD 证据时必须停在文献辅助层。
 
 ## 15. 未验证项
 

@@ -89,7 +89,7 @@ CFD-Paper-Agent在外层强制记录源文件、单位、case ID、采样定义�
 预期收益高，集成成本中等，主要风险是依赖体积与科学语义缺失。验证应使用公开小型VTK/Fluent
 fixture检查数组关联、缺失字段、积分定义和SVG/PDF导出，而不是仅做截图smoke test。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
 其价值对应“场图必须能回到锁定数据与明确采样定义”的正向模式；其缺口也说明，单靠可视化库
 无法阻止不可比工况或错误QoI被写成结论。产品必须把scientific gate置于绘图调用之前。

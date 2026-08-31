@@ -74,10 +74,11 @@ MIT允许直接依赖和分发。其运行依赖轻于Quarto完整工具链，�
 验证、ZIP/OOXML结构检查及LibreOffice/Word渲染QA。对已有含Zotero/修订的文档默认只读或限定操作；
 复杂引用优先Quarto/BibTeX生成，不能手改编号。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-P04的Word版本混淆和字段保真问题说明，python-docx只能做确定性小范围装配，不能无差别重写整稿。
-Gate 5则说明真实DOCX交付必须位于科学门之后，不能把文件生成当作结论批准。
+`authorized internal positive regression` 中的 Word 版本混淆和字段保真问题表明，python-docx 只能做
+确定性小范围装配，不能无差别重写整稿。`authorized internal negative scientific-gate regression`
+则表明真实 DOCX 交付必须位于科学门之后，不能把文件生成当作结论批准。
 
 ## 15. 未验证项
 

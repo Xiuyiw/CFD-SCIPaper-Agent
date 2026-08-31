@@ -82,10 +82,11 @@ Quarto自身测试体系。
 图片和source-data，再渲染DOCX/LaTeX/PDF。安装缺失时给出明确最小操作，并回退到python-docx或源文件。
 在科学证据冻结后才允许export。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-P04证明最终交付必须有真实DOCX/PDF和逐页QA；Quarto可减少手工装配，但不能替代Word字段/视觉终审。
-Gate 5提醒：export成功不得被当作科学门通过，最终文件必须来自已批准claims和图件。
+`authorized internal positive regression` 表明最终交付必须有真实 DOCX/PDF 和逐页 QA；Quarto 可
+减少手工装配，但不能替代 Word 字段/视觉终审。`authorized internal negative scientific-gate regression`
+表明 export 成功不得被当作科学门通过，最终文件必须来自已批准 claims 和图件。
 
 ## 15. 未验证项
 

@@ -83,10 +83,11 @@ Word原生引用；LaTeX导出附BibTeX。完整参考文献表和全部导出�
 确认，导出时选择DOCX/LaTeX策略并做结构回读。验证使用含公式、图表、批注、动态引用和修订的
 夹具，任何不支持对象都必须保持缺失或报告损失。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-正向对应P04中Word字段、批注和作者手工引用必须保护的经验；Gate 5说明“文件已生成”不能视为
-科学完成。文档适配器应诚实报告损失，而不是创建虚假完成状态。
+`authorized internal positive regression` 表明 Word 字段、批注和作者手工引用必须受到保护；
+`authorized internal negative scientific-gate regression` 表明“文件已生成”不能视为科学完成。
+文档适配器应诚实报告损失，而不是创建虚假完成状态。
 
 ## 15. 未验证项
 

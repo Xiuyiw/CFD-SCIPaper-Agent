@@ -83,7 +83,7 @@ MIT核心可复用；SQLite/Postgres等package有各自安装依赖。若只借�
 在现有SQLite项目状态中窄实现，而非引入LangGraph。只有当V0.3后出现复杂分支/并发Agent需求并有
 性能证据时，才重新评估直接依赖。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
 真实interrupt可避免“系统自称作者已批准”的失败；但如果恢复状态中的QoI本身错误，强持久化只会
 更可靠地传播错误。因此scientific validity必须先于workflow durability。

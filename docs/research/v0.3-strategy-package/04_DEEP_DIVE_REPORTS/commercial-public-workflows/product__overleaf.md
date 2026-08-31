@@ -82,10 +82,11 @@ CFD-Paper-Agent应在科学证据和图件QA通过后才进入渲染/交付；�
 使用标准LaTeX/Quarto后端和可下载ZIP。验证要检查PDF、源码、BibTeX、图件及必要生成文件均在
 目标期刊要求下完整，并确保提交动作永远由作者触发。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-对应P04最终系统PDF逐页检查和作者提交的有效模式；Gate 5说明外观完整不能覆盖科学失败。因此
-Overleaf式交付只在科学与证据门通过后启用，且仍保留人工预览。
+`authorized internal positive regression` 支持最终系统 PDF 逐页检查和作者提交的有效模式；
+`authorized internal negative scientific-gate regression` 表明外观完整不能覆盖科学失败。因此，
+Overleaf 式交付只在科学与证据门通过后启用，且仍保留人工预览。
 
 ## 15. 未验证项
 

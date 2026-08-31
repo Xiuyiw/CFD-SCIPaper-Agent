@@ -80,10 +80,11 @@ MIT允许复用结构和内容；若迁移具体科学方法，应保留来源�
 渐进references、assets/scripts、gotcha和正反/对抗eval；另补机器可解析依赖、能力探测、回退和
 真实项目测试。不要直接复制与当前产品无关的OMF方法全文。
 
-## 14. P04 / Gate 5 对应关系
+## 14. Internal regression relevance
 
-P04沉淀适合转为gotchas、templates和回归eval，而不是继续堆在全局规则中；Gate 5失败适合成为
-adversarial eval，验证Skill在证据不足、工况不可比、工具缺失时能停止或降级，而非声称完成。
+`authorized internal positive regression` 适合转为 gotchas、templates 和回归 eval，而不是继续堆在
+全局规则中；`authorized internal negative scientific-gate regression` 适合成为 adversarial eval，
+验证 Skill 在证据不足、工况不可比、工具缺失时能停止或降级，而非声称完成。
 
 ## 15. 未验证项
 

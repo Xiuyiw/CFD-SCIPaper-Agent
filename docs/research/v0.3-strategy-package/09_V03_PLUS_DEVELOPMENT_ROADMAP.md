@@ -104,8 +104,8 @@ v1.0.0 是对 v0.6.0 已验证能力的稳定化发布；它继承已有输入�
 
 | 回归资产 | 已记录的角色 | 可验证的主要模块 | 不能代替 |
 |---|---|---|---|
-| P04 抽象正向资产 | figure contract、数值/图文传播、作者语气、最终图文交付 | claim ceiling、FigureContract、三重 QA、数值反链段落、跨文档传播 | 通用求解器支持或异构科学正确性 |
-| Gate 5 / SG_Baffle 抽象负向资产 | 不可比工况、错趋势、弱收敛、错聚合、缺失数据和虚假批准 | qualification、QoI 合同、全序列趋势、ceiling、真实作者检查点 | 正向可发表结果或异构普适性 |
+| `authorized internal positive regression` | figure contract、数值/图文传播、作者语气、最终图文交付 | claim ceiling、FigureContract、三重 QA、数值反链段落、跨文档传播 | 通用求解器支持或异构科学正确性 |
+| `authorized internal negative scientific-gate regression` | 不可比工况、错趋势、弱收敛、错聚合、缺失数据和虚假批准 | qualification、QoI 合同、全序列趋势、ceiling、真实作者检查点 | 正向可发表结果或异构普适性 |
 | 缺失：稳态单相内流 | 待建立的公开正向端到端 fixture | V0.3 CSV 纵向链 | 换热、多相或原生 adapter |
 | 缺失：换热 | 待建立的公开异构正向 fixture | VTK field、空间 QoI、多图/章节工作区 | 瞬态/多相或所有求解器 |
 | 缺失：瞬态/多相 | 待建立的统计窗口、相分数/相交换和不稳定证据回放 | 瞬态资格、统计 QoI、missing policy、不确定性边界 | 稳态内流或换热验收 |
