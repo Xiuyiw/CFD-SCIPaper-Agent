@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T02:04:40+08:00",
+  "generated_at": "2026-09-01T10:00:00+08:00",
   "sources": [
     {
       "id": "src-pyvista-pyvista",
@@ -711,7 +711,7 @@
       "url": "https://support.elicit.com/en/articles/14758189-export-your-data-from-elicit",
       "source_type": "commercial-public",
       "title": "Elicit official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary hosted service under Elicit Terms of Service",
       "tracks": [
         "writing",
@@ -726,17 +726,22 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__elicit.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "Export your data from Elicit: export choices and plan-dependent formats; related official workflow, pricing, and terms pages are listed in the report Sources section"
     },
     {
       "id": "src-product-scispace",
-      "url": "https://scispace.com/search",
+      "url": "https://scispace.com/help/en/articles/10660587-how-to-conduct-a-literature-review-using-scispace",
       "source_type": "commercial-public",
       "title": "SciSpace official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary hosted service under SciSpace Terms",
       "tracks": [
         "writing",
@@ -751,17 +756,22 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scispace.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "How to conduct a literature review using SciSpace: search, filtering, custom columns, single-paper review, and export; related official pages are listed in the report Sources section"
     },
     {
       "id": "src-product-paperpal",
-      "url": "https://paperpal.com/",
+      "url": "https://paperpal.com/blog/news-updates/product-updates/paperpal-prime-now-includes-free-unlimited-manuscript-submission-readiness-checks",
       "source_type": "commercial-public",
       "title": "Paperpal official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary service under CACTUS Terms of Use",
       "tracks": [
         "writing",
@@ -775,17 +785,22 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__paperpal.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "Manuscript submission readiness checks: manuscript upload, report, and tracked-changes DOCX workflow; related official pages are listed in the report Sources section"
     },
     {
       "id": "src-product-scite",
-      "url": "https://scite.ai/terms",
+      "url": "https://scite.ai/features",
       "source_type": "commercial-public",
       "title": "scite official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary hosted service under scite Terms of Service",
       "tracks": [
         "writing",
@@ -800,17 +815,22 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scite.md",
+          "section": "2. 轨道与真实任务",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "scite Features: Search, Reports, Assistant, and Reference Check entry points; related official workflow, pricing, and terms pages are listed in the report Sources section"
     },
     {
       "id": "src-product-jenni",
       "url": "https://docs.jenni.ai/docs/export-and-import/exporting/",
       "source_type": "commercial-public",
       "title": "Jenni AI official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary hosted service under Jenni Terms of Service",
       "tracks": [
         "writing",
@@ -824,17 +844,22 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__jenni.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "Exporting: DOCX, LaTeX, Rich Text, reference, and comment export behavior; related official import, plan, and terms pages are listed in the report Sources section"
     },
     {
       "id": "src-product-consensus",
       "url": "https://consensus.app/home/resources/consensus-responsible-ai/",
       "source_type": "commercial-public",
       "title": "Consensus official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary hosted service under Consensus Terms of Service",
       "tracks": [
         "writing",
@@ -849,17 +874,22 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__consensus.md",
+          "section": "6. 科学边界",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "Consensus Responsible AI: source-first synthesis and original-paper verification boundary; related official workflow and terms pages are listed in the report Sources section"
     },
     {
       "id": "src-product-overleaf",
-      "url": "https://docs.overleaf.com/",
+      "url": "https://docs.overleaf.com/managing-projects-and-files/uploading-a-project",
       "source_type": "commercial-public",
       "title": "Overleaf official source",
-      "accessed_at": "2026-08-31T15:16:55+08:00",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
       "license_or_terms": "Proprietary hosted service under Overleaf Terms; open-source editor core not analyzed here",
       "tracks": [
         "writing",
@@ -873,10 +903,677 @@
           "path": "docs/research/v0.3-strategy-package/03_PROJECT_LANDSCAPE.md",
           "section": "候选覆盖与来源层级",
           "claim_id": null
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__overleaf.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
         }
       ],
       "claim_type": "fact",
-      "locator": "Official workflow page sections listed in discovery_evidence"
+      "locator": "Uploading a project: LaTeX project import workflow; related official download, review, publisher submission, plan-limit, and legal pages are listed in the report Sources section"
+    },
+    {
+      "id": "src-product-elicit-systematic-review",
+      "url": "https://elicit.com/blog/systematic-review/",
+      "source_type": "commercial-public",
+      "title": "Elicit systematic review workflow",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Elicit Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/elicit"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__elicit.md",
+          "section": "2. 轨道与真实任务",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Systematic review workflow: staged search, screening, extraction, report organization, editable criteria, and author overrides"
+    },
+    {
+      "id": "src-product-elicit-pricing",
+      "url": "https://elicit.com/pricing",
+      "source_type": "commercial-public",
+      "title": "Elicit pricing and plan limits",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Public pricing page; proprietary hosted service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/elicit"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__elicit.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Pricing: plan-dependent search, export, screening-scale, figure-extraction, and collaboration limits"
+    },
+    {
+      "id": "src-product-elicit-terms",
+      "url": "https://elicit.com/operations/terms",
+      "source_type": "commercial-public",
+      "title": "Elicit Terms of Service",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Elicit Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/elicit"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__elicit.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Terms of Service: hosted-service and use boundary"
+    },
+    {
+      "id": "src-product-scispace-workspace",
+      "url": "https://scispace.com/resources/scispace-literature-review-workspace/",
+      "source_type": "commercial-public",
+      "title": "SciSpace literature review workspace",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under SciSpace Terms",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scispace"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scispace.md",
+          "section": "4. 架构",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Literature review workspace: matrix organization, custom columns, paper-level drill-down, and saved workspace"
+    },
+    {
+      "id": "src-product-scispace-sharing",
+      "url": "https://scispace.com/help/en/articles/10921653-how-to-share-literature-review-search-results-in-scispace",
+      "source_type": "commercial-public",
+      "title": "SciSpace sharing workflow",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under SciSpace Terms",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scispace"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scispace.md",
+          "section": "7. 状态与恢复",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Sharing search results: public-link behavior and saved-search sharing limitation"
+    },
+    {
+      "id": "src-product-scispace-pricing",
+      "url": "https://scispace.com/pricing",
+      "source_type": "commercial-public",
+      "title": "SciSpace pricing and plan limits",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Public pricing page; proprietary hosted service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scispace"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scispace.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Pricing: publicly listed plan and usage limits"
+    },
+    {
+      "id": "src-product-scispace-terms",
+      "url": "https://scispace.com/terms",
+      "source_type": "commercial-public",
+      "title": "SciSpace Terms",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "SciSpace Terms",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scispace"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scispace.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Terms: hosted-service use boundary"
+    },
+    {
+      "id": "src-product-paperpal-changelog",
+      "url": "https://paperpal.com/productchangelog",
+      "source_type": "commercial-public",
+      "title": "Paperpal product changelog",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary service under CACTUS Terms of Use",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/paperpal"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__paperpal.md",
+          "section": "3. 实际代码或文档定位",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Product changelog: web-document download with tracked changes"
+    },
+    {
+      "id": "src-product-paperpal-google-docs-history",
+      "url": "https://support.paperpal.com/support/solutions/articles/3000129867-can-i-track-changes-and-revisions-in-paperpal-for-google-docs-",
+      "source_type": "commercial-public",
+      "title": "Paperpal revision history in Google Docs",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary service under CACTUS Terms of Use",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/paperpal"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__paperpal.md",
+          "section": "7. 状态与恢复",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Google Docs revision history: host-native collaboration and version-history boundary"
+    },
+    {
+      "id": "src-product-paperpal-pricing",
+      "url": "https://paperpal.com/pricing",
+      "source_type": "commercial-public",
+      "title": "Paperpal pricing and plan limits",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Public pricing page; proprietary service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/paperpal"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__paperpal.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Pricing: publicly listed language, research, PDF, and submission-check limits"
+    },
+    {
+      "id": "src-product-paperpal-terms",
+      "url": "https://cactusglobal.com/terms-of-use/",
+      "source_type": "commercial-public",
+      "title": "CACTUS Terms of Use",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "CACTUS Terms of Use",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/paperpal"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__paperpal.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Terms of Use: proprietary-service boundary"
+    },
+    {
+      "id": "src-product-scite-collections",
+      "url": "https://scite.ai/blog/introducing-collections",
+      "source_type": "commercial-public",
+      "title": "scite Collections workflow",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under scite Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scite"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scite.md",
+          "section": "7. 状态与恢复",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Collections: save/import sources, scoped Assistant use, and collection organization"
+    },
+    {
+      "id": "src-product-scite-reference-check",
+      "url": "https://scite.ai/blog/how-do-i-use-the-scite-reference-check",
+      "source_type": "commercial-public",
+      "title": "scite Reference Check workflow",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under scite Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scite"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scite.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Reference Check: manuscript PDF input, reference recognition, and citation-context report"
+    },
+    {
+      "id": "src-product-scite-pricing",
+      "url": "https://scite.ai/pricing",
+      "source_type": "commercial-public",
+      "title": "scite pricing and plan limits",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Public pricing page; proprietary hosted service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scite"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scite.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Pricing: publicly listed plan boundaries"
+    },
+    {
+      "id": "src-product-scite-terms",
+      "url": "https://scite.ai/terms",
+      "source_type": "commercial-public",
+      "title": "scite Terms of Service",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "scite Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/scite"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__scite.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Terms of Service: proprietary hosted-service and content-use boundary"
+    },
+    {
+      "id": "src-product-jenni-docs-index",
+      "url": "https://docs.jenni.ai/docs/",
+      "source_type": "commercial-public",
+      "title": "Jenni documentation index",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Jenni Terms of Service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/jenni"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__jenni.md",
+          "section": "3. 实际代码或文档定位",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Documentation index: writing, AI tools, research, collaboration, import/export, and account modules"
+    },
+    {
+      "id": "src-product-jenni-importing",
+      "url": "https://docs.jenni.ai/docs/export-and-import/importing/",
+      "source_type": "commercial-public",
+      "title": "Jenni importing documentation",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Jenni Terms of Service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/jenni"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__jenni.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Importing: DOCX support matrix, unsupported document features, citation matching, and author Review queue"
+    },
+    {
+      "id": "src-product-jenni-plans",
+      "url": "https://docs.jenni.ai/docs/account/plans-and-billing/",
+      "source_type": "commercial-public",
+      "title": "Jenni plans and billing documentation",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Public plan documentation; proprietary hosted service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/jenni"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__jenni.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Plans and billing: plan-dependent messages, uploads, review, citation-style, and export limits"
+    },
+    {
+      "id": "src-product-jenni-terms",
+      "url": "https://jenni.ai/terms",
+      "source_type": "commercial-public",
+      "title": "Jenni Terms of Service",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Jenni Terms of Service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/jenni"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__jenni.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Terms of Service: proprietary hosted-service boundary"
+    },
+    {
+      "id": "src-product-consensus-libguide",
+      "url": "https://consensus.app/home/resources/consensus-libguide-for-academic-research/",
+      "source_type": "commercial-public",
+      "title": "Consensus academic research guide",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Consensus Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/consensus"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__consensus.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Academic research guide: search modes, filters, results, Threads, Lists, and reference export"
+    },
+    {
+      "id": "src-product-consensus-reference-list",
+      "url": "https://consensus.app/home/resources/turn-your-reference-list-into-an-thinking-partner/",
+      "source_type": "commercial-public",
+      "title": "Consensus reference-list collection workflow",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Consensus Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/consensus"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__consensus.md",
+          "section": "7. 状态与恢复",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Reference-list workflow: Collections, scoped questions, and external reference export"
+    },
+    {
+      "id": "src-product-consensus-terms",
+      "url": "https://consensus.app/home/terms-of-service/",
+      "source_type": "commercial-public",
+      "title": "Consensus Terms of Service",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Consensus Terms of Service",
+      "tracks": [
+        "writing",
+        "agent-rag",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/consensus"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__consensus.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Terms of Service: hosted-service use boundary"
+    },
+    {
+      "id": "src-product-overleaf-download",
+      "url": "https://docs.overleaf.com/managing-projects-and-files/downloading-a-project",
+      "source_type": "commercial-public",
+      "title": "Overleaf project download documentation",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Overleaf Terms",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/overleaf"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__overleaf.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Downloading a project: PDF and source ZIP are distinct exports; generated files and bibliography artifacts have separate handling"
+    },
+    {
+      "id": "src-product-overleaf-reviewing",
+      "url": "https://docs.overleaf.com/collaborating/reviewing-and-reviewers",
+      "source_type": "commercial-public",
+      "title": "Overleaf reviewing and reviewer roles",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Overleaf Terms",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/overleaf"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__overleaf.md",
+          "section": "7. 状态与恢复",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Reviewing and reviewers: editing, reviewing, and viewing collaboration roles"
+    },
+    {
+      "id": "src-product-overleaf-publisher-submission",
+      "url": "https://docs.overleaf.com/templates/submitting-to-publishers",
+      "source_type": "commercial-public",
+      "title": "Overleaf publisher submission workflow",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Proprietary hosted service under Overleaf Terms",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/overleaf"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__overleaf.md",
+          "section": "5. 输入与输出",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Submitting to publishers: author-triggered partner transfer and publisher-specific availability"
+    },
+    {
+      "id": "src-product-overleaf-plan-limits",
+      "url": "https://docs.overleaf.com/getting-started/free-and-premium-plans/plan-limits",
+      "source_type": "commercial-public",
+      "title": "Overleaf plan limits",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Public plan documentation; proprietary hosted service",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/overleaf"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__overleaf.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Plan limits: collaboration and project limits by plan"
+    },
+    {
+      "id": "src-product-overleaf-legal",
+      "url": "https://www.overleaf.com/legal",
+      "source_type": "commercial-public",
+      "title": "Overleaf legal information",
+      "accessed_at": "2026-09-01T10:00:00+08:00",
+      "license_or_terms": "Overleaf legal terms",
+      "tracks": [
+        "writing",
+        "quality-export"
+      ],
+      "candidate_ids": [
+        "product/overleaf"
+      ],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/04_DEEP_DIVE_REPORTS/commercial-public-workflows/product__overleaf.md",
+          "section": "10. 许可证与条款",
+          "claim_id": null
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Legal and service-terms entry point"
     },
     {
       "id": "src-paper-data-to-paper-arxiv",
