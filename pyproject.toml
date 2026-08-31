@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfd-paper-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Author-in-the-loop CFD evidence, analysis, figure, and manuscript workflow"
 readme = "README.md"
 requires-python = ">=3.10"

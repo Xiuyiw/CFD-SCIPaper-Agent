@@ -11,6 +11,7 @@ from cfdpaper.indexing import ProjectIndexer
 from cfdpaper.planning import PlanningError, run_plan
 from cfdpaper.state import initialize_project, read_status
 from cfdpaper.storage import ProjectStore
+from cfdpaper.topic_generation.artifacts import generation_report_path
 
 app = typer.Typer(no_args_is_help=True, help="Author-in-the-loop CFD paper workflow")
 console = Console()
@@ -93,8 +94,10 @@ def plan_project(
     ] = None,
     approve_topic: Annotated[str | None, typer.Option("--approve-topic")] = None,
     author: Annotated[str | None, typer.Option("--author")] = None,
+    provider: Annotated[str, typer.Option("--provider")] = "offline",
+    regenerate: Annotated[bool, typer.Option("--regenerate")] = False,
 ) -> None:
-    """Rank author-supplied topics against a fast-refreshed evidence snapshot."""
+    """Rank author inputs or evidence-bounded generated topics after a fast inspection."""
 
     try:
         execution = run_plan(
@@ -102,13 +105,16 @@ def plan_project(
             candidates_path=candidates,
             approve_topic=approve_topic,
             author=author,
+            provider_mode=provider,
+            regenerate=regenerate,
         )
     except (FileNotFoundError, PlanningError, RuntimeError) as error:
         raise typer.BadParameter(str(error)) from error
     report = execution.report
     inspection = execution.current_inspection
     console.print(
-        f"Plan complete: outcome={report.ranking.outcome}; "
+        f"Plan complete: source={execution.candidate_source_kind}; "
+        f"outcome={report.ranking.outcome}; "
         f"leading={report.leading_topic_id or 'none'}; "
         f"gaps={len(report.ranking.missing_evidence)}; "
         f"approval={report.approval.scope if report.approval else 'none'}",
@@ -123,6 +129,25 @@ def plan_project(
     )
     if execution.approval_invalidated:
         console.print("Previous approval invalidated by project, candidate, or evidence change")
+    if execution.generation is not None:
+        console.print(
+            f"generation={execution.generation.mode}; "
+            f"reused={execution.generation.reused}; "
+            f"revision={execution.generation.report.generation_revision}; "
+            f"candidates={len(execution.generation.candidate_input.candidates)}",
+            markup=False,
+        )
+        if execution.generation.minimum_missing_data:
+            console.print(
+                "generation-gaps=" + ", ".join(execution.generation.minimum_missing_data),
+                markup=False,
+                soft_wrap=True,
+            )
+        console.print(
+            f"generation-report {generation_report_path(root)}",
+            markup=False,
+            soft_wrap=True,
+        )
     console.print(f"report {execution.report_path}", markup=False, soft_wrap=True)
 
 
@@ -149,5 +174,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.1.0.",
+        help="Roadmap command; not available in v0.2.0.",
     )(_placeholder_command(_command_name))

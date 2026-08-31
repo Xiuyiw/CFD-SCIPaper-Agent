@@ -1,0 +1,24 @@
+{
+  "project_id": "public-mature-topic-project",
+  "source_uri": "mature-results.json",
+  "source": {
+    "varied": [1.0, 2.0, 3.0, 4.0],
+    "controlled": [1.0, 1.0, 1.0, 1.0],
+    "primary_response": [10.0, 12.0, 14.0, 16.0],
+    "secondary_response": [4.0, 6.0, 8.0, 10.0],
+    "residual": [0.000001, 0.000001, 0.000001, 0.000001],
+    "conservation": [0.999, 0.999, 0.999, 0.999]
+  },
+  "expected_patterns": [
+    "ordered-parameter-response",
+    "coupled-association"
+  ],
+  "expected_first_pattern": "coupled-association",
+  "required_evidence_kinds": [
+    "boundary",
+    "case",
+    "conservation",
+    "convergence",
+    "qoi"
+  ]
+}

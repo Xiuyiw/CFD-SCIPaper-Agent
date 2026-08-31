@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 import warnings
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from inspect import signature
 from pathlib import Path
@@ -15,6 +16,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 import cfdpaper.planning as planning_module
+from cfdpaper.cache import ContentAddressedCache
 from cfdpaper.contracts import EvidenceRecord
 from cfdpaper.indexing import ProjectIndexer
 from cfdpaper.planning import (
@@ -28,6 +30,7 @@ from cfdpaper.planning import (
     evidence_snapshot_sha256,
     load_candidate_input,
     plan_fingerprint,
+    plan_report_bytes,
     run_plan,
 )
 from cfdpaper.publication.topics import (
@@ -36,8 +39,19 @@ from cfdpaper.publication.topics import (
     TopicRankingResult,
     rank_topics,
 )
+from cfdpaper.retrieval import HybridRetriever, TaskContextBuilder
 from cfdpaper.state import initialize_project
 from cfdpaper.storage import ProjectStore
+from cfdpaper.topic_generation.canonical import canonical_sha256
+from cfdpaper.topic_generation.service import TopicGenerationDependencies
+from cfdpaper.topic_generation.snapshot import ScientificRecordSnapshot, load_scientific_snapshot
+from tests.fixtures.planning.author_plan_report_golden import AUTHOR_PLAN_REPORT_GOLDEN_HEX
+from tests.topic_generation.factories import (
+    SOURCE_URI,
+    mature_ordered_scientific_store,
+    populated_scientific_store,
+)
+from tests.topic_generation.test_opportunities import synthetic_snapshot
 
 
 def candidate_payload(*, required_kinds: list[str] | None = None) -> dict:
@@ -110,6 +124,249 @@ def prepared_project(
     return store, candidates
 
 
+def prepared_generated_project(tmp_path: Path) -> ProjectStore:
+    return populated_scientific_store(tmp_path)
+
+
+def generated_dependencies(store: ProjectStore, snapshot: object) -> TopicGenerationDependencies:
+    raw = snapshot.model_dump(mode="python")
+    raw["project_id"] = store.status().project_id
+    raw["aggregate_sha256"] = canonical_sha256(
+        {"project_id": raw["project_id"], "component_hashes": raw["component_hashes"]},
+        domain=b"cfdpaper-scientific-snapshot-v1",
+    )
+    project_snapshot = ScientificRecordSnapshot.model_validate(raw)
+    return TopicGenerationDependencies(
+        store=store,
+        cache=ContentAddressedCache(store.root),
+        context_builder=TaskContextBuilder(HybridRetriever(store)),
+        snapshot_loader=lambda _store: project_snapshot,
+        assert_plan_lock_held=lambda: True,
+    )
+
+
+def test_generated_candidates_are_used_only_when_no_author_input_exists(tmp_path: Path) -> None:
+    store = prepared_generated_project(tmp_path)
+
+    execution = run_plan(tmp_path, provider_mode="offline")
+
+    assert execution.candidate_source_kind == "generated"
+    assert execution.generation is not None
+    assert (
+        execution.report.generation_fingerprint
+        == execution.generation.report.generation_fingerprint
+    )
+    assert store.status().stage == "planned"
+
+
+def test_generated_direction_only_topic_requires_real_author_but_stays_non_manuscript(
+    tmp_path: Path,
+) -> None:
+    store = prepared_generated_project(tmp_path)
+    dependencies = generated_dependencies(store, synthetic_snapshot(values=(1.0, 2.0, 3.0)))
+    proposal = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        generation_dependencies=dependencies,
+    )
+    topic_id = proposal.report.ranking.ranked_topics[0].candidate.topic_id
+
+    approved = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        approve_topic=topic_id,
+        author="Author",
+        generation_dependencies=dependencies,
+    )
+
+    assert proposal.report.approval is None
+    assert approved.report.approval is not None
+    assert approved.report.approval.scope == "direction-only"
+    assert store.status().stage == "planned"
+    assert store.resume_checkpoint(approved.checkpoint_id).stage == "plan-direction-approval"
+
+
+def test_generated_candidate_declares_evidence_for_every_required_manuscript_kind(
+    tmp_path: Path,
+) -> None:
+    store = mature_ordered_scientific_store(tmp_path)
+    dependencies = generated_dependencies(store, load_scientific_snapshot(store))
+
+    proposal = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        generation_dependencies=dependencies,
+    )
+    candidate = proposal.generation.candidate_input.candidates[0]
+    evidence_by_id = {item.evidence_id: item for item in store.list_evidence()}
+    declared_kinds = {
+        evidence_by_id[evidence_id].kind
+        for evidence_id in candidate.supporting_evidence_ids
+        if evidence_id in evidence_by_id
+    }
+
+    assert candidate.required_evidence_kinds <= declared_kinds
+    assert proposal.report.ranking.outcome == "manuscript"
+    assert proposal.report.approval is None
+
+    approved = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        approve_topic=candidate.topic_id,
+        author="Author",
+        generation_dependencies=dependencies,
+    )
+
+    assert approved.report.approval is not None
+    assert approved.report.approval.scope == "manuscript-topic"
+    assert approved.report.approval.plan_fingerprint == approved.report.plan_fingerprint
+    assert store.status().stage == "topic-approved"
+
+
+def test_generated_approval_is_invalidated_by_regeneration_and_evidence_change(
+    tmp_path: Path,
+) -> None:
+    store = prepared_generated_project(tmp_path)
+    dependencies = generated_dependencies(store, synthetic_snapshot(values=(1.0, 2.0, 3.0)))
+    proposal = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        generation_dependencies=dependencies,
+    )
+    topic_id = proposal.report.ranking.ranked_topics[0].candidate.topic_id
+    approved = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        approve_topic=topic_id,
+        author="Author",
+        generation_dependencies=dependencies,
+    )
+    assert approved.report.approval is not None
+    assert approved.report.approval.plan_fingerprint == approved.report.plan_fingerprint
+
+    regenerated = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        regenerate=True,
+        generation_dependencies=dependencies,
+    )
+
+    assert regenerated.report.candidate_source_sha256 == approved.report.candidate_source_sha256
+    assert regenerated.report.generation_fingerprint != approved.report.generation_fingerprint
+    assert regenerated.approval_invalidated is True
+    assert regenerated.report.approval is None
+    assert store.status().stage == "planned"
+
+    reapproved = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        approve_topic=topic_id,
+        author="Author",
+        generation_dependencies=dependencies,
+    )
+    assert reapproved.report.approval is not None
+    (tmp_path / SOURCE_URI).write_text(
+        '{"parameter": [4.0], "response": [14.0]}\n',
+        encoding="utf-8",
+    )
+
+    after_evidence_change = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        generation_dependencies=dependencies,
+    )
+
+    assert (
+        after_evidence_change.report.candidate_source_sha256
+        == reapproved.report.candidate_source_sha256
+    )
+    assert after_evidence_change.report.plan_fingerprint != reapproved.report.plan_fingerprint
+    assert after_evidence_change.approval_invalidated is True
+    assert after_evidence_change.report.approval is None
+    assert store.status().stage == "planned"
+
+
+@pytest.mark.parametrize(
+    "field",
+    ("candidate_source_sha256", "evidence_snapshot_sha256", "generation_fingerprint"),
+)
+def test_generated_plan_report_rejects_each_tampered_fingerprint_input(
+    tmp_path: Path, field: str
+) -> None:
+    store = prepared_generated_project(tmp_path)
+    execution = run_plan(
+        tmp_path,
+        provider_mode="offline",
+        generation_dependencies=generated_dependencies(
+            store, synthetic_snapshot(values=(1.0, 2.0, 3.0))
+        ),
+    )
+    payload = execution.report.model_dump(mode="json")
+    payload[field] = "f" * 64
+
+    with pytest.raises(ValidationError, match="plan fingerprint does not match source hashes"):
+        PlanReport.model_validate(payload)
+
+
+def test_author_source_precedence_blocks_generation_and_regenerate(tmp_path: Path) -> None:
+    _store, explicit = prepared_project(tmp_path)
+
+    execution = run_plan(tmp_path, candidates_path=explicit)
+
+    assert execution.candidate_source_kind == "author-explicit"
+    assert execution.generation is None
+    with pytest.raises(PlanningInputError, match="--regenerate requires generated candidates"):
+        run_plan(tmp_path, candidates_path=explicit, regenerate=True)
+
+
+def test_invalid_default_author_candidate_file_does_not_fall_back_to_generation(
+    tmp_path: Path,
+) -> None:
+    _store, default = prepared_project(tmp_path)
+    default.write_text("{not valid JSON", encoding="utf-8")
+
+    with pytest.raises(PlanningInputError):
+        run_plan(tmp_path)
+
+    assert not (
+        tmp_path / ".cfdpaper" / "outputs" / "plan" / "candidate-generation-report.json"
+    ).exists()
+
+
+def test_default_author_source_is_resolved_after_acquiring_plan_lock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _store, default = prepared_project(tmp_path)
+    default.unlink()
+
+    @contextmanager
+    def create_default_source_while_locking(*_args: object, **_kwargs: object):
+        write_candidates(default)
+        yield
+
+    monkeypatch.setattr(planning_module, "process_file_lock", create_default_source_while_locking)
+
+    execution = run_plan(tmp_path)
+
+    assert execution.candidate_source_kind == "author-default"
+    assert execution.generation is None
+
+
+def test_author_mode_plan_report_matches_pre_slice_golden_bytes(tmp_path: Path) -> None:
+    _store, _candidates = prepared_project(tmp_path)
+    report = run_plan(tmp_path).report
+    payload = report.model_dump(mode="json")
+    payload["candidate_source_uri"] = "fixture://author-input"
+    payload["generated_at"] = "2026-08-30T00:00:00Z"
+    fixed = PlanReport.model_validate(payload)
+
+    actual = plan_report_bytes(fixed)
+
+    assert actual == bytes.fromhex(AUTHOR_PLAN_REPORT_GOLDEN_HEX)
+    assert actual.endswith(b"\n")
+    assert b'"generation_fingerprint"' not in actual
+
+
 def corrupt_inspection(payload: dict, corruption: str) -> None:
     if corruption == "missing":
         del payload["inspection"]
@@ -138,6 +395,8 @@ def test_run_plan_uses_default_input_fast_inspection_and_persists_manuscript(
     )
     report = PlanReport.model_validate_json(execution.report_path.read_text(encoding="utf-8"))
     assert report.candidate_source_uri == str(candidates.resolve())
+    assert execution.candidate_source_kind == "author-default"
+    assert execution.generation is None
     assert report.inspection.mode == "fast"
     assert report.ranking.outcome == "manuscript"
     assert report.leading_topic_id == "topic-01"
@@ -152,9 +411,12 @@ def test_run_plan_explicit_candidate_path_overrides_default(tmp_path: Path) -> N
     _store, _default = prepared_project(tmp_path)
     override = write_candidates(tmp_path / "author-input.json")
 
-    report = run_plan(tmp_path, candidates_path=override).report
+    execution = run_plan(tmp_path, candidates_path=override)
+    report = execution.report
 
     assert report.candidate_source_uri == str(override.resolve())
+    assert execution.candidate_source_kind == "author-explicit"
+    assert execution.generation is None
 
 
 def test_run_plan_default_candidate_provenance_resolves_symlink_target(
@@ -2348,6 +2610,7 @@ def test_snapshot_storage_names_do_not_leak_from_external_schema_or_dumps() -> N
         "candidate_source_uri",
         "candidate_source_sha256",
         "evidence_snapshot_sha256",
+        "generation_fingerprint",
         "plan_fingerprint",
         "generated_at",
         "inspection",

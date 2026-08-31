@@ -1,0 +1,17 @@
+{
+  "project_id": "public-incomplete-comparison",
+  "source_uri": "failure-shapes.json",
+  "source": {
+    "varied": [1.0, 2.0, 3.0],
+    "controlled": [1.0, 1.0, 1.0],
+    "aggregate": [10.0, 14.0, 11.0],
+    "residual": [0.1, 0.1, 0.1],
+    "conservation": [0.8, 0.8, 0.8]
+  },
+  "failure_shapes": [
+    "case-comparability-unverified",
+    "multi-reversal-discrete-series",
+    "aggregation-provenance-error",
+    "weak-residual-convergence-evidence"
+  ]
+}

@@ -10,12 +10,9 @@ recorded here instead of being represented as already complete.
 
 | Version | Public deliverable | Release condition |
 |---|---|---|
-| `v0.1.0` | Initial Public Preview: installable CLI, local project state, resumable inspection, author-supplied topic ranking, architecture and tests | Fresh-clone Quickstart, public example, CI, privacy scan and honest capability matrix pass |
-| `v0.2.0` | Automatic generation of 2–4 evidence-bounded topic candidates | Generic private-regression checks pass; author review and approval remain external |
-| `v0.3.0` | Scientific analysis and reproducible figure-contract vertical slice | Units, comparability, QoI, trends, source data, scripts and figure QA close one public example |
-| `v0.4.0` | Evidence-linked paper spine and section writing | Claim-evidence and literature-role mapping produce a bounded manuscript section and external-review package |
-| `v0.5.0+` | Review, export, adapters and broader project support | Each capability passes its public contract and private regression without overclaiming support |
-| `v1.0.0` | Stable evidence-to-paper workflow | Three heterogeneous real projects, at least two data/solver routes and zero hard scientific/cross-document errors |
+| `v0.1.0` | Initial Public Preview: installable CLI, local project state, resumable inspection, and author-supplied topic ranking | Released 2026-08-30 |
+| `v0.2.0` | Automatic generation of 2–4 evidence-bounded topic candidates from mature structured records | Public positive example, fail-closed private challenge replays, CI, package, and release smoke pass |
+| `v0.3.0` | Paused; no active specification, branch, or implementation | Development resumes only after explicit author authorization |
 
 ## Long-term maturity gates
 
@@ -31,5 +28,5 @@ recorded here instead of being represented as already complete.
 | 7 | Stable public package | CI, docs, examples, license and release audit pass |
 
 The versioned roadmap changes when functionality becomes public; it does not weaken the maturity
-gates. A failed validation becomes a regression fixture and returns the affected subsystem to
-implementation.
+gates. Development pauses after v0.2.0. Longer-term gates remain architectural context rather than
+an active backlog, and no v0.3.0 work begins without explicit author authorization.

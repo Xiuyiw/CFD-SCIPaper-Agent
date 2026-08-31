@@ -92,7 +92,9 @@ jobs:
           $dist = Join-Path $env:RUNNER_TEMP "cfdpaper-dist"
           $smoke = Join-Path $env:RUNNER_TEMP "cfdpaper-wheel-smoke"
           $project = Join-Path $env:RUNNER_TEMP "cfdpaper-cli-project"
+          $generatedProject = Join-Path $env:RUNNER_TEMP "cfdpaper-generated-topic-project"
           $candidates = Join-Path $env:RUNNER_TEMP "cfdpaper-candidates.json"
+          $snapshot = Join-Path $env:RUNNER_TEMP "cfdpaper-public-snapshot"
           $wheels = @(Get-ChildItem -LiteralPath $dist -Filter "*.whl" -File)
           if ($wheels.Count -ne 1) {
             throw "expected one wheel for smoke testing; found $($wheels.Count)"
@@ -103,7 +105,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir $wheel.FullName
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.1.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.2.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -130,9 +132,11 @@ jobs:
           & $cfdpaper inspect $project
           & $cfdpaper plan $project --candidates $candidates
           & $cfdpaper status $project
+          & $smokePython (Join-Path $snapshot "examples\generated-topic\prepare_project.py") $generatedProject
+          & $cfdpaper plan $generatedProject --provider offline
       - name: Upload release distributions
         uses: actions/upload-artifact@v4
         with:
-          name: cfd-paper-agent-0.1.0-distributions
+          name: cfd-paper-agent-0.2.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

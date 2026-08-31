@@ -43,11 +43,30 @@ _UNITS = {
     "kg/m^3": _Unit("density"),
 }
 
+_CANONICAL_ALIASES = {
+    "-": "1",
+    "°c": "degc",
+    "w/m^2": "w/m2",
+    "w/m^3": "w/m3",
+    "kg/m^3": "kg/m3",
+}
+
 
 def _normalize(unit: str) -> str:
     return (
         unit.strip().lower().replace(" ", "").replace("·", "").replace("²", "2").replace("³", "3")
     )
+
+
+def canonical_unit(unit: str | None) -> str:
+    """Return the registered canonical spelling of a unit."""
+
+    if unit is None:
+        raise ValueError("unit is required")
+    normalized = _normalize(unit)
+    if normalized not in _UNITS:
+        raise ValueError(f"unknown unit: {unit!r}")
+    return _CANONICAL_ALIASES.get(normalized, normalized)
 
 
 def units_compatible(first: str | None, second: str | None) -> bool:

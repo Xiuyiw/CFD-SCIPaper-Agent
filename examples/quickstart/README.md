@@ -22,8 +22,12 @@ Expected planning boundary:
 Plan complete: outcome=missing-evidence; leading=pressure-loss-screening; gaps=4; approval=none
 ```
 
-`inspect` indexes the files, but v0.1.0 does not expose a CLI command that promotes indexed files
+`inspect` indexes the files, but v0.2.0 does not expose a general CLI command that promotes indexed files
 to verified scientific evidence. The example candidates reference intentionally unregistered
 `demo-` evidence IDs, so `plan` reports the missing IDs and evidence kinds and refuses to call
 either candidate defensible. This is a successful workflow demonstration, not a
 manuscript-production claim.
+
+This author-candidate route remains supported in v0.2.0 and takes precedence over generated
+candidates. Generated planning is available only after mature structured scientific records have
+been added through current Python contracts or an adapter; it is not inferred from these files.

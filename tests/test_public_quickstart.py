@@ -89,7 +89,7 @@ def test_public_quickstart_sources_are_synthetic_and_path_independent() -> None:
             assert all(fragment not in text for fragment in forbidden_fragments)
 
 
-def test_public_docs_match_the_v010_capability_contract() -> None:
+def test_public_docs_match_the_v020_capability_contract() -> None:
     readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
     capability_section = readme.split("## Capability matrix", 1)[1].split("\n## ", 1)[0]
     state_cells = {
@@ -98,7 +98,7 @@ def test_public_docs_match_the_v010_capability_contract() -> None:
         if "---" not in match and "State" not in match
     }
 
-    assert state_cells == {"Available in v0.1.0", "Experimental", "Roadmap"}
+    assert state_cells == {"Available in v0.2.0", "Experimental", "Roadmap"}
     for command in (
         "cfdpaper init project --project-id synthetic-duct-study",
         "cfdpaper inspect project",
@@ -118,6 +118,7 @@ def test_public_docs_match_the_v010_capability_contract() -> None:
     linked_targets = (
         "docs/architecture/overview.md",
         "docs/ROADMAP.md",
+        "docs/releases/v0.2.0.md",
         "docs/releases/v0.1.0.md",
         "LIMITATIONS.md",
         "CONTRIBUTING.md",
@@ -127,24 +128,25 @@ def test_public_docs_match_the_v010_capability_contract() -> None:
         assert f"]({target})" in readme
         assert (REPOSITORY_ROOT / target).is_file()
 
-    release_notes = (REPOSITORY_ROOT / "docs" / "releases" / "v0.1.0.md").read_text(
+    release_notes = (REPOSITORY_ROOT / "docs" / "releases" / "v0.2.0.md").read_text(
         encoding="utf-8"
     )
-    assert "v0.2.0" in release_notes
-    assert "2–4 evidence-bounded topic candidates" in release_notes
-    assert "does not produce a complete manuscript" in release_notes
+    assert "two to four provisional research topics" in release_notes
+    assert "inspect` alone does not create those records" in release_notes
+    assert "Development pauses after v0.2.0" in release_notes
 
     limitations = (REPOSITORY_ROOT / "LIMITATIONS.md").read_text(encoding="utf-8")
     assert "v0.1.0-alpha" not in limitations
     assert "author-supplied" in limitations
+    assert "generate provisional candidates" in limitations
     assert "analyze" in limitations and "export" in limitations
 
     changelog = (REPOSITORY_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    assert "## [0.1.0] — 2026-08-30" in changelog
+    assert "## [0.2.0] — 2026-08-31" in changelog
     assert "alpha" not in changelog.casefold()
 
     citation = yaml.safe_load((REPOSITORY_ROOT / "CITATION.cff").read_text(encoding="utf-8"))
     assert citation["cff-version"] == "1.2.0"
     assert citation["title"] == "CFD-Paper-Agent"
-    assert citation["version"] == "0.1.0"
+    assert citation["version"] == "0.2.0"
     assert citation["license"] == "Apache-2.0"

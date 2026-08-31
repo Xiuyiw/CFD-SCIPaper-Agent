@@ -1,44 +1,50 @@
 # Architecture overview
 
 CFD-Paper-Agent keeps project state local and separates file discovery from scientific evidence
-qualification. The v0.1.0 public architecture is deliberately narrow: a CLI coordinates a file
-index, a SQLite state store, deterministic checkpoints, and author-supplied topic ranking.
+qualification. In v0.2.0, the CLI coordinates source indexing, structured scientific records,
+evidence-bounded topic generation or author-supplied candidates, ranking, and explicit author
+approval.
 
 ```mermaid
 flowchart LR
     A[Mature CFD results or neutral exports] --> B[inspect]
     B --> C[Local source index and staleness state]
-    C --> D[plan]
-    E[Structured evidence state<br/>no v0.1.0 ingestion CLI] --> D
-    F[Author-supplied topic candidates] --> D
-    D --> G[Ranked report and checkpoint]
-    G --> H{Author review and approval}
-    H -. roadmap .-> I[analyze → figure → write]
+    C --> D[Structured scientific records]
+    D --> E[Evidence and claim-ceiling checks]
+    F[Author candidate file] --> G[plan]
+    E --> H[Generate 2–4 provisional candidates]
+    H --> G
+    G --> I[Ranked report and recoverable artifacts]
+    I --> J{Author review and approval}
+    J -. paused roadmap .-> K[analyze → figure → write]
 ```
 
-`inspect` snapshots discoverable project files into a content-addressed cache, records relative
-source URIs, and updates stale/current state. It does **not** infer solver semantics or promote a
-file to verified evidence. Structured evidence records, when present through current contracts,
-retain source locators, hashes, maturity, and stale status.
+`inspect` records relative source URIs, content identity, and stale/current state. It does not infer
+solver semantics or promote files to evidence. Structured case, boundary, QoI, convergence,
+conservation, and provenance records must be supplied through current Python contracts or an
+adapter that preserves their source locators.
 
-`plan` accepts a schema-v1 author candidate envelope, performs a fast incremental reinspection,
-and ranks candidates against the evidence state. It writes a JSON report and an atomic workflow
-checkpoint in the project-local `.cfdpaper` directory. A missing-evidence outcome is a valid,
-expected boundary rather than a hidden success.
+`plan` performs a fast incremental reinspection. When an author candidate file is supplied, it is
+validated and ranked. Otherwise the planner discovers comparison and ordered-response
+opportunities from mature structured records, constructs two to four provisional candidates, and
+records supporting evidence, prohibited inferences, claim ceilings, and minimum missing data.
+Missing evidence is a valid result rather than a hidden success.
 
-Author approval is explicit and evidence-dependent. It records a selected direction or topic
-scope but does not launch any downstream roadmap command. Analysis, figure generation, writing,
-review, revision, export, and general solver-native extraction are not delivered end to end in
-v0.1.0.
+Offline generation is deterministic. Optional provider refinement may change bounded wording but
+cannot introduce evidence, alter numerical relations, or approve a topic. Candidate generation
+artifacts are committed atomically to the project-local `.cfdpaper` directory and reused only while
+their scientific inputs remain current.
 
 ## Local components
 
 | Component | Responsibility | Boundary |
 |---|---|---|
 | Typer CLI | Expose current commands and non-zero roadmap placeholders | No unattended research decisions |
-| Project indexer | Discover files, cache bytes, chunk text, and track staleness | No scientific evidence qualification |
-| SQLite store | Persist project, source, evidence, stage, and checkpoint records | Local state; author controls source data |
-| Planner | Validate candidate JSON, rank against evidence, and write a report | Author supplies candidates in v0.1.0 |
+| Project indexer | Discover files, cache bytes, and track staleness | No scientific evidence qualification |
+| SQLite store | Persist project, sources, evidence, QoI definitions, assessments, and checkpoints | Local state; author controls source data |
+| Topic generator | Discover bounded opportunities and construct provisional candidates | No evidence invention or automatic approval |
+| Planner | Rank generated or author-supplied candidates and write reports | Author approves the final direction |
 
-The [public roadmap](../ROADMAP.md) promotes later components only after their executable contracts,
-tests, evidence boundaries, and artifacts are released.
+Analysis, figure generation, writing, review, revision, export, and general solver-native extraction
+are not delivered end to end in v0.2.0. Development pauses after this release until explicitly
+resumed. See the [public roadmap](../ROADMAP.md).

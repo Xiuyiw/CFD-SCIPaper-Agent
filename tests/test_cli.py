@@ -90,7 +90,7 @@ def test_top_level_help_labels_unavailable_commands_as_roadmap() -> None:
     assert result.exit_code == 0, result.stdout
     normalized = " ".join(_plain_cli_text(result.stdout).split())
     for command in ("analyze", "figure", "write", "review", "revise", "export"):
-        assert f"{command} Roadmap command; not available in v0.1.0." in normalized
+        assert f"{command} Roadmap command; not available in v0.2.0." in normalized
 
 
 def prepared_cli_project(tmp_path: Path) -> ProjectStore:
@@ -145,6 +145,8 @@ def test_plan_help_exposes_real_inputs() -> None:
     assert "--candidates" in help_text
     assert "--approve-topic" in help_text
     assert "--author" in help_text
+    assert "--provider" in help_text
+    assert "--regenerate" in help_text
 
 
 def test_plan_cli_writes_report_and_prints_fast_inspection_boundary(
@@ -171,13 +173,48 @@ def test_plan_cli_writes_report_and_prints_fast_inspection_boundary(
     assert store.status().stage == "planned"
 
 
-def test_plan_cli_returns_stable_error_for_missing_candidates(tmp_path: Path) -> None:
+def test_plan_cli_reports_missing_data_when_no_author_candidate_file_exists(tmp_path: Path) -> None:
     initialize_project(tmp_path, "demo")
 
     result = runner.invoke(app, ["plan", str(tmp_path)])
 
+    assert result.exit_code == 0, result.stdout
+    assert "source=generated" in result.stdout
+    assert "outcome=missing-evidence" in result.stdout
+    assert "approval=none" in result.stdout
+
+
+def test_plan_cli_auto_truthfully_falls_back_and_named_provider_fails_closed(
+    tmp_path: Path,
+) -> None:
+    auto_project = tmp_path / "auto"
+    auto_project.mkdir()
+    initialize_project(auto_project, "auto")
+    named_project = tmp_path / "named"
+    named_project.mkdir()
+    initialize_project(named_project, "named")
+
+    auto = runner.invoke(app, ["plan", str(auto_project), "--provider", "auto"])
+    named = runner.invoke(app, ["plan", str(named_project), "--provider", "openai"])
+
+    assert auto.exit_code == 0, auto.stdout
+    assert "source=generated" in auto.stdout
+    assert "generation=offline-fallback" in auto.stdout
+    assert "generation-gaps=" in auto.stdout
+    assert "candidate-generation-report.json" in auto.stdout
+    assert named.exit_code == 2
+    assert "explicit-provider-unavailable" in named.stdout + named.stderr
+
+
+def test_plan_cli_rejects_regenerate_for_author_candidates_without_generation(
+    tmp_path: Path,
+) -> None:
+    prepared_cli_project(tmp_path)
+
+    result = runner.invoke(app, ["plan", str(tmp_path), "--regenerate"])
+
     assert result.exit_code == 2
-    assert "invalid candidate input" in result.stdout + result.stderr
+    assert "--regenerate requires generated candidates" in result.stdout + result.stderr
 
 
 def test_plan_cli_requires_paired_approval_options(tmp_path: Path) -> None:

@@ -18,6 +18,7 @@ from cfdpaper.scientific import (
     grade_convergence,
     units_compatible,
 )
+from cfdpaper.scientific.units import canonical_unit
 
 
 def test_units_check_dimensions_and_convert_scale() -> None:
@@ -25,6 +26,34 @@ def test_units_check_dimensions_and_convert_scale() -> None:
     assert not units_compatible("K", "Pa")
     assert not units_compatible(None, None)
     assert convert_value(1.5, "kPa", "Pa") == pytest.approx(1500.0)
+
+
+@pytest.mark.parametrize(
+    ("alias", "expected"),
+    [
+        ("W/m^2", "w/m2"),
+        ("W/m²", "w/m2"),
+        ("W/m^3", "w/m3"),
+        ("kg/m^3", "kg/m3"),
+        ("°C", "degc"),
+    ],
+)
+def test_canonical_unit_folds_only_explicit_same_scale_and_offset_aliases(
+    alias: str, expected: str
+) -> None:
+    assert canonical_unit(alias) == expected
+
+
+def test_canonical_unit_preserves_distinct_scale_units() -> None:
+    assert canonical_unit("Pa") != canonical_unit("kPa")
+    assert canonical_unit("%") != canonical_unit("1")
+
+
+def test_canonical_unit_rejects_missing_or_unknown_units() -> None:
+    with pytest.raises(ValueError, match="^unit is required$"):
+        canonical_unit(None)
+    with pytest.raises(ValueError, match="^unknown unit: 'rpm'$"):
+        canonical_unit("rpm")
 
 
 def test_case_comparability_requires_matching_operating_conditions() -> None:

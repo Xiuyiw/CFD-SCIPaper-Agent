@@ -17,6 +17,8 @@ from cfdpaper.scientific import (
     detect_trend,
     grade_convergence,
 )
+from cfdpaper.topic_generation.opportunities import discover_research_opportunities
+from tests.topic_generation.test_opportunities import synthetic_snapshot
 
 
 def test_incomparable_cases_are_blocked() -> None:
@@ -103,3 +105,24 @@ def test_monotonic_claim_with_reverse_increment_cannot_be_validated() -> None:
 
     assert maturity.trend_contradiction
     assert not ceiling.allows(ClaimCeiling.VALIDATION)
+
+
+def test_incomplete_comparison_blocks_false_publication_conclusions() -> None:
+    snapshot = synthetic_snapshot(
+        values=(1.0, 2.0, 3.0),
+        qoi_values=(1.0, 1.8, 1.3),
+        comparable=False,
+        strong=False,
+        definition=False,
+    )
+
+    result = discover_research_opportunities(snapshot)
+
+    assert all(not item.defensible for item in result.opportunities)
+    assert all(item.trend_type != "monotonic-increasing" for item in result.opportunities)
+    assert all(
+        item.claim_ceiling not in {"mechanism", "validation", "engineering"}
+        for item in result.opportunities
+    )
+    prohibited = {text for item in result.opportunities for text in item.prohibited_inferences}
+    assert {"continuous optimum", "stable operating window"}.issubset(prohibited)

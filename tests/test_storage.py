@@ -85,8 +85,11 @@ def test_initialization_migrates_all_phase2_tables(tmp_path: Path) -> None:
         "chunks",
         "chunks_fts",
         "checkpoints",
+        "scientific_records",
+        "qoi_definition_assessments",
+        "scientific_assessment_state",
     } <= tables
-    assert schema_version == SCHEMA_VERSION == 3
+    assert schema_version == SCHEMA_VERSION == 6
 
 
 def test_store_connection_context_explicitly_closes_for_windows_cleanup(tmp_path: Path) -> None:
@@ -120,6 +123,31 @@ def test_store_migrates_an_existing_v1_database(tmp_path: Path) -> None:
 
     assert store.schema_version >= 2
     assert store.status().project_id == "legacy"
+
+
+def test_v010_schema3_project_migrates_to_v020_without_losing_state(tmp_path: Path) -> None:
+    initialize_project(tmp_path, "legacy-v010")
+    source = tmp_path / "results.csv"
+    source.write_text("case,value\nreference,1.0\n", encoding="utf-8")
+    store = ProjectStore.open(tmp_path)
+    ProjectIndexer(store).inspect()
+    store.set_stage("planned", {"source": "v0.1.0"})
+    store.save_checkpoint("plan", {"source": "v0.1.0"})
+
+    with store.connect() as connection:
+        connection.execute("DROP TABLE scientific_assessment_state")
+        connection.execute("DROP TABLE qoi_definition_assessments")
+        connection.execute("DROP TABLE scientific_records")
+        connection.execute("DELETE FROM schema_migrations WHERE version >= 4")
+
+    migrated = ProjectStore.open(tmp_path)
+    status = migrated.status()
+
+    assert migrated.schema_version == SCHEMA_VERSION == 6
+    assert status.project_id == "legacy-v010"
+    assert status.stage == "planned"
+    assert status.source_count == 1
+    assert status.latest_checkpoint == "plan"
 
 
 def test_structured_records_are_persisted_with_evidence_links(tmp_path: Path) -> None:
@@ -232,8 +260,8 @@ def test_migrations_are_atomic_under_sixteen_concurrent_openers(tmp_path: Path) 
         migration_rows = connection.execute(
             "SELECT version, COUNT(*) FROM schema_migrations GROUP BY version ORDER BY version"
         ).fetchall()
-    assert versions == [3] * 16
-    assert migration_rows == [(1, 1), (2, 1), (3, 1)]
+    assert versions == [6] * 16
+    assert migration_rows == [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1)]
 
 
 def test_v2_to_v3_marks_unrecoverable_record_versions_unknown_and_stale(

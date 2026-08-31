@@ -10,11 +10,9 @@ python -m ruff check .
 python -m ruff format --check .
 ```
 
-The initial public-preview CI targets CPython 3.10-3.12 on Windows and Linux. These combinations
-remain release candidates until the public GitHub Actions matrix passes at the exact release
-commit. Other interpreters and platforms are welcome, but they are not release-supported without
-repeatable CI evidence. Contributions should be solver-agnostic unless they live in an adapter
-package.
+The public CI targets CPython 3.10-3.12 on Windows and Linux. Other interpreters and platforms are
+welcome, but they are not release-supported without repeatable CI evidence. Contributions should
+be solver-agnostic unless they live in an adapter package.
 
 ## Scientific contribution requirements
 

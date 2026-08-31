@@ -8,7 +8,7 @@ import math
 import os
 import re
 import sqlite3
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from inspect import signature
 from pathlib import Path
@@ -27,6 +27,7 @@ from pydantic import (
 )
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode
 
+from cfdpaper.cache import ContentAddressedCache
 from cfdpaper.contracts import EvidenceRecord, StageResult
 from cfdpaper.indexing import ConcurrentModificationError, ProjectIndexer
 from cfdpaper.locking import (
@@ -40,7 +41,17 @@ from cfdpaper.publication.topics import (
     TopicRankingResult,
     rank_topics,
 )
+from cfdpaper.retrieval import HybridRetriever, TaskContextBuilder
 from cfdpaper.storage import ProjectStore
+from cfdpaper.topic_generation.artifacts import generated_candidates_path, recover_generation_bundle
+from cfdpaper.topic_generation.candidates import apply_generation_constraints
+from cfdpaper.topic_generation.canonical import canonical_sha256
+from cfdpaper.topic_generation.models import GenerationRequest
+from cfdpaper.topic_generation.service import (
+    GenerationExecution,
+    TopicGenerationDependencies,
+    TopicGenerationService,
+)
 
 _SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 _PUBLIC_SCHEMA_NAMES = {
@@ -74,6 +85,14 @@ class PlanningInputError(PlanningError):
 
 class PlanningWriteError(PlanningError):
     """Raised when a report or workflow transition cannot be persisted."""
+
+
+@dataclass(frozen=True)
+class CandidateSource:
+    """The only three candidate origins accepted by the planning boundary."""
+
+    kind: Literal["author-explicit", "author-default", "generated"]
+    path: Path | None
 
 
 class PlanningModel(BaseModel):
@@ -300,6 +319,7 @@ class PlanReport(PlanningModel):
     candidate_source_uri: str = Field(min_length=1)
     candidate_source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     evidence_snapshot_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    generation_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     plan_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
     generated_at: datetime
     inspection: InspectionSummary
@@ -354,9 +374,14 @@ class PlanReport(PlanningModel):
 
     @model_validator(mode="after")
     def report_bindings_are_consistent(self) -> PlanReport:
-        expected_fingerprint = plan_fingerprint(
-            self.candidate_source_sha256,
-            self.evidence_snapshot_sha256,
+        expected_fingerprint = (
+            plan_fingerprint(self.candidate_source_sha256, self.evidence_snapshot_sha256)
+            if self.generation_fingerprint is None
+            else generated_plan_fingerprint(
+                self.candidate_source_sha256,
+                self.evidence_snapshot_sha256,
+                self.generation_fingerprint,
+            )
         )
         if self.plan_fingerprint != expected_fingerprint:
             raise ValueError("plan fingerprint does not match source hashes")
@@ -400,6 +425,8 @@ class PlanExecution(PlanningModel):
     checkpoint_id: str
     current_inspection: InspectionSummary
     approval_invalidated: bool = False
+    candidate_source_kind: Literal["author-explicit", "author-default", "generated"]
+    generation: GenerationExecution | None = None
 
 
 def _validation_summary(error: ValidationError) -> str:
@@ -428,6 +455,24 @@ def load_candidate_input(path: Path) -> tuple[CandidateInput, bytes, str]:
     ) as error:
         raise PlanningInputError(f"invalid candidate input {path}: {error}") from error
     return envelope, raw, hashlib.sha256(raw).hexdigest()
+
+
+def resolve_candidate_source(root: Path, explicit_path: Path | None) -> CandidateSource:
+    if explicit_path is not None:
+        return CandidateSource("author-explicit", explicit_path.expanduser().resolve())
+    default_path = root / ".cfdpaper" / "inputs" / "topic_candidates.json"
+    if default_path.exists():
+        return CandidateSource("author-default", default_path.resolve())
+    return CandidateSource("generated", None)
+
+
+def _default_generation_dependencies(store: ProjectStore) -> TopicGenerationDependencies:
+    return TopicGenerationDependencies(
+        store=store,
+        cache=ContentAddressedCache(store.root),
+        context_builder=TaskContextBuilder(HybridRetriever(store)),
+        assert_plan_lock_held=lambda: True,
+    )
 
 
 def evidence_snapshot_sha256(evidence: list[EvidenceRecord]) -> str:
@@ -469,6 +514,37 @@ def plan_fingerprint(candidate_sha256: str, evidence_sha256: str) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def generated_plan_fingerprint(
+    candidate_sha256: str,
+    evidence_sha256: str,
+    generation_fingerprint: str,
+) -> str:
+    for source, value in (
+        ("candidate", candidate_sha256),
+        ("evidence", evidence_sha256),
+        ("generation", generation_fingerprint),
+    ):
+        if not isinstance(value, str) or _SHA256_PATTERN.fullmatch(value) is None:
+            raise PlanningInputError(
+                f"invalid {source} SHA-256: expected 64 lowercase hexadecimal characters"
+            )
+    return canonical_sha256(
+        {
+            "candidate_sha256": candidate_sha256,
+            "evidence_sha256": evidence_sha256,
+            "generation_fingerprint": generation_fingerprint,
+        },
+        domain=b"cfdpaper-generated-plan-v1",
+    )
+
+
+def plan_report_bytes(report: PlanReport) -> bytes:
+    """Keep historical author reports byte-identical while binding generated reports."""
+
+    exclude = {"generation_fingerprint"} if report.generation_fingerprint is None else set()
+    return (report.model_dump_json(indent=2, exclude=exclude) + "\n").encode("utf-8")
+
+
 def _fsync_parent_directory(directory: Path) -> None:
     if os.name == "nt":
         return
@@ -483,9 +559,8 @@ def _atomic_write_report(path: Path, report: PlanReport) -> None:
     temporary = path.parent / f".{path.name}.{uuid4().hex}.tmp"
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with temporary.open("x", encoding="utf-8", newline="\n") as stream:
-            stream.write(report.model_dump_json(indent=2))
-            stream.write("\n")
+        with temporary.open("xb") as stream:
+            stream.write(plan_report_bytes(report))
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
@@ -741,6 +816,26 @@ def _plan_stage_snapshot(
     return str(row["status"]), payload, row["approved_by"]
 
 
+def _generation_report_is_integrated(store: ProjectStore, report: PlanReport) -> bool:
+    """Return whether the durable plan transition agrees with a generated report.
+
+    A generated artifact report is committed before the ranking report and SQLite
+    transition.  A regenerate retry must therefore reuse that artifact revision
+    when the later transition was interrupted, rather than silently producing a
+    new revision.
+    """
+
+    stage_snapshot = _plan_stage_snapshot(store)
+    if stage_snapshot is None:
+        return False
+    _status, payload, _approved_by = stage_snapshot
+    expected_approval = report.approval.model_dump(mode="json") if report.approval else None
+    return (
+        payload.get("plan_fingerprint") == report.plan_fingerprint
+        and payload.get("approval") == expected_approval
+    )
+
+
 def _approval_from_checkpoint(
     store: ProjectStore,
     checkpoint_id: str,
@@ -971,25 +1066,88 @@ def _run_plan(
     candidates_path: Path | None = None,
     approve_topic: str | None = None,
     author: str | None = None,
+    provider_mode: str = "offline",
+    regenerate: bool = False,
+    generation_dependencies: TopicGenerationDependencies | None = None,
     lock_timeout_seconds: float = 30.0,
 ) -> PlanExecution:
     approve_topic, author = _normalize_approval_inputs(approve_topic, author)
     store = ProjectStore.open(root)
-    candidate_path = (
-        candidates_path.expanduser().resolve()
-        if candidates_path is not None
-        else (store.root / ".cfdpaper" / "inputs" / "topic_candidates.json").resolve()
-    )
     report_path = store.root / ".cfdpaper" / "outputs" / "plan" / "topic-ranking.json"
     lock_path = store.root / ".cfdpaper" / "locks" / "plan.lock"
     with process_file_lock(lock_path, timeout_seconds=lock_timeout_seconds):
-        envelope, _raw, candidate_sha = load_candidate_input(candidate_path)
+        source = resolve_candidate_source(store.root, candidates_path)
+        if source.kind != "generated" and regenerate:
+            raise PlanningInputError("--regenerate requires generated candidates")
         inspected = ProjectIndexer(store, strict_hash=False).inspect()
         inspection = InspectionSummary(mode="fast", **asdict(inspected))
         evidence = store.list_evidence()
         evidence_sha = evidence_snapshot_sha256(evidence)
-        fingerprint = plan_fingerprint(candidate_sha, evidence_sha)
-        ranking = rank_topics(envelope.candidates, evidence)
+        generation: GenerationExecution | None = None
+        generation_fingerprint: str | None = None
+        if source.kind == "generated":
+            service_regenerate = regenerate
+            if regenerate:
+                committed_generation = recover_generation_bundle(
+                    project_root=store.root,
+                    expected_project_id=store.status().project_id,
+                )
+                integrated = _load_existing_report(report_path, explicit_approval=False)
+                if committed_generation is not None and (
+                    integrated is None
+                    or integrated.generation_fingerprint
+                    != committed_generation.report.generation_fingerprint
+                    or not _generation_report_is_integrated(store, integrated)
+                ):
+                    service_regenerate = False
+            try:
+                request = GenerationRequest(
+                    provider_mode=provider_mode, regenerate=service_regenerate
+                )
+            except ValidationError as error:
+                raise PlanningInputError(f"invalid provider mode: {error}") from error
+            dependencies = generation_dependencies or _default_generation_dependencies(store)
+            generation = TopicGenerationService(store.root, dependencies).generate(request)
+            candidate_path = generated_candidates_path(store.root)
+            try:
+                raw = candidate_path.read_bytes()
+                envelope = CandidateInput.model_validate_json(raw)
+            except (OSError, ValidationError, ValueError) as error:
+                raise PlanningInputError(f"invalid generated candidate input: {error}") from error
+            candidate_sha = hashlib.sha256(raw).hexdigest()
+            if candidate_sha != generation.report.candidate_sha256:
+                raise PlanningInputError("generated candidate bytes do not match generation report")
+            by_opportunity = {
+                item.opportunity_id: item for item in generation.opportunities.opportunities
+            }
+            mapping = dict(generation.report.topic_to_opportunity)
+            if len(mapping) != len(generation.report.topic_to_opportunity):
+                raise PlanningInputError("generated topic mapping contains duplicate topic IDs")
+            try:
+                opportunities_by_topic_id = {
+                    topic_id: by_opportunity[opportunity_id]
+                    for topic_id, opportunity_id in mapping.items()
+                }
+            except KeyError as error:
+                raise PlanningInputError(
+                    "generated topic mapping references an unknown opportunity"
+                ) from error
+            ranking = apply_generation_constraints(
+                rank_topics(envelope.candidates, evidence),
+                opportunities_by_topic_id=opportunities_by_topic_id,
+            )
+            generation_fingerprint = generation.report.generation_fingerprint
+            fingerprint = generated_plan_fingerprint(
+                candidate_sha,
+                evidence_sha,
+                generation_fingerprint,
+            )
+        else:
+            assert source.path is not None
+            candidate_path = source.path
+            envelope, _raw, candidate_sha = load_candidate_input(candidate_path)
+            fingerprint = plan_fingerprint(candidate_sha, evidence_sha)
+            ranking = rank_topics(envelope.candidates, evidence)
         leading = ranking.ranked_topics[0].candidate.topic_id if ranking.ranked_topics else None
         project_id = store.status().project_id
         existing = _load_existing_report(
@@ -1107,6 +1265,7 @@ def _run_plan(
                 candidate_source_uri=str(candidate_path),
                 candidate_source_sha256=candidate_sha,
                 evidence_snapshot_sha256=evidence_sha,
+                generation_fingerprint=generation_fingerprint,
                 plan_fingerprint=fingerprint,
                 generated_at=datetime.now(timezone.utc),
                 inspection=inspection,
@@ -1148,6 +1307,8 @@ def _run_plan(
             checkpoint_id=checkpoint_id,
             current_inspection=inspection,
             approval_invalidated=approval_invalidated,
+            candidate_source_kind=source.kind,
+            generation=generation,
         )
 
 
@@ -1157,6 +1318,9 @@ def run_plan(
     candidates_path: Path | None = None,
     approve_topic: str | None = None,
     author: str | None = None,
+    provider_mode: str = "offline",
+    regenerate: bool = False,
+    generation_dependencies: TopicGenerationDependencies | None = None,
     lock_timeout_seconds: float = 30.0,
 ) -> PlanExecution:
     try:
@@ -1165,6 +1329,9 @@ def run_plan(
             candidates_path=candidates_path,
             approve_topic=approve_topic,
             author=author,
+            provider_mode=provider_mode,
+            regenerate=regenerate,
+            generation_dependencies=generation_dependencies,
             lock_timeout_seconds=lock_timeout_seconds,
         )
     except PlanningError:

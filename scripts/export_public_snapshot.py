@@ -27,6 +27,7 @@ REQUIRED_PUBLIC_FILES = (
     "scripts/check_public_release.py",
     "docs/ROADMAP.md",
     "docs/architecture/overview.md",
+    "docs/releases/v0.2.0.md",
     "docs/releases/v0.1.0.md",
 )
 OPTIONAL_PUBLIC_FILES: tuple[str, ...] = ()

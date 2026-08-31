@@ -36,6 +36,7 @@ def _synthetic_source(root: Path) -> Path:
         ".github/workflows/ci.yml",
         "docs/ROADMAP.md",
         "docs/architecture/overview.md",
+        "docs/releases/v0.2.0.md",
         "docs/releases/v0.1.0.md",
     ):
         _write(root / relative, f"content for {relative}\n")
