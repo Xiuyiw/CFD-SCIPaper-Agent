@@ -29,38 +29,43 @@ V0.3 是唯一已在本包中给出可验收范围的下一版。V0.4–V0.6 只
 
 | 项目 | 定义 |
 |---|---|
-| 用户输入 | v0.2 成熟结构化记录；一份规范 CSV 观察表；作者批准的科学问题。系统由该问题、observed fields 和 candidate QoIs 生成 candidate QoI contract，不要求用户预先手写。 |
-| CLI/界面 | `inspect --observations`生成资格候选和 candidate QoI contract；第一检查点确认并锁定后，才允许`analyze`、`figure`和`write --artifact results-paragraph`；每阶段预览有用结果或最小缺口。 |
+| 用户输入 | v0.2 成熟结构化记录；一份带`value_role`和 expected case/coordinate set 的规范 CSV 观察表；作者批准的科学问题。首次用户可通过 guided intake 把已有 case、边界、模型、收敛/守恒和来源信息写入现有 records，不要求理解内部 schema 或预先手写 QoI 定义。 |
+| CLI/界面 | `inspect`保留 v0.2 项目/文件状态语义；新增`qualify --observations`生成资格候选、最小修正请求和 candidate QoI contract；第一检查点锁定后运行`analyze`，形成 candidate FigureContract；第二检查点批准后才允许`figure`和`write --artifact results-paragraph`。 |
 | 输出 | qualification 与 verification/validation status；locked QoI 和全序列趋势；FigureContract、source data、脚本、SVG/PNG、图注与三重 QA；一个反链结果段。 |
-| 作者检查点 | ①选题/问题与 candidate QoI contract 确认锁定；②证据、claim、FigureContract 与段落职责；③最终图、图注与段落。 |
-| 验收 | 一个公开稳态单相内流正向 fixture；不可转换/歧义单位、无 locator、不可比 case、重复序列坐标、缺 QoI 必需点必须`insufficient`；缺 verification/validation 或允许差异必须`restricted`；守恒/收敛按显式阈值阻断或限制；单位、case、QoI、趋势、ceiling、图和段落零硬错；中断可恢复。 |
+| 作者检查点 | ①选题/问题与 candidate QoI contract 确认锁定；②证据、claim、ceiling、candidate FigureContract 与段落职责；③最终图、图注与段落。 |
+| 验收 | 一个公开稳态单相内流正/负 fixture；不可转换/歧义单位、无 locator、不可比 case、expected membership 缺失、重复序列坐标、错`value_role`或缺 QoI 必需点必须`insufficient`；缺 verification/validation、无依据阈值或未解决干扰必须限制/阻断；趋势与四档 ceiling 符合 oracle；科学输入变化使下游 stale；单位、case、QoI、图和段落零硬错。 |
 | 不宣称 | 不支持任意 CSV、VTK/三维场、原生求解器、全稿、自动文献、DOCX/LaTeX、自审/返修、工程验证或自动提交。 |
 
 ### v0.3.0 实现工作包
 
 | 顺序 | 工作包 | 依赖 | 完成判据 |
 |---:|---|---|---|
-| 1 | 规范 CSV 观察入口与错误反馈 | v0.2 结构化记录 | 不明列/缺单位/缺 locator fail closed；原始 CSV 只读。 |
-| 2 | comparison qualification、verification/validation status 与 candidate QoI contract | 工作包1+作者批准的科学问题 | 三态资格及两类状态都有来源或缺口；候选合同覆盖 observed fields/candidate QoIs 且未冒充作者锁定。 |
-| 3 | QoI 确认锁定、单位与全序列趋势 | 第一检查点确认 candidate QoI contract；工作包2为`eligible/restricted` | 用户无需手写 QoI 定义；全序列 oracle 通过；缺必需点/重复坐标为`insufficient`，中间反转不被误写为单调。 |
-| 4 | claim ceiling 与第二检查点产物 | 工作包3 | 资格/验证缺口能降低可用措辞；作者决定绑定对象。 |
-| 5 | FigureContract、source data、SVG/PNG 和三重 QA | 工作包4 | 可编辑图与 source data 一致；一轮 QA 无硬错。 |
+| 1 | 规范 CSV 观察入口、最小单位表、guided intake 与错误反馈 | v0.2 结构化记录 | 不明列/缺单位/缺 locator/错`value_role` fail closed；只读输入；首次用户无需理解内部 records。 |
+| 2 | comparison qualification、V&V status 与 candidate QoI contract | 工作包1+作者批准的科学问题 | 差异科学角色、阈值依据、三态资格及两类状态都有来源或缺口；候选合同冻结 expected membership，未冒充作者锁定。 |
+| 3 | QoI 确认锁定、单位与全序列趋势 | 第一检查点确认 candidate QoI contract；工作包2为`eligible/restricted` | 只消费已导出观察和声明聚合；全序列 oracle、容差和最小点数通过；不发明场算子或公式。 |
+| 4 | 四档 claim ceiling 与 candidate FigureContract | 工作包3 | 资格/V&V 缺口确定性限制可用措辞；生成待第二检查点确认的图件与段落职责，不渲染正式图。 |
+| 5 | 锁定 FigureContract、source data、SVG/PNG 和三重 QA | 第二检查点批准工作包4候选 | 可编辑图与 source data 一致；一轮 QA 无硬错。 |
 | 6 | 受证据约束的单段写作 | 工作包4–5 | 未批第二检查点时不生成；数值反链与 ceiling 通过。 |
-| 7 | 公开正/负回放、CLI 文档与打包 | 工作包1–6 | Windows/Linux、Python 3.10–3.12 通过；新用户可按 Quickstart 复现。 |
+| 7 | 公开正/负/对抗回放、stale-input 回归、CLI 文档与打包 | 工作包1–6 | Windows/Linux、Python 3.10–3.12 通过；修改 CSV/expected set/科学合同会阻断旧图文；新用户可按 Quickstart 复现。 |
 
 资源预算为 55% 科学、25% 图文、10% 适配/易用、10% 必要可靠性。实现规格应用工作包和验收工时核对，
 不用代码行数伪装精确分配。
+
+V0.3 的权威执行路径为本地 Python CLI 与确定性脚本。四个窄 Skill 包只调用相同合同；三宿主 adapter、
+provider transport、PDF/TIFF、换热和瞬态/多相公开 fixture 均不属于本版本。核心结果段由受限 renderer
+生成，宿主模型只能提供不改变 locked facts、趋势和 ceiling 的可选候选措辞。
 
 ## 4. v0.4.0 条件性能力地平线候选：场数据与论文工作区
 
 | 项目 | 定义 |
 |---|---|
 | 前置 | v0.3.0 科学纵向链通过，且真实用户反馈确认一个主要瓶颈。VTK 场数据、文献证据和多图/章节工作区只是候选；下一规格只能锁定其中一个主要瓶颈。 |
-| 用户输入 | 受支持的 VTK 场数据；多个锁定 QoI/图件；明确的文献问题与原始文献来源；作者批准的 paper spine。 |
-| CLI/界面 | 扩展`inspect/analyze/figure/write`，加入场 inventory、空间 scope、文献 evidence table、多图方案和指定章节写作。 |
-| 输出 | VTK 派生 source data/场图；多图 FigureContracts；literature evidence table；paper spine；指定章节候选稿与反链。 |
+| 候选瓶颈 | **一次只允许选择一项：** A. VTK 场数据与空间 QoI；B. 文献 evidence table；C. 多图/指定章节工作区。三项不是联合承诺。 |
+| 用户输入 | A：受支持的 VTK 场数据；B：明确的文献问题与原始来源；C：多个锁定 QoI/图件及作者批准的 paper spine。 |
+| CLI/界面 | 只扩展被真实用户反馈选中的一个瓶颈及其最小命令表面，不默认同时扩展`inspect/analyze/figure/write`。 |
+| 输出 | A：VTK 派生 source data/场图；或 B：literature evidence table；或 C：多图 FigureContracts、指定章节候选稿与反链。 |
 | 作者检查点 | 仍为三个：①选题；②证据/claims/图件/spine；③当前文稿与图件。 |
-| 验收 | 一个公开换热 fixture；场变量 location/scope/单位正确；文献 locator 可复核；多图多段无数字或 claim 漂移。 |
+| 验收 | 只验收所选瓶颈：A 验证场变量 location/scope/单位；B 验证文献 locator；C 验证多图多段的数字和 claim 传播。未选择项不得成为隐藏门槛。 |
 | 不宣称 | 不宣称任意 VTK/求解器都支持；不生成完整投稿包；不因文献检索结果提升 CFD claim。 |
 
 ## 5. v0.5.0 条件性能力地平线候选：真实文档与事件驱动返修

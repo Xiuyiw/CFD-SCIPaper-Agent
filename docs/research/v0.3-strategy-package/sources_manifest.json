@@ -1647,6 +1647,37 @@
       ],
       "claim_type": "fact",
       "locator": "Original paper landing page; paper body not read in Task 5"
+    },
+    {
+      "id": "src-official-nasa-cfd-vv-tutorial",
+      "url": "https://www.grc.nasa.gov/www/wind/valid/tutorial/tutorial.html",
+      "source_type": "official-technical-guidance",
+      "title": "NASA Glenn Tutorial on CFD Verification and Validation",
+      "accessed_at": "2026-09-01T14:30:00+08:00",
+      "license_or_terms": "Public NASA technical guidance; cited for terminology and assessment structure, not copied as implementation",
+      "tracks": [
+        "cfd-science"
+      ],
+      "candidate_ids": [],
+      "used_in": [
+        {
+          "path": "docs/research/v0.3-strategy-package/06_REUSABLE_PATTERNS_AND_ANTI_PATTERNS.md",
+          "section": "S08 收敛与守恒证据资格",
+          "claim_id": "vv-definitions"
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/08_V03_PLUS_PRODUCT_DESIGN.md",
+          "section": "3.1 证据层",
+          "claim_id": "vv-status-semantics"
+        },
+        {
+          "path": "docs/research/v0.3-strategy-package/10_UNIFIED_PRINCIPLES_DRAFT.md",
+          "section": "3. 科学证据原则",
+          "claim_id": "vv-definitions"
+        }
+      ],
+      "claim_type": "fact",
+      "locator": "Tutorial index; Verification Assessment; Glossary of Verification and Validation Terms; follows AIAA G-077-1998"
     }
   ]
 }

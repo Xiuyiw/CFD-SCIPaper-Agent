@@ -138,7 +138,10 @@
 - **资源类别：** 科学理解与分析。
 - **目标问题：** 单一残差或单一监测量趋稳被包装成“结果已收敛”，随后进入论文主张。
 - **来源与精确定位：** [产品基线§6](01_CURRENT_PRODUCT_BASELINE.md)“弱收敛不能包装为完成”；
-  [跨项目比较§3.2](05_CROSS_PROJECT_COMPARISON.md)确认外部算法库不承担这一综合判断。
+  [跨项目比较§3.2](05_CROSS_PROJECT_COMPARISON.md)确认外部算法库不承担这一综合判断；
+  [NASA Glenn CFD V&V tutorial](https://www.grc.nasa.gov/www/wind/valid/tutorial/tutorial.html)基于
+  AIAA G-077，分别组织 iterative convergence、solution consistency/conservation、spatial/temporal
+  convergence、verification assessment 与 validation assessment。
 - **迁移类别：** `reimplement`。
 - **许可证：** 本项目原创科学门控。
 - **适配条件：** 按项目声明残差、关键监测量、守恒闭合、稳态/统计窗口和缺失证据处理。
@@ -311,7 +314,8 @@
 - **来源与精确定位：** [OMF Skills](04_DEEP_DIVE_REPORTS/open-source/openmodelingfoundation__skills.md)：
   `docs/SKILL-TEMPLATE.md`、`skills/peer-review/SKILL.md`、`evals.json`、validators；
   [OpenSkill](04_DEEP_DIVE_REPORTS/open-source/vudknguyen__openskill.md)：`discoverSkills`、宿主adapter与安装回滚。
-- **迁移类别：** `reimplement`。
+- **迁移类别：** OMF Skills 的包结构、渐进披露和 eval 机制为`reimplement`；OpenSkill 的跨宿主
+  路径与失败回退仅为`idea-only`。
 - **许可证：** 两者MIT；不复制无关Skill正文或建设marketplace。
 - **适配条件：** Level 1元数据、Level 2工作流、Level 3按需scripts/references/templates；每Skill有正/负/对抗eval、依赖探测和回退。
 - **预期收益：** 只在需要时加载专业方法，提升跨宿主可用性并减少全局规则噪声。

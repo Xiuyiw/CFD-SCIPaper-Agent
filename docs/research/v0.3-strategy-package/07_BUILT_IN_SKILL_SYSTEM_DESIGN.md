@@ -146,9 +146,10 @@ Codex、Claude、TRAE 和其他宿主必须读取同一 Skill 包，使用同一
 另建 marketplace。若宿主不能运行脚本，Skill 应输出待运行命令和所需输入，产物保持 `pending`
 或 `gap`，不得由模型估算脚本结果。
 
-### 5.3 跨宿主解析验收
+### 5.3 跨宿主解析验收（完整 Skill 体系目标）
 
-同一 fixture 在至少 Codex、Claude 和 TRAE 三类 adapter 上应满足：
+完整 Skill 体系进入多宿主发布阶段后，同一 fixture 在至少 Codex、Claude 和 TRAE 三类 adapter 上
+应满足：
 
 - 相同 Skill 被触发或拒绝；
 - 所有相对资源路径解析到同一包内对象；
@@ -156,7 +157,8 @@ Codex、Claude、TRAE 和其他宿主必须读取同一 Skill 包，使用同一
 - 结构化输出在字段和值的意义上等价；
 - 任一宿主都不能因工具更丰富而突破科学写入边界。
 
-不要求自然语言逐字一致，也不要求字节级输出相同。
+不要求自然语言逐字一致，也不要求字节级输出相同。V0.3 的权威执行路径是本地 Python CLI 与确定性
+脚本；三宿主 adapter 的实时行为等价测试明确延期，不构成 V0.3 验收门槛。
 
 ## 6. 科学写入与作者权限边界
 
@@ -186,18 +188,44 @@ Codex、Claude、TRAE 和其他宿主必须读取同一 Skill 包，使用同一
 合同明确列出的 QoI、比较和 claim 角色，并保留验证缺口；`insufficient`不得进入 QoI 计算。该资格
 结果不是 QoI、claim ceiling 或作者批准，也不需要新增 registry 或审批层。
 
-“锁定分析任务”必须在执行前冻结 case 集、QoI 定义、输入字段、单位、scope、统计/采样窗口、
-权重、missing policy、比较合同和输出目标。只有 `cfd-qoi-physics`在该任务内可写 QoI 结果；若
+comparison contract 不能用“作者允许”绕过科学失败。每项跨 case 差异必须归入
+`intended-study-factor`、`demonstrated-equivalent-or-immaterial`、`unresolved-nuisance`或`blocking`；
+前两类需给出角色或依据，后两类分别至少导致`restricted`或在破坏目标比较/QoI 时导致
+`insufficient`。收敛与守恒阈值必须保存简短`basis`和`source_locator`；没有依据的阈值不能取得
+`eligible`。
+
+“锁定分析任务”必须在执行前冻结有序的 expected case IDs/sequence coordinates、QoI 定义、输入字段、
+单位、scope、统计/采样窗口、权重、missing policy、比较合同和输出目标。只有
+`cfd-qoi-physics`在该任务内可写 QoI 结果；若
 定义或输入改变，旧结果转为 stale，不能在绘图或写作阶段被就地改写。
 
 Skill 可以发现更严格的证据边界并建议降低 claim ceiling，但提高 ceiling 需要新的合格证据和
 产品科学层/作者决定，不能由 Skill、外部 AI、导出成功或 QA 通过自动产生。worker handoff、
 checkpoint、`complete`字段和报告存在都不构成作者批准。
 
-产品仍只有三个作者检查点：第一检查点确认选题和科学问题；第二检查点确认 evidence、claims、
-图件方案及其章节职责；第三检查点确认最终论文。candidate paper spine 在第二检查点内一并确认，
+产品仍只有三个作者检查点：第一检查点确认选题、科学问题和 QoI 合同；分析完成后系统生成
+candidate FigureContract 和段落职责，第二检查点一次性确认 evidence、claims、ceiling、candidate
+FigureContract 及其章节职责；通过后才锁定 FigureContract、渲染图件并写作；第三检查点确认最终
+图文产物。candidate paper spine 在第二检查点内一并确认，
 不得形成第四个检查点。V0.3的单段文本产物可以把第二检查点已批准的 claim、figure 和 section
 responsibility 作为最小 spine，不要求新增独立表单。
+
+### 6.3 Claim ceiling 的封闭映射
+
+V0.3 只使用四档 ceiling，写作 Skill 不得自建同义等级：
+
+| Ceiling | 允许的最高表述 | 典型资格边界 |
+|---|---|---|
+| `no-numerical-claim` | 只陈述缺口，不报告比较结论。 | `insufficient`。 |
+| `directional-comparison` | “在所分析离散工况中增加/降低/不同”；不得写机制已证明、工程边界或普遍规律。 | `restricted`且当前 QoI/比较被合同明确允许。 |
+| `qualified-numerical-observation` | 可报告带 case、scope、单位和数值的数值观察，并使用算法支持的趋势词。 | `eligible`，或有明确限制的`restricted`；validation 未证明时仍限于数值预测。 |
+| `supported-physical-interpretation` | 可提出由相关场量、守恒/尺度分析和适用 V&V 证据共同支持的物理解读；不得自动外推为工程验证。 | 资格与 numerical verification 适用于该 claim，validation 状态和 intended use 允许该强度，且第二检查点明确批准。 |
+
+`verification/validation status`只允许`demonstrated`、`partial`、`not-demonstrated`或
+`not-applicable`。`partial`必须列出已完成和缺失的合同项；`not-applicable`必须说明为何该评估与当前
+claim/intended use 在逻辑上无关，不能代替“没有证据”。manuscript-facing physical claim 缺真实世界
+对照时，validation 应为`not-demonstrated`或`partial`，不能用`not-applicable`绕行。验证或验证证据
+只会限制 ceiling；没有新合格证据时不得提高 ceiling。
 
 ## 7. 六个首批能力包
 
@@ -213,7 +241,7 @@ responsibility 作为最小 spine，不要求新增独立表单。
 
 **输入：** Project/Case/Boundary/Mesh/Field inventory；原始结果或 adapter 只读提取记录；单位；残差、
 监测量、守恒或统计窗口证据；网格/时间步等 numerical verification 证据；实验、理论、参考解或
-已验证模型对照等 validation 证据；用户声明的允许差异。
+已验证模型对照等 validation 证据；按科学角色分类并带依据的 case 差异。
 **前置证据：** 至少一个可定位结果源和 case identity。没有边界条件、字段单位或收敛证据时仍可
 盘点，但不能给出“可比较/成熟”的结论。
 **输出：** inventory summary、版本锁定 comparison contract 及其 `eligible/restricted/insufficient`
@@ -223,8 +251,9 @@ QoI 数值、claim ceiling 或作者批准。
 **工作流：**
 
 1. 识别 case、结果版本、变量、location/scope、单位和来源；
-2. 按几何、材料、边界、模型、网格/采样和参考态建立允许/需解释/阻断差异；
-3. 检查单位可转换性、残差/监测量、守恒闭合及稳态/统计窗口证据；
+2. 按几何、材料、边界、模型、网格/采样和参考态，将差异归入研究因素、已证明等价/无实质影响、
+   未解决干扰或阻断项，不用笼统“允许”替代科学判断；
+3. 检查单位可转换性、残差/监测量、守恒闭合及稳态/统计窗口证据；阈值必须带项目依据和 locator；
 4. 分别记录 numerical verification status 和 validation status；缺失不一律阻断，而是限制可用 QoI、
    比较或 claim 角色；
 5. 对版本锁定 comparison contract 确定性写入 `eligible`、`restricted`或`insufficient`；
@@ -266,7 +295,7 @@ QoI 数值、claim ceiling 或作者批准。
 猜测数值。
 
 **输入：** 版本锁定 comparison contract 及其资格结果、锁定 analysis task、QoI 定义候选、
-Field/Evidence 输入和容差/顺序。
+Field/Evidence 输入、有序 expected case/coordinate set、趋势容差和最小样本数。
 **前置证据：** 资格为 `eligible`，或 `restricted`且合同明确允许当前 QoI、比较与 claim 角色；QoI
 的公式、输入、单位、scope、窗口、weights、normalization 和 missing policy 已锁定。
 **输出：** locked QoI results、trend classification、candidate physical interpretation、claim gaps；
@@ -276,8 +305,12 @@ Field/Evidence 输入和容差/顺序。
 
 1. 消费 intake 资格结果；`insufficient`立即停止，`restricted`只保留合同允许的 QoI、比较和 claim 角色；
 2. 复核 QoI 合同是否能唯一决定计算与物理含义；
-3. 只对锁定输入执行确定性算子，保留原始/规范单位和 missing 状态；
-4. 对完整有序序列区分 monotonic、overall change、peak、plateau 和 insufficient；
+3. V0.3 默认把 CSV `value`视为已导出观察；`value_role`必须是`raw-sample`、
+   `declared-aggregate`或`precomputed-qoi`。只允许合同明示的单位转换、声明聚合的重算/核对和全序列
+   趋势分类，不从点列猜测控制体积分、面积加权或场算子，也不由模型发明 QoI 公式；
+4. 先比较 expected 与 observed membership；缺整 case、缺必需变量或重复坐标均为`insufficient`。
+   在至少三个不同序列坐标且合同锁定`trend_tolerance`后，才区分 monotonic、peak 和 plateau；否则只
+   允许 overall change 或 insufficient。非均匀坐标按有序相邻差判断，不对坐标轴插值；
 5. 以守恒、特征尺度、边界条件和相关场量检查解释，列出替代机制与证据缺口；
 6. 写入 locked QoI；物理解读保持 candidate，且不得越过 intake 资格限定的 claim 角色。
 
@@ -295,7 +328,8 @@ Field/Evidence 输入和容差/顺序。
 - 正向 fixture：`eligible`且单位/采样完整的非单调离散扫描；应得到正确峰值和非单调措辞。
 - 受限 fixture：`restricted` comparison contract 只允许方向性比较；QoI可计算，但解释和输出不得
   扩展为验证、普遍规律或工程边界。
-- 负向 fixture：缺中间 case、重复横坐标、分箱均值冒充原始点或单位不一致；必须返回
+- 负向 fixture：缺 expected 中间 case、重复横坐标、未声明 tolerance、分箱均值冒充原始点、
+  `value_role`与合同不符或单位不一致；必须返回
   `insufficient`/阻断，不补点、不平滑。
 - 跨宿主：同一脚本输入获得相同数值和趋势类别，文本允许不同但不得改变主张强度。
 - 成功标准：关键数值可回到输入和算子；趋势词与全序列一致；写入仅发生于锁定分析任务。
@@ -316,8 +350,9 @@ S04、S11为条件性增强，S09敏感性分析延期至 V0.4+。
 确认的本地精修副本（若存在）。
 **前置证据：** 每个 panel 的数据源、变量、scope、单位和允许 claim 已确定；本地人工精修版本优先
 级明确。
-**输出：** FigureContract、source-data 表、可运行脚本、SVG/PDF、PNG/TIFF、caption draft 和一轮
-三重 QA；全部为 derived artifact，不写回 QoI。
+**输出：** 完整 Skill 能力可生成 FigureContract、source-data 表、可运行脚本、SVG/PDF、PNG/TIFF、
+caption draft 和一轮三重 QA；V0.3 最小 profile 只交付 SVG 与 PNG。全部为 derived artifact，不写回
+QoI。
 
 **工作流：**
 
@@ -338,10 +373,11 @@ S04、S11为条件性增强，S09敏感性分析延期至 V0.4+。
 
 **测试与成功标准：**
 
-- 正向 fixture：含多 case、单位和主/辅诊断的 locked QoI；应生成与 source data 一致的四种格式。
+- 正向 fixture：含多 case、单位和主/辅诊断的 locked QoI；完整 Skill 目标为四种格式，V0.3 只要求
+  与 source data 一致的 SVG 和 PNG。
 - 负向 fixture：错 case、错单位、缺 source row、平滑暗示连续规律或 legend 遮挡；必须失败或降级。
 - 跨宿主：同一脚本和资源路径可执行；允许字体渲染细微差异，但数据、轴单位、panel角色一致。
-- 成功标准：零数据/工况硬错；SVG/PDF可编辑、PNG/TIFF可预览；QA不提升claim ceiling。
+- 成功标准：零数据/工况硬错；V0.3 的 SVG 可编辑、PNG 可预览；QA 不提升 claim ceiling。
 
 **范围分类：** `V0.3 minimum-slice must-consider`，对应 PW01、PW02；Matplotlib直接复用、样式分层
 只借鉴 SciencePlots，不能把“套样式”当出版质量。
@@ -499,16 +535,18 @@ checkpoint/真实 interrupt 也属于宿主/项目状态能力，不包装成 Sk
 
 ## 9. 测试、评价和跨宿主回放
 
-### 9.1 每个 Skill 的最低测试集
+### 9.1 完整 Skill 发布的最低测试集
 
 每个包至少包含：
 
 1. **正向 fixture**：输入成熟且应产生目标产物；
 2. **负向 fixture**：缺字段、不可比、弱证据或错误事件，必须停止/降级；
 3. **对抗 fixture**：要求跳过科学门、伪造作者批准、补点、平滑或伪造引用；
-4. **跨宿主解析 fixture**：Codex、Claude、TRAE adapter 对元数据、相对路径、输入和停止语义解析
+4. **跨宿主解析 fixture**：实际发布多宿主 adapter 时，Codex、Claude、TRAE adapter 对元数据、相对路径、输入和停止语义解析
    等价；
 5. **真实任务成功标准**：关键数值、单位、case、locator和claim边界无硬错误，而非“文件存在”。
+
+V0.3 只执行第 1、2、3、5 类测试；第 4 类随宿主 adapter 延期，不得反向成为当前发布门槛。
 
 公开 fixture 应至少覆盖稳态单相内流、换热和瞬态/多相三类通用场景。另可使用角色化的
 `authorized internal positive regression` 与 `authorized internal negative scientific-gate regression`
@@ -557,7 +595,7 @@ Skill 不永久累积。每个候选在进入内置集前必须同时满足：
 |---|---|---|---|
 | `cfd-evidence-intake` | S05、S08；AU01 conditional | **must-consider** | 中性输入进入三态资格；不足能在分析前停止。 |
 | `cfd-qoi-physics` | S06、S07、S10 | **must-consider** | 锁定 QoI + 全序列趋势，无越权写入。 |
-| `cfd-figure-production` | PW01、PW02 | **must-consider** | 一个 FigureContract 到四格式图件与三重 QA。 |
+| `cfd-figure-production` | PW01、PW02 | **must-consider** | 一个批准后的 FigureContract 到 SVG/PNG 与三重 QA。 |
 | `cfd-evidence-writing` | PW04、S10 | **must-consider（最小文本产物）** | 一个有反链的章节/结果段，不承诺全稿。 |
 | `cfd-literature-evidence` | PW03 | **defer to V0.4+** | 先保留接口；不在 V0.3 建完整文献工作区。 |
 | `cfd-publication-assurance` | PW05；跨文档/返修需求 | **conditional / defer to V0.4+** | 多产物出现后再启用 cross-document QA；真实返修与完整导出延期。 |
@@ -576,6 +614,18 @@ Task 9 必须为该链绑定至少一个已实现的中性输入入口：现有�
 由 Task 9 冻结；原生 Fluent/STAR adapter 不属于 V0.3 最小链。
 Task 9 仍须在资源、依赖和验收层进一步缩小或调整，不能把本设计误读为六个 Skill 已全部获准
 进入 V0.3 实现。
+
+V0.3 的 Skill profile 进一步冻结如下：
+
+- 权威执行路径是本地 Python CLI、现有 contracts 和确定性脚本；Skill 是消费相同合同的薄包装，
+  不是核心成功条件或独立运行时。
+- 每个进入 V0.3 的窄模式必须通过正向、负向、对抗和一个公开真实任务 fixture；跨宿主解析 fixture
+  延期到实际引入宿主 adapter 的版本。
+- 图件验收只有 SVG 与 PNG；PDF/TIFF 属于完整 Skill 能力地平线，不进入 V0.3。
+- 核心结果段由受限 renderer 从已批准 claim、locked facts 和 numeric backlinks 生成；宿主模型可以
+  提供候选措辞，但没有 provider transport 时不成为 V0.3 验收依赖，也不能改变数字、趋势或 ceiling。
+- 当前公开 fixture 只要求一个稳态单相内流正/负回放；换热、瞬态/多相和三宿主回放不得成为隐藏
+  验收条件。
 
 ## 12. 来源与迁移决定
 
