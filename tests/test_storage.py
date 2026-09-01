@@ -9,10 +9,95 @@ from pathlib import Path
 import pytest
 
 import cfdpaper.storage as storage
-from cfdpaper.contracts import CaseRecord, ClaimRecord, EvidenceRecord, StageResult
+from cfdpaper.contracts import BoundaryRecord, CaseRecord, ClaimRecord, EvidenceRecord, StageResult
 from cfdpaper.indexing import ProjectIndexer
 from cfdpaper.state import initialize_project
 from cfdpaper.storage import SCHEMA_VERSION, ProjectStore
+
+
+def test_import_records_atomic_commits_a_complete_batch(tmp_path: Path) -> None:
+    initialize_project(tmp_path, "demo")
+    store = ProjectStore.open(tmp_path)
+
+    store.import_records_atomic(
+        sources=(
+            {
+                "uri": "results.csv",
+                "locator": "results.csv",
+                "sha256": "a" * 64,
+                "mtime_ns": 1,
+                "size_bytes": 12,
+                "media_type": "text/csv",
+            },
+        ),
+        cases=(CaseRecord(case_id="P1", source_uri="results.csv", locator="results.csv#case=P1"),),
+        boundaries=(
+            BoundaryRecord(
+                boundary_id="b-P1",
+                case_id="P1",
+                boundary_type="velocity-inlet",
+                values={"velocity": 0.25},
+                units={"velocity": "m/s"},
+                source_uri="results.csv",
+                locator="results.csv#boundary=P1",
+            ),
+        ),
+        evidence=(
+            EvidenceRecord(
+                evidence_id="conv-P1",
+                source_uri="results.csv",
+                locator="results.csv#convergence=P1",
+                kind="convergence",
+                summary="Monitor span satisfies the declared threshold.",
+            ),
+        ),
+    )
+
+    assert len(store.list_sources()) == 1
+    assert len(store.list_cases()) == 1
+    assert len(store.list_boundaries()) == 1
+    assert len(store.list_evidence()) == 1
+
+
+def test_import_records_atomic_rolls_back_on_mid_write_failure(tmp_path: Path) -> None:
+    initialize_project(tmp_path, "demo")
+    store = ProjectStore.open(tmp_path)
+    with store.connect() as connection:
+        connection.execute(
+            "CREATE TRIGGER reject_atomic_evidence BEFORE INSERT ON evidence "
+            "BEGIN SELECT RAISE(ABORT, 'reject atomic evidence'); END"
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="reject atomic evidence"):
+        store.import_records_atomic(
+            sources=(
+                {
+                    "uri": "results.csv",
+                    "locator": "results.csv",
+                    "sha256": "a" * 64,
+                    "mtime_ns": 1,
+                    "size_bytes": 12,
+                    "media_type": "text/csv",
+                },
+            ),
+            cases=(
+                CaseRecord(case_id="P1", source_uri="results.csv", locator="results.csv#case=P1"),
+            ),
+            boundaries=(),
+            evidence=(
+                EvidenceRecord(
+                    evidence_id="conv-P1",
+                    source_uri="results.csv",
+                    locator="results.csv#convergence=P1",
+                    kind="convergence",
+                    summary="Monitor span satisfies the declared threshold.",
+                ),
+            ),
+        )
+
+    assert store.list_sources() == []
+    assert store.list_cases() == []
+    assert store.list_evidence() == []
 
 
 class _SynchronizedStageCursor:

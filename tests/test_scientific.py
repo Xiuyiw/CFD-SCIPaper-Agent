@@ -18,7 +18,11 @@ from cfdpaper.scientific import (
     grade_convergence,
     units_compatible,
 )
-from cfdpaper.scientific.units import canonical_unit
+from cfdpaper.scientific.units import (
+    UNIT_REGISTRY_SHA256,
+    UNIT_REGISTRY_VERSION,
+    canonical_unit,
+)
 
 
 def test_units_check_dimensions_and_convert_scale() -> None:
@@ -54,6 +58,27 @@ def test_canonical_unit_rejects_missing_or_unknown_units() -> None:
         canonical_unit(None)
     with pytest.raises(ValueError, match="^unknown unit: 'rpm'$"):
         canonical_unit("rpm")
+
+
+@pytest.mark.parametrize(
+    ("alias", "expected"),
+    [
+        ("Pa*s", "pa*s"),
+        ("Pa·s", "pa*s"),
+        ("kg/(m*s)", "pa*s"),
+        ("kg/(m·s)", "pa*s"),
+        ("m^2", "m2"),
+        ("m²", "m2"),
+    ],
+)
+def test_fixture_units_have_explicit_canonical_aliases(alias: str, expected: str) -> None:
+    assert canonical_unit(alias) == expected
+
+
+def test_unit_registry_identity_is_explicit_and_deterministic() -> None:
+    assert UNIT_REGISTRY_VERSION == "v0.3-explicit-1"
+    assert len(UNIT_REGISTRY_SHA256) == 64
+    assert UNIT_REGISTRY_SHA256 == UNIT_REGISTRY_SHA256.lower()
 
 
 def test_case_comparability_requires_matching_operating_conditions() -> None:

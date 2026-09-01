@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 
 
@@ -41,6 +43,10 @@ _UNITS = {
     "w/m^3": _Unit("volumetric-power"),
     "kg/m3": _Unit("density"),
     "kg/m^3": _Unit("density"),
+    "pa*s": _Unit("dynamic-viscosity"),
+    "kg/(m*s)": _Unit("dynamic-viscosity"),
+    "m2": _Unit("area"),
+    "m^2": _Unit("area"),
 }
 
 _CANONICAL_ALIASES = {
@@ -49,12 +55,36 @@ _CANONICAL_ALIASES = {
     "w/m^2": "w/m2",
     "w/m^3": "w/m3",
     "kg/m^3": "kg/m3",
+    "kg/(m*s)": "pa*s",
+    "m^2": "m2",
 }
+
+UNIT_REGISTRY_VERSION = "v0.3-explicit-1"
+
+
+def _registry_digest() -> str:
+    payload = {
+        "units": {
+            name: {
+                "dimension": definition.dimension,
+                "scale": definition.scale,
+                "offset": definition.offset,
+            }
+            for name, definition in sorted(_UNITS.items())
+        },
+        "aliases": dict(sorted(_CANONICAL_ALIASES.items())),
+        "version": UNIT_REGISTRY_VERSION,
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+UNIT_REGISTRY_SHA256 = _registry_digest()
 
 
 def _normalize(unit: str) -> str:
     return (
-        unit.strip().lower().replace(" ", "").replace("·", "").replace("²", "2").replace("³", "3")
+        unit.strip().lower().replace(" ", "").replace("·", "*").replace("²", "2").replace("³", "3")
     )
 
 
