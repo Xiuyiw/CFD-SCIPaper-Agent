@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime
 from enum import Enum
 from typing import Literal
 
@@ -128,6 +129,14 @@ ThresholdOperator = Literal["<=", "<", ">=", ">"]
 ThresholdConsequence = Literal["blocking", "restricting"]
 QoIOperator = Literal["identity", "difference", "ratio", "relative-change"]
 MissingDataPolicy = Literal["reject"]
+
+
+class DiscreteTrend(str, Enum):
+    MONOTONIC_INCREASING = "monotonic-increasing"
+    MONOTONIC_DECREASING = "monotonic-decreasing"
+    INTERIOR_PEAK = "interior-peak"
+    PLATEAU = "plateau"
+    OVERALL_CHANGE = "overall-change"
 
 
 class CaseDifference(QualificationModel):
@@ -420,3 +429,94 @@ class CandidateQoIContract(QualificationModel):
         if len(set(keys)) != len(keys):
             raise ValueError("expected membership must be unique")
         return self
+
+
+class AuthorApproval(QualificationModel):
+    author: str
+    object_id: str
+    object_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    approved_at: datetime
+
+    @field_validator("author", "object_id")
+    @classmethod
+    def approval_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("approval text must be nonblank")
+        return stripped
+
+    @field_validator("approved_at")
+    @classmethod
+    def approval_time_is_aware(cls, value: datetime) -> datetime:
+        if value.utcoffset() is None:
+            raise ValueError("approved_at must be timezone-aware")
+        return value
+
+
+class LockedQoIContract(QualificationModel):
+    candidate: CandidateQoIContract
+    approval: AuthorApproval
+    scientific_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def approval_is_bound_to_candidate(self) -> LockedQoIContract:
+        if (
+            self.approval.object_id != self.candidate.qoi_contract_id
+            or self.approval.object_fingerprint != self.candidate.fingerprint
+        ):
+            raise ValueError("approval must remain bound to the locked candidate")
+        if self.scientific_input_fingerprint != self.candidate.scientific_input_fingerprint:
+            raise ValueError("locked scientific input must match the candidate")
+        return self
+
+
+class QoIValue(QualificationModel):
+    result_id: str
+    case_id: str
+    coordinate_value: float
+    coordinate_unit: str
+    value: float
+    unit: str
+    evidence_id: str
+    source_locator: str
+
+    @field_validator(
+        "result_id", "case_id", "coordinate_unit", "unit", "evidence_id", "source_locator"
+    )
+    @classmethod
+    def qoi_value_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("QoI value text must be nonblank")
+        return stripped
+
+    @field_validator("coordinate_value", "value")
+    @classmethod
+    def qoi_numbers_are_finite(cls, value: float) -> float:
+        if not math.isfinite(value):
+            raise ValueError("QoI values must be finite")
+        return value
+
+
+class QoIAnalysis(QualificationModel):
+    qoi_contract_id: str
+    scientific_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    values: tuple[QoIValue, ...]
+    overall_change: float | None
+    trend: DiscreteTrend | None
+    restrictions: tuple[str, ...]
+
+    @field_validator("qoi_contract_id")
+    @classmethod
+    def analysis_id_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("qoi_contract_id must be nonblank")
+        return stripped
+
+    @field_validator("overall_change")
+    @classmethod
+    def overall_change_is_finite(cls, value: float | None) -> float | None:
+        if value is not None and not math.isfinite(value):
+            raise ValueError("overall change must be finite")
+        return value

@@ -57,6 +57,14 @@ def candidate_qoi_contract_path(project_root: Path) -> Path:
     return qualify_artifact_path(project_root, "candidate-qoi-contract.json")
 
 
+def locked_qoi_contract_path(project_root: Path) -> Path:
+    return qualify_artifact_path(project_root, "locked-qoi-contract.json")
+
+
+def qoi_results_path(project_root: Path) -> Path:
+    return qualify_artifact_path(project_root, "qoi-results.json")
+
+
 def canonical_bytes(value: Any) -> bytes:
     """Return the repository's canonical compact JSON representation."""
 
