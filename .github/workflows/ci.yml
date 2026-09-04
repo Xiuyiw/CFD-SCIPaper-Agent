@@ -28,9 +28,9 @@ jobs:
           - "3.12"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -46,9 +46,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -118,7 +118,7 @@ jobs:
           & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\generated-topic\prepare_project.py") $generatedProject
           & $cfdpaper plan $generatedProject --provider offline
       - name: Upload release distributions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cfd-paper-agent-0.3.1-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
