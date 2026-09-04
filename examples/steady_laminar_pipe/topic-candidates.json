@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "candidates": [
+    {
+      "topic_id": "steady-pipe-pressure-drop",
+      "title": "Velocity-dependent pressure drop in steady laminar pipe flow",
+      "research_question": "How does the pressure drop over a fixed fully developed pipe span change with prescribed mean velocity?",
+      "supporting_evidence_ids": [
+        "verification-pipe-model-PIPE-U005"
+      ],
+      "required_evidence_kinds": [
+        "other"
+      ],
+      "required_maturity": "verified",
+      "minimum_verified_evidence": 1,
+      "significance": 0.4,
+      "novelty": 0.1
+    }
+  ]
+}

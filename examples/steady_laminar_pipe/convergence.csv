@@ -1,0 +1,4 @@
+case_id,normalized_pressure_drop_monitor_range,relative_mass_imbalance
+PIPE-U005,3.0e-5,2.0e-7
+PIPE-U010,2.0e-5,1.0e-7
+PIPE-U015,4.0e-5,3.0e-7

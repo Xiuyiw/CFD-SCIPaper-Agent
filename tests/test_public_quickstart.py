@@ -89,7 +89,7 @@ def test_public_quickstart_sources_are_synthetic_and_path_independent() -> None:
             assert all(fragment not in text for fragment in forbidden_fragments)
 
 
-def test_public_docs_match_the_v020_capability_contract() -> None:
+def test_public_docs_match_the_v030_capability_contract() -> None:
     readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
     capability_section = readme.split("## Capability matrix", 1)[1].split("\n## ", 1)[0]
     state_cells = {
@@ -98,14 +98,33 @@ def test_public_docs_match_the_v020_capability_contract() -> None:
         if "---" not in match and "State" not in match
     }
 
-    assert state_cells == {"Available in v0.2.0", "Experimental", "Roadmap"}
+    assert state_cells == {"Available", "Experimental", "Roadmap"}
     for command in (
-        "cfdpaper init project --project-id synthetic-duct-study",
-        "cfdpaper inspect project",
-        "cfdpaper plan project --candidates candidates.json",
-        "cfdpaper status project",
+        "cfdpaper init . --project-id steady-laminar-pipe",
+        "cfdpaper inspect .",
+        "cfdpaper qualify . --records project-records.json --observations observations.csv "
+        "--question question.json",
+        "cfdpaper plan . --candidates topic-candidates.json "
+        "--approve-topic steady-pipe-pressure-drop",
+        "cfdpaper qualify . --approve-qoi-contract QOI_ID",
+        "cfdpaper analyze .",
+        "cfdpaper figure . --approve-contract FIGURE_ID",
+        "cfdpaper write . --artifact results-paragraph",
     ):
         assert command in readme
+
+    ordered_commands = (
+        "cfdpaper init .",
+        "cfdpaper inspect .",
+        "cfdpaper qualify . --records",
+        "cfdpaper plan .",
+        "cfdpaper qualify . --approve-qoi-contract",
+        "cfdpaper analyze .",
+        "cfdpaper figure .",
+        "cfdpaper write .",
+    )
+    positions = [readme.index(command) for command in ordered_commands]
+    assert positions == sorted(positions)
 
     for overclaim in (
         "fully autonomous",
@@ -129,25 +148,21 @@ def test_public_docs_match_the_v020_capability_contract() -> None:
         assert f"]({target})" in readme
         assert (REPOSITORY_ROOT / target).is_file()
 
-    release_notes = (REPOSITORY_ROOT / "docs" / "releases" / "v0.2.0.md").read_text(
-        encoding="utf-8"
-    )
-    assert "two to four provisional research topics" in release_notes
-    assert "inspect` alone does not create those records" in release_notes
-    assert "Development pauses after v0.2.0" in release_notes
-
-    limitations = (REPOSITORY_ROOT / "docs" / "limitations.md").read_text(encoding="utf-8")
-    assert "v0.1.0-alpha" not in limitations
-    assert "author-supplied" in limitations
-    assert "generate provisional candidates" in limitations
-    assert "analyze" in limitations and "export" in limitations
-
     changelog = (REPOSITORY_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [0.3.0] — 2026-09-04" in changelog
     assert "## [0.2.0] — 2026-08-31" in changelog
     assert "alpha" not in changelog.casefold()
 
     citation = yaml.safe_load((REPOSITORY_ROOT / "CITATION.cff").read_text(encoding="utf-8"))
     assert citation["cff-version"] == "1.2.0"
     assert citation["title"] == "CFD-Paper-Agent"
-    assert citation["version"] == "0.2.0"
+    assert citation["version"] == "0.3.0"
     assert citation["license"] == "Apache-2.0"
+
+    workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    for operating_system in ("ubuntu-latest", "windows-latest"):
+        assert operating_system in workflow
+    for python_version in ('"3.10"', '"3.11"', '"3.12"'):
+        assert python_version in workflow
+    assert "cfd-paper-agent-0.3.0-distributions" in workflow
+    assert "cfd-paper-agent-0.2.0-distributions" not in workflow

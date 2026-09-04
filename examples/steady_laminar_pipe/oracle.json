@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "PIPE-U005",
+    "PIPE-U010",
+    "PIPE-U015"
+  ],
+  "coordinate": {
+    "name": "mean_velocity",
+    "unit": "m/s",
+    "values": [0.05, 0.1, 0.15]
+  },
+  "qoi": {
+    "name": "Pressure drop",
+    "unit": "Pa",
+    "values": [16.0, 32.0, 48.0],
+    "trend": "monotonic-increasing",
+    "source_data_rows": 3
+  },
+  "qualification": {
+    "status": "restricted",
+    "verification": "demonstrated",
+    "validation": "not-demonstrated",
+    "claim_ceiling": "qualified-numerical-observation",
+    "forbidden_ceiling": "supported-physical-interpretation"
+  },
+  "figure": {
+    "source_data_rows": 3,
+    "editable_output": "svg",
+    "preview_output": "png"
+  },
+  "paragraph": {
+    "required_facts": [
+      "16, 32, and 48 Pa",
+      "PIPE-U005, PIPE-U010, and PIPE-U015",
+      "increased monotonically"
+    ],
+    "maximum_words": 120,
+    "numeric_backlinks": 3
+  },
+  "negative_variants": [
+    {
+      "path": "negative/missing-middle-member.csv",
+      "first_issue_code": "missing-expected-member",
+      "maximum_ceiling": "insufficient"
+    },
+    {
+      "path": "negative/duplicate-middle-member.csv",
+      "first_issue_code": "duplicate-observation",
+      "maximum_ceiling": "insufficient"
+    },
+    {
+      "path": "negative/unknown-pressure-unit.csv",
+      "first_issue_code": "unknown-unit",
+      "maximum_ceiling": "insufficient"
+    },
+    {
+      "path": "negative/failed-convergence-project-records.json",
+      "first_issue_code": "failed-blocking-threshold",
+      "maximum_ceiling": "insufficient"
+    }
+  ]
+}

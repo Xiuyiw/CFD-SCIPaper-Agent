@@ -1,0 +1,238 @@
+{
+  "cases": [
+    {
+      "case_id": "PIPE-U005",
+      "source_uri": "observations.csv",
+      "locator": "observations.csv#case=PIPE-U005",
+      "solver": "reference-data",
+      "solver_version": "1",
+      "state": "validated"
+    },
+    {
+      "case_id": "PIPE-U010",
+      "source_uri": "observations.csv",
+      "locator": "observations.csv#case=PIPE-U010",
+      "solver": "reference-data",
+      "solver_version": "1",
+      "state": "validated"
+    },
+    {
+      "case_id": "PIPE-U015",
+      "source_uri": "observations.csv",
+      "locator": "observations.csv#case=PIPE-U015",
+      "solver": "reference-data",
+      "solver_version": "1",
+      "state": "validated"
+    }
+  ],
+  "boundaries": [
+    {
+      "boundary_id": "prescribed-mean-velocity",
+      "case_id": "PIPE-U005",
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md#model-and-geometry",
+      "boundary_type": "comparison-difference",
+      "values": {
+        "name": "prescribed mean velocity",
+        "reference": "0.050 m/s",
+        "candidate": "0.100 and 0.150 m/s"
+      },
+      "units": {
+        "mean_velocity": "m/s"
+      },
+      "comparison_role": "intended-study-factor",
+      "basis": "Mean velocity is the sole prescribed comparison coordinate."
+    },
+    {
+      "boundary_id": "fixed-pipe-geometry",
+      "case_id": "PIPE-U005",
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md#model-and-geometry",
+      "boundary_type": "comparison-difference",
+      "values": {
+        "name": "pipe geometry and pressure-tap span",
+        "reference": "D=0.010 m; L=1.000 m",
+        "candidate": "D=0.010 m; L=1.000 m"
+      },
+      "units": {
+        "diameter": "m",
+        "length": "m"
+      },
+      "comparison_role": "demonstrated-equivalent-or-immaterial",
+      "basis": "The diameter and fully developed pressure-tap span are identical in all three cases."
+    },
+    {
+      "boundary_id": "fixed-fluid-properties",
+      "case_id": "PIPE-U005",
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md#model-and-geometry",
+      "boundary_type": "comparison-difference",
+      "values": {
+        "name": "fluid density and dynamic viscosity",
+        "reference": "rho=1000 kg/m^3; mu=1.000e-3 Pa s",
+        "candidate": "rho=1000 kg/m^3; mu=1.000e-3 Pa s"
+      },
+      "units": {
+        "density": "kg/m^3",
+        "dynamic_viscosity": "Pa*s"
+      },
+      "comparison_role": "demonstrated-equivalent-or-immaterial",
+      "basis": "Density and dynamic viscosity are identical in all three cases."
+    }
+  ],
+  "models": [
+    {
+      "model_id": "pipe-model-PIPE-U005",
+      "case_id": "PIPE-U005",
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md#model-and-geometry",
+      "description": "Steady incompressible fully developed laminar flow of a Newtonian fluid in a circular no-slip pipe",
+      "comparison_role": "demonstrated-equivalent-or-immaterial",
+      "basis": "The numerical model and wall condition are identical in all three cases.",
+      "verification_status": "demonstrated",
+      "verification_basis": "Pressure drop matches the Hagen-Poiseuille relation for the stated model.",
+      "verification_locator": "analytic-reference.md#numerical-verification-reference",
+      "validation_status": "not-demonstrated",
+      "validation_basis": "No independent experimental or field measurement is supplied.",
+      "validation_locator": "analytic-reference.md#validation-boundary"
+    },
+    {
+      "model_id": "pipe-model-PIPE-U010",
+      "case_id": "PIPE-U010",
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md#model-and-geometry",
+      "description": "Steady incompressible fully developed laminar flow of a Newtonian fluid in a circular no-slip pipe",
+      "comparison_role": "demonstrated-equivalent-or-immaterial",
+      "basis": "The numerical model and wall condition are identical in all three cases.",
+      "verification_status": "demonstrated",
+      "verification_basis": "Pressure drop matches the Hagen-Poiseuille relation for the stated model.",
+      "verification_locator": "analytic-reference.md#numerical-verification-reference",
+      "validation_status": "not-demonstrated",
+      "validation_basis": "No independent experimental or field measurement is supplied.",
+      "validation_locator": "analytic-reference.md#validation-boundary"
+    },
+    {
+      "model_id": "pipe-model-PIPE-U015",
+      "case_id": "PIPE-U015",
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md#model-and-geometry",
+      "description": "Steady incompressible fully developed laminar flow of a Newtonian fluid in a circular no-slip pipe",
+      "comparison_role": "demonstrated-equivalent-or-immaterial",
+      "basis": "The numerical model and wall condition are identical in all three cases.",
+      "verification_status": "demonstrated",
+      "verification_basis": "Pressure drop matches the Hagen-Poiseuille relation for the stated model.",
+      "verification_locator": "analytic-reference.md#numerical-verification-reference",
+      "validation_status": "not-demonstrated",
+      "validation_basis": "No independent experimental or field measurement is supplied.",
+      "validation_locator": "analytic-reference.md#validation-boundary"
+    }
+  ],
+  "convergence": [
+    {
+      "evidence_id": "conv-PIPE-U005",
+      "case_id": "PIPE-U005",
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv#row=2",
+      "metric": "normalized-pressure-drop-monitor-range-PIPE-U005",
+      "observed_value": 3e-05,
+      "unit": "1",
+      "threshold_value": 0.0001,
+      "operator": "<=",
+      "consequence": "blocking",
+      "basis": "The final normalized pressure-drop monitor range must not exceed 1.0e-4."
+    },
+    {
+      "evidence_id": "conv-PIPE-U010",
+      "case_id": "PIPE-U010",
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv#row=3",
+      "metric": "normalized-pressure-drop-monitor-range-PIPE-U010",
+      "observed_value": 2e-05,
+      "unit": "1",
+      "threshold_value": 0.0001,
+      "operator": "<=",
+      "consequence": "blocking",
+      "basis": "The final normalized pressure-drop monitor range must not exceed 1.0e-4."
+    },
+    {
+      "evidence_id": "conv-PIPE-U015",
+      "case_id": "PIPE-U015",
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv#row=4",
+      "metric": "normalized-pressure-drop-monitor-range-PIPE-U015",
+      "observed_value": 4e-05,
+      "unit": "1",
+      "threshold_value": 0.0001,
+      "operator": "<=",
+      "consequence": "blocking",
+      "basis": "The final normalized pressure-drop monitor range must not exceed 1.0e-4."
+    }
+  ],
+  "conservation": [
+    {
+      "evidence_id": "mass-PIPE-U005",
+      "case_id": "PIPE-U005",
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv#row=2",
+      "metric": "relative-mass-imbalance-PIPE-U005",
+      "observed_value": 2e-07,
+      "unit": "1",
+      "threshold_value": 1e-06,
+      "operator": "<=",
+      "consequence": "blocking",
+      "basis": "The relative mass imbalance must not exceed 1.0e-6."
+    },
+    {
+      "evidence_id": "mass-PIPE-U010",
+      "case_id": "PIPE-U010",
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv#row=3",
+      "metric": "relative-mass-imbalance-PIPE-U010",
+      "observed_value": 1e-07,
+      "unit": "1",
+      "threshold_value": 1e-06,
+      "operator": "<=",
+      "consequence": "blocking",
+      "basis": "The relative mass imbalance must not exceed 1.0e-6."
+    },
+    {
+      "evidence_id": "mass-PIPE-U015",
+      "case_id": "PIPE-U015",
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv#row=4",
+      "metric": "relative-mass-imbalance-PIPE-U015",
+      "observed_value": 3e-07,
+      "unit": "1",
+      "threshold_value": 1e-06,
+      "operator": "<=",
+      "consequence": "blocking",
+      "basis": "The relative mass imbalance must not exceed 1.0e-6."
+    }
+  ],
+  "sources": [
+    {
+      "source_uri": "observations.csv",
+      "locator": "observations.csv",
+      "sha256": "209dd0bc6240d67015e5990369f89d59ca9c64f8b1c748d65e1c10eeef467f83",
+      "mtime_ns": 0,
+      "size_bytes": 699,
+      "media_type": "text/csv"
+    },
+    {
+      "source_uri": "analytic-reference.md",
+      "locator": "analytic-reference.md",
+      "sha256": "8efb43fe6e143b7b6e357e22f6d88e88c82f90f1c3a687387070474d02ae13c9",
+      "mtime_ns": 0,
+      "size_bytes": 931,
+      "media_type": "text/markdown"
+    },
+    {
+      "source_uri": "convergence.csv",
+      "locator": "convergence.csv",
+      "sha256": "4366025294a37eb1781d41c16fae40d85d12a851c6a4096aed5fd4ebe1d29fc0",
+      "mtime_ns": 0,
+      "size_bytes": 143,
+      "media_type": "text/csv"
+    }
+  ]
+}

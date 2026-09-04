@@ -1,0 +1,51 @@
+{
+  "question_id": "steady-pipe-pressure-response",
+  "proposal": {
+    "qoi_name": "Pressure drop",
+    "scientific_definition": "Pressure difference over the 1.000 m fully developed pressure-tap span",
+    "operator": "identity",
+    "operands": [
+      {
+        "name": "pressure drop",
+        "variable": "pressure_drop",
+        "value_role": "precomputed-qoi",
+        "unit": "Pa",
+        "scope": "fully-developed-pressure-tap-span",
+        "locator_policy": "one located scalar per expected member"
+      }
+    ],
+    "output_unit": "Pa",
+    "expected_members": [
+      {
+        "case_id": "PIPE-U005",
+        "coordinate_name": "mean_velocity",
+        "coordinate_value": 0.05,
+        "coordinate_unit": "m/s",
+        "variable": "pressure_drop",
+        "unit": "Pa",
+        "scope": "fully-developed-pressure-tap-span"
+      },
+      {
+        "case_id": "PIPE-U010",
+        "coordinate_name": "mean_velocity",
+        "coordinate_value": 0.1,
+        "coordinate_unit": "m/s",
+        "variable": "pressure_drop",
+        "unit": "Pa",
+        "scope": "fully-developed-pressure-tap-span"
+      },
+      {
+        "case_id": "PIPE-U015",
+        "coordinate_name": "mean_velocity",
+        "coordinate_value": 0.15,
+        "coordinate_unit": "m/s",
+        "variable": "pressure_drop",
+        "unit": "Pa",
+        "scope": "fully-developed-pressure-tap-span"
+      }
+    ],
+    "trend_tolerance": 0.0,
+    "missing_data_policy": "reject",
+    "allow_quantitative_reporting": true
+  }
+}

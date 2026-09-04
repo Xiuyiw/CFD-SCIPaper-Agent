@@ -72,16 +72,12 @@ def test_inspect_discovers_and_indexes_files_then_status_reports_counts(tmp_path
     assert "checkpoint inspect" in status.stdout
 
 
-def test_remaining_workflow_commands_are_explicitly_unimplemented() -> None:
-    result = runner.invoke(app, ["analyze"])
+def test_remaining_roadmap_commands_are_explicitly_unimplemented() -> None:
+    for command in ("review", "revise", "export"):
+        result = runner.invoke(app, [command])
 
-    assert result.exit_code != 0
-    assert "not implemented" in result.stdout
-
-    help_result = runner.invoke(app, ["analyze", "--help"])
-    assert "--candidates" not in help_result.stdout
-    assert "--approve-topic" not in help_result.stdout
-    assert "--author" not in help_result.stdout
+        assert result.exit_code != 0
+        assert "not implemented" in result.stdout
 
 
 def test_top_level_help_labels_unavailable_commands_as_roadmap() -> None:
@@ -89,8 +85,10 @@ def test_top_level_help_labels_unavailable_commands_as_roadmap() -> None:
 
     assert result.exit_code == 0, result.stdout
     normalized = " ".join(_plain_cli_text(result.stdout).split())
-    for command in ("analyze", "figure", "write", "review", "revise", "export"):
-        assert f"{command} Roadmap command; not available in v0.2.0." in normalized
+    for command in ("review", "revise", "export"):
+        assert f"{command} Roadmap command; not available in v0.3.0." in normalized
+    for command in ("qualify", "analyze", "figure", "write"):
+        assert f"{command} Roadmap command; not available in v0.3.0." not in normalized
 
 
 def prepared_cli_project(tmp_path: Path) -> ProjectStore:

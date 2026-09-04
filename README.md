@@ -1,88 +1,132 @@
 # CFD-Paper-Agent
 
-CFD-Paper-Agent is an open-source, author-in-the-loop research workflow for turning mature CFD
-evidence into defensible research directions. **v0.2.0** adds evidence-bounded topic generation
-to the installable CLI: it can initialize and inspect a project, maintain resumable scientific
-state, rank author candidates, or generate two to four provisional candidates from mature
-structured records.
+CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
+defensible paper topics, figures, and results prose. Version 0.3.0 adds a complete evidence pathway:
+qualify a declared comparison, lock a quantity of interest (QoI), analyze discrete cases, render an
+evidence-bound figure, and write one numerically backlinked results paragraph.
 
-Scientific judgment, evidence qualification, validation, and publication decisions remain with
-the author. Candidate generation stops at explicit evidence gaps and never grants approval.
+The software does not replace scientific judgment. Authors still choose the research topic, accept
+the QoI and figure claim, and approve the final artifact.
 
 ## Capability matrix
 
-| Capability | State | v0.2.0 boundary |
+| Capability | State | Current boundary |
 |---|---|---|
-| `cfdpaper init`, `inspect`, and `status` | Available in v0.2.0 | Create local SQLite state, index files, track staleness, and resume work. |
-| Author-supplied `cfdpaper plan` | Available in v0.2.0 | Rank schema-v1 candidate JSON; explicit author input takes precedence. |
-| Evidence-bounded topic generation | Available in v0.2.0 | Generate two to four provisional candidates only from mature structured records. |
-| Offline generation, reuse, and regeneration | Available in v0.2.0 | Deterministic offline mode, recoverable artifacts, and explicit `--regenerate`. |
-| Strict/fast reinspection policy and extension contracts | Experimental | Interfaces are present, but broader project behavior is still being validated. |
-| Optional provider and adapter extension points | Experimental | No provider transport or general solver-native support is claimed. |
-| `analyze`, `figure`, `write`, `review`, `revise`, and `export` | Roadmap | CLI placeholders exit non-zero and do not produce artifacts. |
-| Fluent, STAR-CCM+, and other native solver adapters | Roadmap | Use small synthetic or neutral exported files for the current release. |
+| Project initialization, inspection, status, and resumable state | Available | Local project state and source-change detection. |
+| Author-supplied or evidence-bounded topic planning | Available | Two to four provisional topics from mature structured records; author selection is required. |
+| Scientific comparison qualification | Available | Strict records, observation membership, units, locators, comparison roles, convergence, conservation, verification, and validation. |
+| Discrete QoI analysis and claim ceiling | Available | Locked observed cases only; no interpolation or continuous optimization. |
+| Figure production | Available | One evidence-bound panel with source data, runnable script, SVG, PNG, caption, and three QA results. |
+| Evidence writing | Available | One results paragraph with numeric backlinks and an author-approved reporting ceiling. |
+| Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
+| Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
+| Full-manuscript writing, literature management, review, revision, and document export | Roadmap | Not delivered by the v0.3.0 CLI. |
 
-## Install from a public checkout
+## Installation
 
-CFD-Paper-Agent targets CPython 3.10–3.12. From the repository root:
+CFD-Paper-Agent supports CPython 3.10–3.12. From a public checkout:
 
 ```text
 python -m pip install -e .
 cfdpaper --help
 ```
 
-## Reproducible Quickstart
+## Reproducible v0.3.0 Quickstart
 
-Copy `examples/quickstart` to a writable temporary directory, change into the copied directory,
-and run:
+Copy `examples/steady_laminar_pipe` to a writable directory and change into the copied directory.
+The example uses synthetic, non-sensitive data for fully developed laminar pipe flow.
+
+Run the evidence workflow in this order:
 
 ```text
-cfdpaper init project --project-id synthetic-duct-study
-cfdpaper inspect project
-cfdpaper plan project --candidates candidates.json
-cfdpaper status project
+cfdpaper init . --project-id steady-laminar-pipe
+cfdpaper inspect .
+cfdpaper qualify . --records project-records.json --observations observations.csv --question question.json
+cfdpaper plan . --candidates topic-candidates.json --approve-topic steady-pipe-pressure-drop --author "Fixture Author"
+cfdpaper qualify . --approve-qoi-contract QOI_ID --author "Fixture Author"
+cfdpaper analyze .
+cfdpaper figure . --approve-contract FIGURE_ID --author "Fixture Author"
+cfdpaper write . --artifact results-paragraph
+cfdpaper write . --artifact results-paragraph --approve-final --author "Fixture Author"
 ```
 
-The example uses invented, non-sensitive duct-flow values. Expected planning output includes:
+Replace `QOI_ID` with the identifier printed by the first `qualify` command and `FIGURE_ID` with the
+identifier printed by `analyze`. The fixture should reach a qualified numerical observation, not a
+supported physical interpretation, because it supplies an analytic numerical-verification reference
+but no external validation dataset. See the [fixture walkthrough](examples/steady_laminar_pipe/README.md)
+and its machine-readable [oracle](examples/steady_laminar_pipe/oracle.json).
+
+Negative fixture variants demonstrate that missing members, duplicate observations, unknown units,
+or failed convergence stop before unsupported analysis, figure, or paragraph artifacts are created.
+
+## Inputs
+
+The non-interactive evidence workflow accepts:
+
+- `project-records.json`: cases, boundaries, comparison roles, numerical checks, verification,
+  validation, and source locations;
+- `observations.csv`: located scalar observations with case identity, coordinate, variable, value
+  role, scope, value, and unit;
+- `question.json`: the proposed QoI definition, operator, operands, expected membership, units, and
+  reporting policy;
+- a topic-candidate JSON file accepted by `cfdpaper plan`.
+
+These are structured scientific inputs, not arbitrary solver files. The input observations are never
+rewritten.
+
+## Outputs
+
+Project-local outputs are written under `.cfdpaper/outputs/`:
 
 ```text
-Plan complete: outcome=missing-evidence; leading=pressure-loss-screening; gaps=4; approval=none
+plan/topic-ranking.json
+qualify/qualification-report.json
+qualify/candidate-qoi-contract.json
+qualify/locked-qoi-contract.json
+qualify/qoi-results.json
+qualify/claim-ceiling.json
+qualify/candidate-figure-contract.json
+qualify/paragraph-duty.json
+figure/FIGURE_ID/source-data.csv
+figure/FIGURE_ID/plot_FIGURE_ID.py
+figure/FIGURE_ID/FIGURE_ID.svg
+figure/FIGURE_ID/FIGURE_ID.png
+figure/FIGURE_ID/caption.txt
+figure/FIGURE_ID/qa-data.json
+figure/FIGURE_ID/qa-narrative.json
+figure/FIGURE_ID/qa-visual.json
+write/results-paragraph.txt
+write/numeric-backlinks.json
+write/delivery.json
 ```
 
-That result is intentional. `inspect` builds a file index, but the public CLI does not promote
-indexed files to verified evidence records. `plan` still writes
-`project/.cfdpaper/outputs/plan/topic-ranking.json`, stores a checkpoint, and refuses to call the
-candidate defensible. See the [example walkthrough](examples/quickstart/README.md).
+Changed scientific inputs make dependent artifacts stale. The CLI reports the earliest command that
+must be rerun. Invalid input exits with a correction, insufficient evidence stops without downstream
+artifacts, and render or write failures are not presented as completed work.
 
-## Generated topic planning
+## Topic planning
 
-When mature structured case, boundary, convergence, conservation, QoI-definition, and QoI records
-already exist, omit `--candidates` to use generated planning:
+`cfdpaper plan` can rank an author file or generate provisional candidates from mature structured
+records:
 
 ```text
-cfdpaper plan PROJECT_ROOT
 cfdpaper plan PROJECT_ROOT --candidates AUTHOR_CANDIDATES.json
 cfdpaper plan PROJECT_ROOT --provider offline
 cfdpaper plan PROJECT_ROOT --provider auto
 cfdpaper plan PROJECT_ROOT --regenerate
 ```
 
-A complete synthetic walkthrough that creates mature structured records and exercises automatic
-generation is available in [`examples/generated-topic`](examples/generated-topic/README.md).
+The deterministic offline path requires no API key. Author files take precedence over generated
+candidates. Generated topics remain provisional: reports retain the minimum missing-data list,
+provider transport is not real author approval, and ordinary indexed files are not promoted
+automatically to verified scientific evidence.
 
-`offline` is deterministic and requires no API key. `auto` falls back to the same offline candidate
-skeletons when no provider is available; provider transport integrations are not included in this
-release. Author files take precedence over generated candidates. A changed scientific snapshot
-invalidates reuse, while non-scientific generation changes require `--regenerate`.
+## Explicit non-capabilities
 
-Generated artifacts under `.cfdpaper/outputs/plan/` retain candidate-to-evidence provenance and
-the minimum missing-data list. They are recoverable project artifacts, not a stable public
-interchange schema. Ordinary indexed files are not automatically promoted to mature scientific
-records; this release therefore does not claim raw-result-to-topic automation.
-
-`--approve-topic` must be paired with `--author`. Approval records the selected direction and its
-evidence-dependent scope; real author approval is still required and does not execute analysis or manuscript production. No roadmap
-command reports success in v0.2.0.
+Version 0.3.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
+values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
+identify an operating optimum, write a complete manuscript, manage references, export submission
+documents, or submit to a journal. The `review`, `revise`, and `export` commands remain unavailable.
 
 ## Public documentation
 
@@ -103,5 +147,5 @@ QoI definitions, source provenance, and claim scope still require scientific rev
 
 ## License
 
-Apache-2.0 for the source code. The Quickstart data are synthetic and provided solely for software
+Apache-2.0 for the source code. Public examples are synthetic and provided solely for software
 demonstration.

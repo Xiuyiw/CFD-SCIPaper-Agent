@@ -2,11 +2,32 @@
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-04
+
+### Added
+
+- Strict scientific intake for declared CFD cases, observations, units, source locators, comparison
+  roles, convergence, conservation, verification, and validation.
+- Author-locked QoI analysis over observed discrete cases with evidence-bounded reporting ceilings.
+- Reproducible figure delivery with source data, a runnable plotting script, SVG and PNG outputs,
+  caption, and data, narrative, and visual QA results.
+- One results paragraph with exact numeric backlinks and unchanged final author approval.
+- Four thin workflow Skills and a public steady-laminar-pipe example with positive, negative, and
+  adversarial expectations.
+
 ### Changed
 
 - Consolidated public documentation under `docs/` and added a documentation index.
 - Simplified release CI to test, build, install, and smoke-test the public repository directly.
 - Removed internal snapshot-export artifacts from the public source tree.
+
+### Boundaries
+
+- Inputs must use the documented structured records, observation, question, and topic contracts;
+  arbitrary native solver cases are not ingested.
+- Analysis remains discrete and evidence-bounded; no interpolation, smoothing, continuous optimum,
+  full manuscript, reference workflow, or submission document export is claimed.
+- `review`, `revise`, and `export` remain unavailable roadmap commands.
 
 ## [0.2.0] — 2026-08-31
 

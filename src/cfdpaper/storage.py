@@ -412,74 +412,96 @@ class ProjectStore:
     ) -> str:
         """Upsert a current source version and atomically replace its text chunks."""
 
-        now = _utc_now()
-        source_id = str(uuid5(NAMESPACE_URL, f"cfdpaper:{uri}"))
         chunk_rows = list(chunks)
         with self.connect() as connection:
-            old = connection.execute(
-                "SELECT source_id, sha256, version FROM sources WHERE uri = ?", (uri,)
-            ).fetchone()
-            if old is not None and str(old["sha256"]) == sha256:
-                connection.execute(
-                    "UPDATE sources SET locator=?, mtime_ns=?, size_bytes=?, stale=0, "
-                    "media_type=?, indexed_at=? WHERE source_id=?",
-                    (locator, mtime_ns, size_bytes, media_type, now, old["source_id"]),
-                )
-                return "unchanged"
-
-            version = 1 if old is None else int(old["version"]) + 1
-            if old is None:
-                connection.execute(
-                    "INSERT INTO sources(source_id, uri, locator, sha256, mtime_ns, "
-                    "size_bytes, version, stale, media_type, indexed_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)",
-                    (
-                        source_id,
-                        uri,
-                        locator,
-                        sha256,
-                        mtime_ns,
-                        size_bytes,
-                        version,
-                        media_type,
-                        now,
-                    ),
-                )
-                result = "added"
-            else:
-                source_id = str(old["source_id"])
-                connection.execute(
-                    "UPDATE sources SET locator=?, sha256=?, mtime_ns=?, size_bytes=?, "
-                    "version=?, stale=0, media_type=?, indexed_at=? WHERE source_id=?",
-                    (
-                        locator,
-                        sha256,
-                        mtime_ns,
-                        size_bytes,
-                        version,
-                        media_type,
-                        now,
-                        source_id,
-                    ),
-                )
-                result = "updated"
-            connection.execute(
-                "INSERT INTO source_versions VALUES (?, ?, ?, ?, ?, ?)",
-                (source_id, version, sha256, mtime_ns, size_bytes, now),
+            return self._index_source_row(
+                connection,
+                uri=uri,
+                locator=locator,
+                sha256=sha256,
+                mtime_ns=mtime_ns,
+                size_bytes=size_bytes,
+                media_type=media_type,
+                chunks=chunk_rows,
             )
-            connection.execute("DELETE FROM chunks_fts WHERE source_id = ?", (source_id,))
-            connection.execute("DELETE FROM chunks WHERE source_id = ?", (source_id,))
-            for ordinal, (content, chunk_locator, token_count) in enumerate(chunk_rows):
-                chunk_id = str(uuid5(NAMESPACE_URL, f"{source_id}:{version}:{ordinal}"))
-                connection.execute(
-                    "INSERT INTO chunks VALUES (?, ?, ?, ?, ?, ?)",
-                    (chunk_id, source_id, ordinal, content, chunk_locator, token_count),
-                )
-                connection.execute(
-                    "INSERT INTO chunks_fts(chunk_id, source_id, content, locator) "
-                    "VALUES (?, ?, ?, ?)",
-                    (chunk_id, source_id, content, chunk_locator),
-                )
+
+    @staticmethod
+    def _index_source_row(
+        connection: sqlite3.Connection,
+        *,
+        uri: str,
+        locator: str,
+        sha256: str,
+        mtime_ns: int,
+        size_bytes: int,
+        media_type: str | None,
+        chunks: list[tuple[str, str, int]],
+    ) -> str:
+        now = _utc_now()
+        source_id = str(uuid5(NAMESPACE_URL, f"cfdpaper:{uri}"))
+        old = connection.execute(
+            "SELECT source_id, sha256, version FROM sources WHERE uri = ?", (uri,)
+        ).fetchone()
+        if old is not None and str(old["sha256"]) == sha256:
+            connection.execute(
+                "UPDATE sources SET locator=?, mtime_ns=?, size_bytes=?, stale=0, "
+                "media_type=?, indexed_at=? WHERE source_id=?",
+                (locator, mtime_ns, size_bytes, media_type, now, old["source_id"]),
+            )
+            return "unchanged"
+
+        version = 1 if old is None else int(old["version"]) + 1
+        if old is None:
+            connection.execute(
+                "INSERT INTO sources(source_id, uri, locator, sha256, mtime_ns, "
+                "size_bytes, version, stale, media_type, indexed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)",
+                (
+                    source_id,
+                    uri,
+                    locator,
+                    sha256,
+                    mtime_ns,
+                    size_bytes,
+                    version,
+                    media_type,
+                    now,
+                ),
+            )
+            result = "added"
+        else:
+            source_id = str(old["source_id"])
+            connection.execute(
+                "UPDATE sources SET locator=?, sha256=?, mtime_ns=?, size_bytes=?, "
+                "version=?, stale=0, media_type=?, indexed_at=? WHERE source_id=?",
+                (
+                    locator,
+                    sha256,
+                    mtime_ns,
+                    size_bytes,
+                    version,
+                    media_type,
+                    now,
+                    source_id,
+                ),
+            )
+            result = "updated"
+        connection.execute(
+            "INSERT INTO source_versions VALUES (?, ?, ?, ?, ?, ?)",
+            (source_id, version, sha256, mtime_ns, size_bytes, now),
+        )
+        connection.execute("DELETE FROM chunks_fts WHERE source_id = ?", (source_id,))
+        connection.execute("DELETE FROM chunks WHERE source_id = ?", (source_id,))
+        for ordinal, (content, chunk_locator, token_count) in enumerate(chunks):
+            chunk_id = str(uuid5(NAMESPACE_URL, f"{source_id}:{version}:{ordinal}"))
+            connection.execute(
+                "INSERT INTO chunks VALUES (?, ?, ?, ?, ?, ?)",
+                (chunk_id, source_id, ordinal, content, chunk_locator, token_count),
+            )
+            connection.execute(
+                "INSERT INTO chunks_fts(chunk_id, source_id, content, locator) VALUES (?, ?, ?, ?)",
+                (chunk_id, source_id, content, chunk_locator),
+            )
         return result
 
     def mark_stale_except(self, seen_uris: set[str]) -> int:
@@ -527,36 +549,52 @@ class ProjectStore:
     def _source_snapshot_for_record(
         self, source_uri: str, source_hash: str | None
     ) -> tuple[str, str]:
-        source = self.get_source(source_uri)
-        snapshot_hash = source_hash or source.sha256
         with self.connect() as connection:
-            exists = connection.execute(
-                "SELECT 1 FROM source_versions WHERE source_id=? AND sha256=?",
-                (source.source_id, snapshot_hash),
-            ).fetchone()
+            return self._source_snapshot_for_record_in_connection(
+                connection, source_uri, source_hash
+            )
+
+    @staticmethod
+    def _source_snapshot_for_record_in_connection(
+        connection: sqlite3.Connection, source_uri: str, source_hash: str | None
+    ) -> tuple[str, str]:
+        source = connection.execute(
+            "SELECT source_id, sha256 FROM sources WHERE uri = ?", (source_uri,)
+        ).fetchone()
+        if source is None:
+            raise KeyError(source_uri)
+        snapshot_hash = source_hash or str(source["sha256"])
+        exists = connection.execute(
+            "SELECT 1 FROM source_versions WHERE source_id=? AND sha256=?",
+            (source["source_id"], snapshot_hash),
+        ).fetchone()
         if exists is None:
             raise ValueError(f"source hash is not an indexed version: {source_uri}")
-        return source.source_id, snapshot_hash
+        return str(source["source_id"]), snapshot_hash
 
-    def _save_scientific_record(self, record_type: str, record: BaseModel) -> None:
+    def _upsert_scientific_record_row(
+        self, connection: sqlite3.Connection, record_type: str, record: BaseModel
+    ) -> None:
         model, id_field = _SCIENTIFIC_RECORD_SPECS[record_type]
         validated = model.model_validate(record.model_dump(mode="python"))
-        source_id, source_version_hash = self._source_snapshot_for_record(
-            validated.source_uri, validated.source_hash
+        source_id, source_version_hash = self._source_snapshot_for_record_in_connection(
+            connection, validated.source_uri, validated.source_hash
         )
         validated = validated.model_copy(update={"source_hash": source_version_hash})
         record_id = str(getattr(validated, id_field))
         record_json = canonical_json_bytes(validated).decode("utf-8")
+        connection.execute(
+            "INSERT INTO scientific_records(record_type, record_id, source_id, "
+            "source_version_hash, record_json) VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT(record_type, record_id) DO UPDATE SET "
+            "source_id=excluded.source_id, source_version_hash=excluded.source_version_hash, "
+            "record_json=excluded.record_json",
+            (record_type, record_id, source_id, source_version_hash, record_json),
+        )
+
+    def _save_scientific_record(self, record_type: str, record: BaseModel) -> None:
         with self.connect() as connection:
-            connection.execute(
-                "INSERT INTO scientific_records(record_type, record_id, source_id, "
-                "source_version_hash, record_json) VALUES (?, ?, ?, ?, ?) "
-                "ON CONFLICT(record_type, record_id) DO UPDATE SET "
-                "source_id=excluded.source_id, "
-                "source_version_hash=excluded.source_version_hash, "
-                "record_json=excluded.record_json",
-                (record_type, record_id, source_id, source_version_hash, record_json),
-            )
+            self._upsert_scientific_record_row(connection, record_type, record)
 
     def _list_scientific_records(self, record_type: str) -> list[BaseModel]:
         model, _ = _SCIENTIFIC_RECORD_SPECS[record_type]
@@ -836,29 +874,134 @@ class ProjectStore:
             return ScientificAssessmentSet()
         return ScientificAssessmentSet.model_validate_json(str(row["record_json"]), strict=True)
 
-    def save_case(self, record: CaseRecord) -> None:
-        source_id, source_version_hash = self._source_snapshot_for_record(
-            record.source_uri, record.source_hash
+    def _upsert_case_row(self, connection: sqlite3.Connection, record: CaseRecord) -> None:
+        validated = CaseRecord.model_validate(record.model_dump(mode="python"))
+        source_id, source_version_hash = self._source_snapshot_for_record_in_connection(
+            connection, validated.source_uri, validated.source_hash
         )
-        metadata = {"locator": record.locator, "stale": record.stale}
-        with self.connect() as connection:
-            connection.execute(
-                "INSERT INTO cases(case_id, source_id, solver, solver_version, state, "
-                "metadata_json, source_version_hash) VALUES (?, ?, ?, ?, ?, ?, ?) "
-                "ON CONFLICT(case_id) DO UPDATE SET source_id=excluded.source_id, "
-                "solver=excluded.solver, solver_version=excluded.solver_version, "
-                "state=excluded.state, metadata_json=excluded.metadata_json, "
-                "source_version_hash=excluded.source_version_hash",
-                (
-                    record.case_id,
-                    source_id,
-                    record.solver,
-                    record.solver_version,
-                    record.state,
-                    json.dumps(metadata, sort_keys=True),
-                    source_version_hash,
-                ),
+        metadata = {"locator": validated.locator, "stale": validated.stale}
+        connection.execute(
+            "INSERT INTO cases(case_id, source_id, solver, solver_version, state, "
+            "metadata_json, source_version_hash) VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(case_id) DO UPDATE SET source_id=excluded.source_id, "
+            "solver=excluded.solver, solver_version=excluded.solver_version, "
+            "state=excluded.state, metadata_json=excluded.metadata_json, "
+            "source_version_hash=excluded.source_version_hash",
+            (
+                validated.case_id,
+                source_id,
+                validated.solver,
+                validated.solver_version,
+                validated.state,
+                json.dumps(metadata, sort_keys=True),
+                source_version_hash,
+            ),
+        )
+
+    def _upsert_evidence_row(self, connection: sqlite3.Connection, record: EvidenceRecord) -> None:
+        validated = EvidenceRecord.model_validate(record.model_dump(mode="python"))
+        source_id, source_version_hash = self._source_snapshot_for_record_in_connection(
+            connection, validated.source_uri, validated.source_hash
+        )
+        metadata = {"stale": validated.stale}
+        connection.execute(
+            "INSERT INTO evidence(evidence_id, source_id, locator, kind, summary, "
+            "maturity, metadata_json, source_version_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(evidence_id) DO UPDATE SET source_id=excluded.source_id, "
+            "locator=excluded.locator, kind=excluded.kind, summary=excluded.summary, "
+            "maturity=excluded.maturity, metadata_json=excluded.metadata_json, "
+            "source_version_hash=excluded.source_version_hash",
+            (
+                validated.evidence_id,
+                source_id,
+                validated.locator,
+                validated.kind,
+                validated.summary,
+                validated.maturity,
+                json.dumps(metadata, sort_keys=True),
+                source_version_hash,
+            ),
+        )
+
+    def import_records_atomic(
+        self,
+        *,
+        sources: Iterable[dict[str, Any]],
+        cases: Iterable[CaseRecord],
+        boundaries: Iterable[BoundaryRecord],
+        evidence: Iterable[EvidenceRecord],
+    ) -> None:
+        """Import one validated records envelope in a single SQLite transaction."""
+
+        allowed_source_keys = {
+            "uri",
+            "locator",
+            "sha256",
+            "mtime_ns",
+            "size_bytes",
+            "media_type",
+        }
+        source_rows = tuple(dict(source) for source in sources)
+        validated_sources: list[dict[str, Any]] = []
+        for source in source_rows:
+            if set(source) != allowed_source_keys:
+                raise ValueError("source import record has invalid fields")
+            uri = source["uri"]
+            locator = source["locator"]
+            sha256 = source["sha256"]
+            mtime_ns = source["mtime_ns"]
+            size_bytes = source["size_bytes"]
+            media_type = source["media_type"]
+            if not isinstance(uri, str) or not uri.strip():
+                raise ValueError("source URI must be nonblank")
+            if not isinstance(locator, str) or not locator.strip():
+                raise ValueError("source locator must be nonblank")
+            if (
+                not isinstance(sha256, str)
+                or len(sha256) != 64
+                or any(character not in "0123456789abcdefABCDEF" for character in sha256)
+            ):
+                raise ValueError("source sha256 must contain 64 hexadecimal characters")
+            if not isinstance(mtime_ns, int) or mtime_ns < 0:
+                raise ValueError("source mtime_ns must be a non-negative integer")
+            if not isinstance(size_bytes, int) or size_bytes < 0:
+                raise ValueError("source size_bytes must be a non-negative integer")
+            if media_type is not None and not isinstance(media_type, str):
+                raise ValueError("source media_type must be text or null")
+            validated_sources.append(
+                {
+                    "uri": uri.strip(),
+                    "locator": locator.strip(),
+                    "sha256": sha256.lower(),
+                    "mtime_ns": mtime_ns,
+                    "size_bytes": size_bytes,
+                    "media_type": media_type,
+                }
             )
+        validated_cases = tuple(
+            CaseRecord.model_validate(record.model_dump(mode="python")) for record in cases
+        )
+        validated_boundaries = tuple(
+            BoundaryRecord.model_validate(record.model_dump(mode="python")) for record in boundaries
+        )
+        validated_evidence = tuple(
+            EvidenceRecord.model_validate(record.model_dump(mode="python")) for record in evidence
+        )
+
+        with self.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            for source in validated_sources:
+                self._index_source_row(connection, **source, chunks=[])
+            for record in validated_cases:
+                self._upsert_case_row(connection, record)
+            for record in validated_boundaries:
+                self._upsert_scientific_record_row(connection, "boundary", record)
+            for record in validated_evidence:
+                self._upsert_evidence_row(connection, record)
+
+    def save_case(self, record: CaseRecord) -> None:
+        with self.connect() as connection:
+            self._upsert_case_row(connection, record)
 
     def list_cases(self, *, source_ids: list[str] | None = None) -> list[CaseRecord]:
         parameters: list[str] = []
@@ -895,29 +1038,8 @@ class ProjectStore:
         return records
 
     def save_evidence(self, record: EvidenceRecord) -> None:
-        source_id, source_version_hash = self._source_snapshot_for_record(
-            record.source_uri, record.source_hash
-        )
-        metadata = {"stale": record.stale}
         with self.connect() as connection:
-            connection.execute(
-                "INSERT INTO evidence(evidence_id, source_id, locator, kind, summary, "
-                "maturity, metadata_json, source_version_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-                "ON CONFLICT(evidence_id) DO UPDATE SET source_id=excluded.source_id, "
-                "locator=excluded.locator, kind=excluded.kind, summary=excluded.summary, "
-                "maturity=excluded.maturity, metadata_json=excluded.metadata_json, "
-                "source_version_hash=excluded.source_version_hash",
-                (
-                    record.evidence_id,
-                    source_id,
-                    record.locator,
-                    record.kind,
-                    record.summary,
-                    record.maturity,
-                    json.dumps(metadata, sort_keys=True),
-                    source_version_hash,
-                ),
-            )
+            self._upsert_evidence_row(connection, record)
 
     def list_evidence(self, *, source_ids: list[str] | None = None) -> list[EvidenceRecord]:
         parameters: list[str] = []
