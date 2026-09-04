@@ -1,50 +1,56 @@
 # Architecture overview
 
 CFD-Paper-Agent keeps project state local and separates file discovery from scientific evidence
-qualification. In v0.2.0, the CLI coordinates source indexing, structured scientific records,
-evidence-bounded topic generation or author-supplied candidates, ranking, and explicit author
-approval.
+qualification. In v0.3.1, the public workflow connects mature structured CFD evidence to a bounded
+research direction, an approved quantity of interest (QoI), a discrete analysis, one reproducible
+figure, and one results paragraph.
 
 ```mermaid
 flowchart LR
     A[Mature CFD results or neutral exports] --> B[inspect]
-    B --> C[Local source index and staleness state]
-    C --> D[Structured scientific records]
-    D --> E[Evidence and claim-ceiling checks]
-    F[Author candidate file] --> G[plan]
-    E --> H[Generate 2–4 provisional candidates]
-    H --> G
-    G --> I[Ranked report and recoverable artifacts]
-    I --> J{Author review and approval}
-    J -. paused roadmap .-> K[analyze → figure → write]
+    B --> C[Local source index and stale state]
+    C --> D[Structured cases, observations, and checks]
+    D --> E[qualify comparison and candidate QoI]
+    E --> F[plan 2–4 provisional topics]
+    F --> G{Author selects topic}
+    G --> H{Author locks QoI}
+    H --> I[analyze observed discrete cases]
+    I --> J{Author accepts figure contract}
+    J --> K[figure package]
+    K --> L[write results paragraph]
+    L --> M{Author approves final artifact}
 ```
 
-`inspect` records relative source URIs, content identity, and stale/current state. It does not infer
-solver semantics or promote files to evidence. Structured case, boundary, QoI, convergence,
-conservation, and provenance records must be supplied through current Python contracts or an
-adapter that preserves their source locators.
+`inspect` records relative source locations and detects changed inputs. It does not infer solver
+semantics or treat file presence as scientific validation.
 
-`plan` performs a fast incremental reinspection. When an author candidate file is supplied, it is
-validated and ranked. Otherwise the planner discovers comparison and ordered-response
-opportunities from mature structured records, constructs two to four provisional candidates, and
-records supporting evidence, prohibited inferences, claim ceilings, and minimum missing data.
-Missing evidence is a valid result rather than a hidden success.
+`qualify` checks the declared comparison, case membership, units, source locations, convergence,
+conservation, verification, validation, and proposed QoI. The current public interface expects
+structured records and scalar observations rather than arbitrary native solver files.
 
-Offline generation is deterministic. Optional provider refinement may change bounded wording but
-cannot introduce evidence, alter numerical relations, or approve a topic. Candidate generation
-artifacts are committed atomically to the project-local `.cfdpaper` directory and reused only while
-their scientific inputs remain current.
+`plan` ranks an author candidate file or generates two to four provisional directions from mature
+records. Offline generation is deterministic. Optional provider refinement may improve bounded
+wording but cannot add evidence, alter numerical relations, or approve a topic.
+
+After author selection, the QoI is locked before `analyze` reads the declared discrete sequence.
+The analysis records trends and claim ceilings without interpolation, smoothing, or continuous
+optimization. `figure` packages source data, a runnable plotting script, editable and preview
+graphics, a caption, and focused QA results. `write` produces one results paragraph whose numbers
+link back to the analyzed records.
 
 ## Local components
 
 | Component | Responsibility | Boundary |
 |---|---|---|
-| Typer CLI | Expose current commands and non-zero roadmap placeholders | No unattended research decisions |
-| Project indexer | Discover files, cache bytes, and track staleness | No scientific evidence qualification |
-| SQLite store | Persist project, sources, evidence, QoI definitions, assessments, and checkpoints | Local state; author controls source data |
-| Topic generator | Discover bounded opportunities and construct provisional candidates | No evidence invention or automatic approval |
-| Planner | Rank generated or author-supplied candidates and write reports | Author approves the final direction |
+| Typer CLI | Coordinate the public workflow and report unavailable commands clearly | No unattended research decisions |
+| Project indexer | Discover files and track changed sources | No scientific evidence qualification |
+| SQLite store | Persist project state, sources, records, approvals, and checkpoints | Project-local state |
+| Topic planner | Propose and rank bounded research directions | Author selects the direction |
+| Scientific qualifier | Check comparability, evidence, QoI definition, and reporting limits | Missing evidence remains missing |
+| QoI analyzer | Evaluate declared scalar sequences and allowable trends | Observed discrete cases only |
+| Figure pipeline | Produce one evidence-linked figure package | No undeclared transformation or general field plotting |
+| Writing pipeline | Produce one numerically backlinked results paragraph | No complete manuscript or autonomous claim expansion |
 
-Analysis, figure generation, writing, review, revision, export, and general solver-native extraction
-are not delivered end to end in v0.2.0. Development pauses after this release until explicitly
-resumed. See the [public roadmap](../ROADMAP.md).
+Native Fluent and STAR-CCM+ extraction, general field analysis, multi-figure manuscript production,
+literature management, pre-submission review, reviewer-response workflows, and document export remain
+future work. See the [public roadmap](../ROADMAP.md) and [current limitations](../limitations.md).

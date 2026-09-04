@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfd-paper-agent"
-version = "0.3.0"
-description = "Author-in-the-loop planning from mature CFD evidence to defensible paper topics"
+version = "0.3.1"
+description = "Author-in-the-loop CFD evidence analysis, figure generation, and scientific writing"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"

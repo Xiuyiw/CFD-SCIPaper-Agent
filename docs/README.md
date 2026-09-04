@@ -6,6 +6,8 @@
   topic file.
 - [Generated-topic walkthrough](../examples/generated-topic/README.md): create mature synthetic
   records and generate evidence-bounded topic candidates.
+- [Evidence-to-figure walkthrough](../examples/steady_laminar_pipe/README.md): qualify a comparison,
+  analyze a QoI, produce a figure package, and write a numerically linked results paragraph.
 - [Architecture overview](architecture/overview.md): understand project state, evidence records,
   planning, and author approval.
 
@@ -18,6 +20,8 @@
 
 ## Releases
 
+- [v0.3.1](releases/v0.3.1.md)
+- [v0.3.0](releases/v0.3.0.md)
 - [v0.2.0](releases/v0.2.0.md)
 - [v0.1.0](releases/v0.1.0.md)
 

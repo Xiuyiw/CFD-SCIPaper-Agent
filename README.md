@@ -1,7 +1,12 @@
 # CFD-Paper-Agent
 
+[![CI](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Xiuyiw/CFD-SCIPaper-Agent)](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases/latest)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. Version 0.3.0 adds a complete evidence pathway:
+defensible paper topics, figures, and results prose. Version 0.3.1 provides the maintained v0.3
+evidence pathway:
 qualify a declared comparison, lock a quantity of interest (QoI), analyze discrete cases, render an
 evidence-bound figure, and write one numerically backlinked results paragraph.
 
@@ -20,7 +25,7 @@ the QoI and figure claim, and approve the final artifact.
 | Evidence writing | Available | One results paragraph with numeric backlinks and an author-approved reporting ceiling. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
-| Full-manuscript writing, literature management, review, revision, and document export | Roadmap | Not delivered by the v0.3.0 CLI. |
+| Full-manuscript writing, literature management, review, revision, and document export | Roadmap | Not delivered by the v0.3.1 CLI. |
 
 ## Installation
 
@@ -31,7 +36,7 @@ python -m pip install -e .
 cfdpaper --help
 ```
 
-## Reproducible v0.3.0 Quickstart
+## Reproducible v0.3.1 Quickstart
 
 Copy `examples/steady_laminar_pipe` to a writable directory and change into the copied directory.
 The example uses synthetic, non-sensitive data for fully developed laminar pipe flow.
@@ -123,7 +128,7 @@ automatically to verified scientific evidence.
 
 ## Explicit non-capabilities
 
-Version 0.3.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
+Version 0.3.1 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
 identify an operating optimum, write a complete manuscript, manage references, export submission
 documents, or submit to a journal. The `review`, `revise`, and `export` commands remain unavailable.
@@ -133,6 +138,8 @@ documents, or submit to a journal. The `review`, `revise`, and `export` commands
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.3.1 release notes](docs/releases/v0.3.1.md)
+- [v0.3.0 release notes](docs/releases/v0.3.0.md)
 - [v0.2.0 release notes](docs/releases/v0.2.0.md)
 - [v0.1.0 release notes](docs/releases/v0.1.0.md)
 - [Limitations](docs/limitations.md)
