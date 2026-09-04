@@ -48,7 +48,7 @@ def _vnv(label: str) -> VNVStatus:
     )
 
 
-def _inputs(root: Path):
+def _inputs(root: Path, coordinates: tuple[float, float, float] = (1.0, 2.0, 3.0)):
     observations = root / "observations.csv"
     observations.write_text(
         "case_id,flow_rate,pressure_drop\nC1,1,10\nC2,2,20\nC3,3,30\n",
@@ -65,7 +65,7 @@ def _inputs(root: Path):
             QoIValue(
                 result_id=f"result-{index}",
                 case_id=f"C{index}",
-                coordinate_value=float(index),
+                coordinate_value=coordinates[index - 1],
                 coordinate_unit="kg/s",
                 value=float(index * 10),
                 unit="Pa",
@@ -120,8 +120,8 @@ def _inputs(root: Path):
     return observations, contract, candidate, analysis, approval
 
 
-def _build(root: Path):
-    observations, contract, candidate, analysis, approval = _inputs(root)
+def _build(root: Path, coordinates: tuple[float, float, float] = (1.0, 2.0, 3.0)):
+    observations, contract, candidate, analysis, approval = _inputs(root, coordinates)
     before = _sha256(observations)
     delivery = build_figure_delivery(
         root=root,
@@ -132,6 +132,14 @@ def _build(root: Path):
     )
     assert _sha256(observations) == before
     return delivery, contract, candidate, analysis
+
+
+def test_small_decimal_coordinate_ticks_remain_inside_figure(tmp_path: Path) -> None:
+    delivery, _, _, _ = _build(tmp_path, (0.05, 0.10, 0.15))
+
+    visual = next(item for item in delivery.qa_results if item.dimension == "visual")
+    bounds = next(item for item in visual.computed_checks if item.check_id == "artist-bounds")
+    assert bounds.status == "pass"
 
 
 def _png_dimensions(path: Path) -> tuple[int, int]:

@@ -1,0 +1,9 @@
+{
+  "base": "project-records.json",
+  "replace": {
+    "pointer": "/convergence/1/observed_value",
+    "old": 2e-05,
+    "new": 0.002
+  },
+  "expected_effect": "The PIPE-U010 normalized pressure-drop monitor range exceeds its blocking threshold of 1.0e-4."
+}

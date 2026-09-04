@@ -5,16 +5,58 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from pydantic import ValidationError
 from rich.console import Console
 
 from cfdpaper.indexing import ProjectIndexer
 from cfdpaper.planning import PlanningError, run_plan
+from cfdpaper.qualification.guided import (
+    GuidedIntakeCancelled,
+    PromptAdapter,
+    build_guided_records,
+)
+from cfdpaper.qualification.records import write_guided_records
+from cfdpaper.qualification.service import (
+    ScientificEvidenceError,
+    StaleArtifactError,
+    WorkflowInputError,
+    approve_and_render_figure,
+    approve_final_artifact,
+    approve_qoi_contract,
+    run_analyze,
+    run_qualify,
+    run_write,
+)
 from cfdpaper.state import initialize_project, read_status
 from cfdpaper.storage import ProjectStore
 from cfdpaper.topic_generation.artifacts import generation_report_path
 
 app = typer.Typer(no_args_is_help=True, help="Author-in-the-loop CFD paper workflow")
 console = Console()
+
+
+class _TyperPromptAdapter(PromptAdapter):
+    def ask(self, key: str, message: str) -> str | None:
+        del key
+        return typer.prompt(message)
+
+
+def _workflow_error(error: Exception) -> None:
+    issue_code = getattr(error, "issue_code", None)
+    message = f"{issue_code}: {error}" if issue_code else str(error)
+    console.print(message, markup=False, soft_wrap=True)
+    if isinstance(error, StaleArtifactError):
+        raise typer.Exit(code=4) from error
+    if isinstance(error, ScientificEvidenceError):
+        raise typer.Exit(code=3) from error
+    if isinstance(
+        error,
+        (WorkflowInputError, GuidedIntakeCancelled, FileNotFoundError, ValidationError),
+    ):
+        raise typer.Exit(code=2) from error
+    if isinstance(error, ValueError):
+        raise typer.Exit(code=3) from error
+    raise typer.Exit(code=1) from error
 
 
 @app.command("init")
@@ -151,6 +193,124 @@ def plan_project(
     console.print(f"report {execution.report_path}", markup=False, soft_wrap=True)
 
 
+@app.command("qualify")
+def qualify_project(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    records: Annotated[Path | None, typer.Option("--records", dir_okay=False)] = None,
+    observations: Annotated[Path | None, typer.Option("--observations", dir_okay=False)] = None,
+    question: Annotated[Path | None, typer.Option("--question", dir_okay=False)] = None,
+    guided: Annotated[bool, typer.Option("--guided")] = False,
+    approve_contract: Annotated[str | None, typer.Option("--approve-qoi-contract")] = None,
+    author: Annotated[str | None, typer.Option("--author")] = None,
+) -> None:
+    """Qualify a scientific comparison and approve its QoI contract."""
+
+    try:
+        if (approve_contract is None) != (author is None):
+            raise WorkflowInputError(
+                "--approve-qoi-contract and --author must be supplied together."
+            )
+        if approve_contract is not None:
+            if records is not None or observations is not None or question is not None or guided:
+                raise WorkflowInputError(
+                    "Contract approval cannot be combined with intake options."
+                )
+            execution = approve_qoi_contract(
+                root, contract_id=approve_contract, author=author or ""
+            )
+            console.print(
+                f"QoI contract approved: {execution.locked_contract.candidate.qoi_contract_id}",
+                markup=False,
+            )
+            return
+        if guided and records is not None:
+            raise WorkflowInputError("Choose either --records or --guided, not both.")
+        if observations is None or question is None:
+            raise WorkflowInputError("--observations and --question are required for intake.")
+        if guided:
+            generated_records = build_guided_records(_TyperPromptAdapter())
+            records = root / ".cfdpaper" / "inputs" / "project-records.json"
+            write_guided_records(records, generated_records)
+        elif records is None:
+            raise WorkflowInputError("Choose --records or --guided for scientific intake.")
+        execution = run_qualify(
+            root,
+            records_path=records,
+            observations_path=observations,
+            question_path=question,
+        )
+    except Exception as error:
+        _workflow_error(error)
+    console.print(
+        f"Qualification {execution.report.status}; QoI candidate "
+        f"{execution.candidate.qoi_contract_id}",
+        markup=False,
+    )
+
+
+@app.command("analyze")
+def analyze_project(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+) -> None:
+    """Analyze the approved QoI over the declared discrete cases."""
+
+    try:
+        execution = run_analyze(root)
+    except Exception as error:
+        _workflow_error(error)
+    console.print(
+        f"Analysis complete: {execution.analysis.qoi_name}; "
+        f"ceiling={execution.ceiling.ceiling.value}; "
+        f"figure candidate={execution.candidate_figure.figure_id}",
+        markup=False,
+    )
+
+
+@app.command("figure")
+def figure_project(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    contract_id: Annotated[str, typer.Option("--approve-contract")],
+    author: Annotated[str, typer.Option("--author")],
+) -> None:
+    """Approve the current figure contract and render its evidence bundle."""
+
+    try:
+        execution = approve_and_render_figure(root, contract_id=contract_id, author=author)
+    except Exception as error:
+        _workflow_error(error)
+    console.print(
+        f"Figure ready: {execution.figure_delivery.contract.figure_id}",
+        markup=False,
+    )
+
+
+@app.command("write")
+def write_project(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    artifact: Annotated[str, typer.Option("--artifact")] = "results-paragraph",
+    approve_final: Annotated[bool, typer.Option("--approve-final")] = False,
+    author: Annotated[str | None, typer.Option("--author")] = None,
+) -> None:
+    """Write or approve the numerically backlinked results paragraph."""
+
+    try:
+        if approve_final:
+            if author is None:
+                raise WorkflowInputError("--approve-final requires --author.")
+            execution = approve_final_artifact(root, artifact=artifact, author=author)
+            console.print("Final results paragraph approved", markup=False)
+            return
+        if author is not None:
+            raise WorkflowInputError("--author is used only with --approve-final.")
+        execution = run_write(root, artifact=artifact)
+    except Exception as error:
+        _workflow_error(error)
+    console.print(
+        f"Results paragraph ready for {execution.paragraph_delivery.figure_id}",
+        markup=False,
+    )
+
+
 def _placeholder(name: str) -> None:
     console.print(f"{name}: not implemented in this milestone")
     raise typer.Exit(code=2)
@@ -165,9 +325,6 @@ def _placeholder_command(name: str) -> Callable[[], None]:
 
 
 for _command_name in (
-    "analyze",
-    "figure",
-    "write",
     "review",
     "revise",
     "export",

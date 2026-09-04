@@ -1,0 +1,4 @@
+case_id,coordinate_name,coordinate_value,coordinate_unit,variable,value,value_role,unit,scope,source_locator,aggregation,statistical_window,note
+PIPE-U005,mean_velocity,0.050,m/s,pressure_drop,16.0,precomputed-qoi,Pa,fully-developed-pressure-tap-span,observations.csv#row=2,,,Hagen-Poiseuille numerical-verification case; Re=500
+PIPE-U010,mean_velocity,0.100,m/s,pressure_drop,32.0,precomputed-qoi,rpm,fully-developed-pressure-tap-span,observations.csv#row=3,,,Hagen-Poiseuille numerical-verification case; Re=1000
+PIPE-U015,mean_velocity,0.150,m/s,pressure_drop,48.0,precomputed-qoi,Pa,fully-developed-pressure-tap-span,observations.csv#row=4,,,Hagen-Poiseuille numerical-verification case; Re=1500

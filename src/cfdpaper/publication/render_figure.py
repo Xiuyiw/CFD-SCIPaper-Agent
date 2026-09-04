@@ -280,6 +280,11 @@ def _script_text(figure_id: str) -> str:
             ax.set_ylabel(f'{{rows[0]["qoi_name"]}} ({{rows[0]["qoi_unit"]}})')
             ax.set_title(rows[0]["qoi_name"])
             ax.margins(x=0.08, y=0.18)
+            x_ticks = ax.get_xticks()
+            lower_ticks = [tick for tick in x_ticks if tick <= min(x_values)]
+            upper_ticks = [tick for tick in x_ticks if tick >= max(x_values)]
+            if lower_ticks and upper_ticks:
+                ax.set_xlim(max(lower_ticks), min(upper_ticks))
             ax.grid(True, which="major", color="#D9DEE5", linewidth=0.55, alpha=0.75)
             ax.set_axisbelow(True)
             legend = ax.legend(frameon=False, loc="best")

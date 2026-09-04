@@ -272,6 +272,15 @@ def _assessment_summary(record: DeclaredAssessment) -> str:
     )
 
 
+def _assessment_passed(record: DeclaredAssessment) -> bool:
+    return {
+        "<=": record.observed_value <= record.threshold_value,
+        "<": record.observed_value < record.threshold_value,
+        ">=": record.observed_value >= record.threshold_value,
+        ">": record.observed_value > record.threshold_value,
+    }[record.operator]
+
+
 def persist_guided_records(store: ProjectStore, records: GuidedRecords) -> None:
     """Map one strict envelope to existing records and commit it once."""
 
@@ -366,6 +375,7 @@ def persist_guided_records(store: ProjectStore, records: GuidedRecords) -> None:
                     f"Case {record.case_id} numerical verification: "
                     f"{record.verification_status}; basis: {record.verification_basis}."
                 ),
+                maturity=("verified" if record.verification_status == "demonstrated" else "raw"),
             )
             for record in validated.models
         ]
@@ -379,6 +389,7 @@ def persist_guided_records(store: ProjectStore, records: GuidedRecords) -> None:
                     f"Case {record.case_id} external validation: {record.validation_status}; "
                     f"basis: {record.validation_basis}."
                 ),
+                maturity=("verified" if record.validation_status == "demonstrated" else "raw"),
             )
             for record in validated.models
         ]
@@ -389,6 +400,7 @@ def persist_guided_records(store: ProjectStore, records: GuidedRecords) -> None:
                 locator=record.locator,
                 kind="convergence",
                 summary=_assessment_summary(record),
+                maturity="verified" if _assessment_passed(record) else "raw",
             )
             for record in validated.convergence
         ]
@@ -399,6 +411,7 @@ def persist_guided_records(store: ProjectStore, records: GuidedRecords) -> None:
                 locator=record.locator,
                 kind="conservation",
                 summary=_assessment_summary(record),
+                maturity="verified" if _assessment_passed(record) else "raw",
             )
             for record in validated.conservation
         ]
