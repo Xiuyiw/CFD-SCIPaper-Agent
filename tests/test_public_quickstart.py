@@ -89,7 +89,7 @@ def test_public_quickstart_sources_are_synthetic_and_path_independent() -> None:
             assert all(fragment not in text for fragment in forbidden_fragments)
 
 
-def test_public_docs_match_the_v030_capability_contract() -> None:
+def test_public_docs_match_the_v031_capability_contract() -> None:
     readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
     capability_section = readme.split("## Capability matrix", 1)[1].split("\n## ", 1)[0]
     state_cells = {
@@ -138,6 +138,8 @@ def test_public_docs_match_the_v030_capability_contract() -> None:
         "docs/README.md",
         "docs/architecture/overview.md",
         "docs/ROADMAP.md",
+        "docs/releases/v0.3.1.md",
+        "docs/releases/v0.3.0.md",
         "docs/releases/v0.2.0.md",
         "docs/releases/v0.1.0.md",
         "docs/limitations.md",
@@ -149,6 +151,7 @@ def test_public_docs_match_the_v030_capability_contract() -> None:
         assert (REPOSITORY_ROOT / target).is_file()
 
     changelog = (REPOSITORY_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [0.3.1] — 2026-09-04" in changelog
     assert "## [0.3.0] — 2026-09-04" in changelog
     assert "## [0.2.0] — 2026-08-31" in changelog
     assert "alpha" not in changelog.casefold()
@@ -156,7 +159,7 @@ def test_public_docs_match_the_v030_capability_contract() -> None:
     citation = yaml.safe_load((REPOSITORY_ROOT / "CITATION.cff").read_text(encoding="utf-8"))
     assert citation["cff-version"] == "1.2.0"
     assert citation["title"] == "CFD-Paper-Agent"
-    assert citation["version"] == "0.3.0"
+    assert citation["version"] == "0.3.1"
     assert citation["license"] == "Apache-2.0"
 
     workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -164,5 +167,6 @@ def test_public_docs_match_the_v030_capability_contract() -> None:
         assert operating_system in workflow
     for python_version in ('"3.10"', '"3.11"', '"3.12"'):
         assert python_version in workflow
-    assert "cfd-paper-agent-0.3.0-distributions" in workflow
+    assert "cfd-paper-agent-0.3.1-distributions" in workflow
+    assert "cfd-paper-agent-0.3.0-distributions" not in workflow
     assert "cfd-paper-agent-0.2.0-distributions" not in workflow

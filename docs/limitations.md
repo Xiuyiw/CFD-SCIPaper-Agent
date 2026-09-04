@@ -1,25 +1,33 @@
 # Limitations
 
-CFD-Paper-Agent v0.2.0 is not a CFD solver and does not validate a model merely because result
-files exist. It cannot replace domain expertise, experimental validation, source-literature
-verification, or author responsibility.
+CFD-Paper-Agent v0.3.1 is not a CFD solver and does not validate a model merely because result files
+exist. It cannot replace domain expertise, experimental validation, source-literature verification,
+or author responsibility.
 
-The public CLI supports `init`, `status`, `inspect`, and `plan`. `plan` can rank author-supplied
-candidates or generate provisional candidates when mature structured scientific records already
-exist. Inspection creates a source index, not verified scientific evidence, and v0.2.0 has no
-general CLI that converts arbitrary CFD or CSV files into complete case, boundary, convergence,
-conservation, QoI-definition, and QoI records.
+The public CLI supports `init`, `status`, `inspect`, `plan`, `qualify`, `analyze`, `figure`, and
+`write`. The implemented scientific path expects structured case records, located scalar
+observations, a declared comparison, and a proposed QoI. It does not convert arbitrary Fluent,
+STAR-CCM+, or other native solver files into complete scientific records. Guided intake is
+experimental and still requires the author to supply the scientific meaning of the data.
 
-Generated candidates are limited by current comparability, units, convergence, conservation,
-QoI definitions, provenance, and claim ceilings. Missing evidence yields a missing-data result;
-author approval cannot override a failed scientific gate. Generated JSON artifacts are recoverable
-project state, not a stable public interchange contract.
+Qualification can reject incomplete membership, unknown units, incompatible cases, missing source
+locations, or inadequate convergence, conservation, verification, and validation evidence. Passing
+these checks bounds what the software may report; it does not make a physical interpretation true.
 
-The `analyze` through `export` commands remain roadmap placeholders. They exit non-zero and do not
-produce completed workflow artifacts. Native Fluent, STAR-CCM+, or other solver integration is not
-a general v0.2.0 capability; optional adapters and provider interfaces remain extension points.
+Analysis is limited to the declared observations and discrete cases. The current release does not
+construct undeclared spatial or temporal integrals, infer missing values, smooth sparse cases,
+identify a continuous optimum, quantify a general uncertainty envelope, or perform general
+three-dimensional field analysis.
+
+Figure production delivers one evidence-bound panel with source data, a runnable Matplotlib script,
+SVG and PNG output, a caption, and focused QA records. It is not yet a general contour, profile,
+multi-panel, TIFF, or manuscript-assembly system. Writing produces one results paragraph with
+numeric backlinks; it does not yet create a full manuscript, manage literature, or export DOCX or
+LaTeX submission packages.
+
+The `review`, `revise`, and `export` commands remain unavailable. Reviewer-response work must be
+triggered by real reviewer comments, and journal submission remains an author action.
 
 Discrete CFD screening must not be presented as an experimental operating window, continuous
-optimum, safety boundary, or validation claim. Topic approval remains an author action and does
-not authorize manuscript production, journal submission, appeals, or external communication.
-
+optimum, safety boundary, or validation claim. Author approval selects a reporting direction within
+the available evidence; it cannot override missing or failed scientific support.

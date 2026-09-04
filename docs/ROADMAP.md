@@ -8,11 +8,28 @@ recorded here instead of being represented as already complete.
 
 ## Versioned delivery
 
-| Version | Public deliverable | Release condition |
+| Version | Public deliverable | Status |
 |---|---|---|
-| `v0.1.0` | Initial Public Preview: installable CLI, local project state, resumable inspection, and author-supplied topic ranking | Released 2026-08-30 |
-| `v0.2.0` | Automatic generation of 2–4 evidence-bounded topic candidates from mature structured records | Public positive example, fail-closed private challenge replays, CI, package, and release smoke pass |
-| `v0.3.0` | Paused; no active specification, branch, or implementation | Development resumes only after explicit author authorization |
+| `v0.1.0` | Installable CLI, local project state, resumable inspection, and author-supplied topic ranking | Released 2026-08-30 |
+| `v0.2.0` | Automatic generation of 2–4 evidence-bounded topic candidates from mature structured records | Released 2026-08-31 |
+| `v0.3.0` | Structured comparison qualification, discrete QoI analysis, one reproducible figure, and one numerically backlinked results paragraph | Released 2026-09-04 |
+| `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Current release |
+| Next capability release | One author-approved product bottleneck selected after the v0.3 workflow review | Specification pending |
+
+## Product direction
+
+Development follows the path from mature CFD results to an author-approved scientific paper:
+
+1. solver-neutral and solver-assisted result intake;
+2. scientific comparison, QoI, trend, uncertainty, and field analysis;
+3. publication figures and linked scientific writing;
+4. full paper structure and document export;
+5. pre-submission review and event-driven revision after real reviewer comments;
+6. heterogeneous validation across flow, heat-transfer, and multiphase projects.
+
+The next release will narrow this list to one primary user bottleneck before implementation. This
+keeps each public increment useful and testable without presenting the long-term system as already
+complete.
 
 ## Long-term maturity gates
 
@@ -25,8 +42,8 @@ recorded here instead of being represented as already complete.
 | 4 | Analysis, figures, writing and export | Claims remain evidence-linked and artifacts are real |
 | 5 | Pre-submission review and event-driven revision | No planned or synthetic change is reported as complete |
 | 6 | Three heterogeneous real-project validations | Zero hard scientific and cross-document errors |
-| 7 | Stable public package | CI, docs, examples, license and release audit pass |
+| 7 | Stable public package | CI, docs, examples, license and release checks pass |
 
-The versioned roadmap changes when functionality becomes public; it does not weaken the maturity
-gates. Development pauses after v0.2.0. Longer-term gates remain architectural context rather than
-an active backlog, and no v0.3.0 work begins without explicit author authorization.
+These maturity gates describe the route to a broadly reusable product. They do not imply that the
+current release already supports arbitrary solver files, complete manuscripts, or unattended
+research decisions.

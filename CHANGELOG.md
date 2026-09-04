@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-09-04
+
+### Fixed
+
+- Made CLI help assertions deterministic when continuous-integration terminals emit ANSI styling.
+- Corrected a line-ending-sensitive stale-source regression so Linux and Windows test the same
+  scientific-input change.
+- Updated release-package formatting and version checks so the wheel smoke test runs consistently
+  across the supported matrix.
+
+### Documentation
+
+- Aligned the README, architecture, limitations, roadmap, release notes, and documentation index
+  with the evidence-to-figure-and-paragraph workflow delivered in v0.3.
+
 ## [0.3.0] — 2026-09-04
 
 ### Added
