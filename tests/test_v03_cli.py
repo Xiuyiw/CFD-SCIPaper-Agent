@@ -60,6 +60,29 @@ def test_qualify_rejects_mixed_file_and_guided_intake(tmp_path: Path) -> None:
     assert "Traceback" not in result.stdout
 
 
+def test_qualify_maps_malformed_json_to_input_exit(tmp_path: Path) -> None:
+    initialize_project(tmp_path, "malformed-records")
+    records = tmp_path / "records.json"
+    records.write_text("{", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "qualify",
+            str(tmp_path),
+            "--records",
+            str(records),
+            "--observations",
+            str(tmp_path / "observations.csv"),
+            "--question",
+            str(tmp_path / "question.json"),
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "Traceback" not in result.stdout
+
+
 def test_review_remains_a_roadmap_command() -> None:
     result = runner.invoke(app, ["review"])
     assert result.exit_code == 2

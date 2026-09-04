@@ -7,6 +7,8 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
+import venv
 from pathlib import Path
 
 import pytest
@@ -27,15 +29,59 @@ def _copy_fixture(tmp_path: Path) -> Path:
     return project
 
 
-def _cli(project: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
+@pytest.fixture(scope="session")
+def installed_cli(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    environment = tmp_path_factory.mktemp("installed-cli")
+    wheelhouse = environment / "wheelhouse"
+    wheelhouse.mkdir()
+    built = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "wheel",
+            ".",
+            "--no-deps",
+            "--wheel-dir",
+            str(wheelhouse),
+        ],
+        cwd=REPOSITORY_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert built.returncode == 0, built.stdout + built.stderr
+    virtualenv = environment / "venv"
+    venv.EnvBuilder(with_pip=True, system_site_packages=True).create(virtualenv)
+    python = virtualenv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    site_packages = subprocess.run(
+        [str(python), "-c", "import site; print(site.getsitepackages()[0])"],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    Path(site_packages, "test-runtime-dependencies.pth").write_text(
+        str(sysconfig.get_paths()["purelib"]), encoding="utf-8"
+    )
+    wheel = next(wheelhouse.glob("*.whl"))
+    installed = subprocess.run(
+        [str(python), "-m", "pip", "install", "--no-deps", str(wheel)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert installed.returncode == 0, installed.stdout + installed.stderr
+    executable = virtualenv / ("Scripts/cfdpaper.exe" if os.name == "nt" else "bin/cfdpaper")
+    assert executable.is_file()
+    return executable
+
+
+def _cli(executable: Path, project: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
     environment["MPLBACKEND"] = "Agg"
-    prior_pythonpath = environment.get("PYTHONPATH")
-    environment["PYTHONPATH"] = os.pathsep.join(
-        item for item in (str(REPOSITORY_ROOT / "src"), prior_pythonpath) if item
-    )
+    environment.pop("PYTHONPATH", None)
     return subprocess.run(
-        [sys.executable, "-c", "from cfdpaper.cli import app; app()", *arguments],
+        [str(executable), *arguments],
         cwd=project,
         env=environment,
         text=True,
@@ -127,16 +173,19 @@ def test_public_fixture_is_physically_self_consistent() -> None:
         assert hashlib.sha256(source_path.read_bytes()).hexdigest() == source["sha256"]
 
 
-def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
+def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path, installed_cli: Path) -> None:
     project = _copy_fixture(tmp_path)
     oracle = _read_json(project / "oracle.json")
     assert isinstance(oracle, dict)
 
-    _assert_cli_ok(_cli(project, "init", str(project), "--project-id", "steady-laminar-pipe"))
-    _assert_cli_ok(_cli(project, "inspect", str(project)))
+    _assert_cli_ok(
+        _cli(installed_cli, project, "init", str(project), "--project-id", "steady-laminar-pipe")
+    )
+    _assert_cli_ok(_cli(installed_cli, project, "inspect", str(project)))
 
     _assert_cli_ok(
         _cli(
+            installed_cli,
             project,
             "qualify",
             str(project),
@@ -161,6 +210,7 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
 
     _assert_cli_ok(
         _cli(
+            installed_cli,
             project,
             "plan",
             str(project),
@@ -174,6 +224,7 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
     )
     _assert_cli_ok(
         _cli(
+            installed_cli,
             project,
             "qualify",
             str(project),
@@ -183,7 +234,7 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
             AUTHOR,
         )
     )
-    _assert_cli_ok(_cli(project, "analyze", str(project)))
+    _assert_cli_ok(_cli(installed_cli, project, "analyze", str(project)))
 
     analysis = _read_json(_output(project, "qualify", "qoi-results.json"))
     values = _find_key(analysis, "values")
@@ -200,6 +251,7 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
     figure_id = str(_find_key(figure_candidate, "figure_id"))
     _assert_cli_ok(
         _cli(
+            installed_cli,
             project,
             "figure",
             str(project),
@@ -230,7 +282,9 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
     assert (figure_dir / f"{figure_id}.svg").is_file()
     assert (figure_dir / f"{figure_id}.png").is_file()
 
-    _assert_cli_ok(_cli(project, "write", str(project), "--artifact", "results-paragraph"))
+    _assert_cli_ok(
+        _cli(installed_cli, project, "write", str(project), "--artifact", "results-paragraph")
+    )
     write_dir = project / ".cfdpaper" / "outputs" / "write"
     delivery = _read_json(write_dir / "delivery.json")
     paragraph = str(_find_key(delivery, "paragraph"))
@@ -247,6 +301,7 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
     }
     _assert_cli_ok(
         _cli(
+            installed_cli,
             project,
             "write",
             str(project),
@@ -278,11 +333,13 @@ def test_public_fixture_runs_complete_public_cli_chain(tmp_path: Path) -> None:
     ],
 )
 def test_public_fixture_rejects_one_defect_before_downstream_artifacts(
-    tmp_path: Path, variant: str, first_issue_code: str
+    tmp_path: Path, installed_cli: Path, variant: str, first_issue_code: str
 ) -> None:
     project = _copy_fixture(tmp_path)
-    _assert_cli_ok(_cli(project, "init", str(project), "--project-id", "negative-pipe"))
-    _assert_cli_ok(_cli(project, "inspect", str(project)))
+    _assert_cli_ok(
+        _cli(installed_cli, project, "init", str(project), "--project-id", "negative-pipe")
+    )
+    _assert_cli_ok(_cli(installed_cli, project, "inspect", str(project)))
 
     observations = project / "observations.csv"
     records = project / "project-records.json"
@@ -292,6 +349,7 @@ def test_public_fixture_rejects_one_defect_before_downstream_artifacts(
         records = _materialize_failed_convergence(project)
 
     result = _cli(
+        installed_cli,
         project,
         "qualify",
         str(project),
@@ -310,3 +368,95 @@ def test_public_fixture_rejects_one_defect_before_downstream_artifacts(
     assert not _output(project, "qualify", "qoi-results.json").exists()
     assert not (project / ".cfdpaper" / "outputs" / "figure").exists()
     assert not (project / ".cfdpaper" / "outputs" / "write").exists()
+
+
+@pytest.mark.parametrize(
+    "analysis_request", ("area integration", "smoothing", "continuous optimum")
+)
+def test_public_fixture_rejects_unsupported_analysis_requests(
+    tmp_path: Path, installed_cli: Path, analysis_request: str
+) -> None:
+    project = _copy_fixture(tmp_path)
+    question = _read_json(project / "question.json")
+    assert isinstance(question, dict)
+    proposal = question["proposal"]
+    assert isinstance(proposal, dict)
+    if analysis_request == "continuous optimum":
+        proposal["continuous_optimum"] = True
+    else:
+        proposal["operator"] = analysis_request.replace(" ", "-")
+    requested = project / "unsupported-question.json"
+    requested.write_text(json.dumps(question), encoding="utf-8")
+    _assert_cli_ok(
+        _cli(installed_cli, project, "init", str(project), "--project-id", "adversarial")
+    )
+    _assert_cli_ok(_cli(installed_cli, project, "inspect", str(project)))
+
+    result = _cli(
+        installed_cli,
+        project,
+        "qualify",
+        str(project),
+        "--records",
+        str(project / "project-records.json"),
+        "--observations",
+        str(project / "observations.csv"),
+        "--question",
+        str(requested),
+    )
+
+    assert result.returncode == 2
+    assert not _output(project, "qualify", "locked-qoi-contract.json").exists()
+    assert not _output(project, "qualify", "claim-ceiling.json").exists()
+    assert not (project / ".cfdpaper" / "outputs" / "figure").exists()
+    assert not (project / ".cfdpaper" / "outputs" / "write").exists()
+
+
+def test_public_fixture_rejects_author_override(tmp_path: Path, installed_cli: Path) -> None:
+    project = _copy_fixture(tmp_path)
+    _assert_cli_ok(_cli(installed_cli, project, "init", str(project), "--project-id", "author"))
+    _assert_cli_ok(_cli(installed_cli, project, "inspect", str(project)))
+    _assert_cli_ok(
+        _cli(
+            installed_cli,
+            project,
+            "qualify",
+            str(project),
+            "--records",
+            str(project / "project-records.json"),
+            "--observations",
+            str(project / "observations.csv"),
+            "--question",
+            str(project / "question.json"),
+        )
+    )
+    candidate = _read_json(_output(project, "qualify", "candidate-qoi-contract.json"))
+    contract_id = str(_find_key(candidate, "qoi_contract_id"))
+    _assert_cli_ok(
+        _cli(
+            installed_cli,
+            project,
+            "plan",
+            str(project),
+            "--candidates",
+            str(project / "topic-candidates.json"),
+            "--approve-topic",
+            TOPIC_ID,
+            "--author",
+            AUTHOR,
+        )
+    )
+
+    result = _cli(
+        installed_cli,
+        project,
+        "qualify",
+        str(project),
+        "--approve-qoi-contract",
+        contract_id,
+        "--author",
+        "Different Author",
+    )
+
+    assert result.returncode == 2
+    assert not _output(project, "qualify", "locked-qoi-contract.json").exists()

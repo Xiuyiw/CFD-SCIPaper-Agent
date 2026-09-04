@@ -24,7 +24,7 @@ undeclared spatial aggregate, or claim an optimum or operating boundary.
 ## Outputs
 
 - QoI results, claim ceiling, candidate figure contract, and paragraph duty under
-  `.cfdpaper/outputs/analyze/`.
+  `.cfdpaper/outputs/qualify/`.
 - A structured insufficient result without downstream artifacts when the evidence cannot support a
   numerical comparison.
 

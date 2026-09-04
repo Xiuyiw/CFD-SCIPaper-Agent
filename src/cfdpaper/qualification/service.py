@@ -13,11 +13,23 @@ from pydantic import BaseModel, ConfigDict
 from cfdpaper.contracts import StageResult
 from cfdpaper.planning import PlanApproval, PlanReport, run_plan
 from cfdpaper.publication.render_figure import FigureDelivery, build_figure_delivery
-from cfdpaper.publication.results_paragraph import render_results_paragraph
+from cfdpaper.publication.results_paragraph import (
+    ParagraphRenderError,
+    render_results_paragraph,
+)
+from cfdpaper.publication.results_paragraph import (
+    _validate_inputs as validate_results_paragraph_inputs,
+)
 from cfdpaper.storage import ProjectStore
 from cfdpaper.topic_generation.canonical import canonical_sha256
 
-from .artifacts import load_json_model, write_json_atomic
+from .artifacts import (
+    ArtifactInputMismatch,
+    load_json_model,
+    mark_json_artifacts_stale,
+    require_current_input,
+    write_json_atomic,
+)
 from .claims import (
     assess_v03_claim_ceiling,
     build_candidate_figure_contract,
@@ -272,15 +284,54 @@ def _input_paths(root: Path) -> tuple[Path, Path, Path, PlanApproval]:
 
 
 def _mark_stale(root: Path, dependency: str, rerun_command: str) -> None:
-    write_json_atomic(
+    mark_json_artifacts_stale(
         root,
-        "artifact-status.json",
-        {
-            "artifact_status": "stale",
-            "changed_dependency": dependency,
-            "rerun_command": rerun_command,
-        },
+        (
+            "qoi-results.json",
+            "claim-ceiling.json",
+            "candidate-figure-contract.json",
+            "paragraph-duty.json",
+            "figure-approval.json",
+            "figure-delivery.json",
+        ),
+        dependency=dependency,
+        rerun_command=rerun_command,
     )
+
+
+def _write_current_json(root: Path, artifact_name: str, value: Any) -> None:
+    write_json_atomic(root, artifact_name, value, artifact_status="current")
+
+
+def _require_current_sources(
+    store: ProjectStore,
+    records: GuidedRecords,
+    *,
+    ignore_paths: frozenset[Path] = frozenset(),
+) -> None:
+    for declared in records.sources:
+        try:
+            stored = store.get_source(declared.source_uri)
+        except KeyError as error:
+            raise StaleArtifactError("source files", f'cfdpaper inspect "{store.root}"') from error
+        source_path = Path(declared.source_uri)
+        if not source_path.is_absolute():
+            source_path = store.root / source_path
+        source_path = source_path.resolve()
+        if source_path in ignore_paths:
+            continue
+        try:
+            stat = source_path.stat()
+        except OSError as error:
+            raise StaleArtifactError("source files", f'cfdpaper inspect "{store.root}"') from error
+        if (
+            stored.stale
+            or stored.sha256 != declared.sha256
+            or stored.size_bytes != declared.size_bytes
+            or stat.st_size != stored.size_bytes
+            or stat.st_mtime_ns != stored.mtime_ns
+        ):
+            raise StaleArtifactError("source files", f'cfdpaper inspect "{store.root}"')
 
 
 def _qualify_rerun(root: Path) -> str:
@@ -315,6 +366,15 @@ def _current_material(
     root: Path,
 ) -> tuple[ObservationTable, QualificationReport, CandidateQoIContract, PlanApproval]:
     records_path, observations_path, question_path, approval = _input_paths(root)
+    try:
+        _require_current_sources(
+            ProjectStore.open(root),
+            load_guided_records(records_path),
+            ignore_paths=frozenset({observations_path.resolve()}),
+        )
+    except StaleArtifactError as error:
+        _mark_stale(root, error.dependency, error.rerun_command)
+        raise
     try:
         _, observations, _, report, candidate = _load_material(
             records_path, observations_path, question_path, approval.plan_fingerprint
@@ -356,6 +416,11 @@ def run_qualify(
     resolved_observations = Path(observations_path).resolve()
     resolved_question = Path(question_path).resolve()
     records = load_guided_records(resolved_records)
+    try:
+        _require_current_sources(store, records)
+    except StaleArtifactError as error:
+        _mark_stale(root, error.dependency, error.rerun_command)
+        raise
     persist_guided_records(store, records)
     plan = run_plan(root)
     records, _, _, report, candidate = _load_material(
@@ -364,8 +429,8 @@ def run_qualify(
         resolved_question,
         plan.report.plan_fingerprint,
     )
-    write_json_atomic(root, "qualification-report.json", report)
-    write_json_atomic(root, "candidate-qoi-contract.json", candidate)
+    _write_current_json(root, "qualification-report.json", report)
+    _write_current_json(root, "candidate-qoi-contract.json", candidate)
     outputs = {
         "records_path": str(resolved_records),
         "observations_path": str(resolved_observations),
@@ -386,6 +451,8 @@ def run_qualify(
 def approve_qoi_contract(root: Path, *, contract_id: str, author: str) -> QualificationExecution:
     root = Path(root).resolve()
     records_path, observations_path, question_path, topic_approval = _input_paths(root)
+    if author != topic_approval.author:
+        raise WorkflowInputError("The approving author must match the manuscript-topic approval.")
     _, observations, _, report, candidate = _load_material(
         records_path, observations_path, question_path, topic_approval.plan_fingerprint
     )
@@ -416,8 +483,8 @@ def approve_qoi_contract(root: Path, *, contract_id: str, author: str) -> Qualif
         author=author,
         approved_at=datetime.now(timezone.utc),
     )
-    write_json_atomic(root, "candidate-qoi-contract.json", candidate)
-    write_json_atomic(root, "locked-qoi-contract.json", locked)
+    _write_current_json(root, "candidate-qoi-contract.json", candidate)
+    _write_current_json(root, "locked-qoi-contract.json", locked)
     store = ProjectStore.open(root)
     outputs = _stage_outputs(store, "qualify")
     outputs["locked_contract"] = str(root / ".cfdpaper/outputs/qualify/locked-qoi-contract.json")
@@ -457,10 +524,10 @@ def run_analyze(root: Path) -> AnalysisExecution:
         figure_id="fig-1",
         author=locked.approval.author,
     )
-    write_json_atomic(root, "qoi-results.json", analysis)
-    write_json_atomic(root, "claim-ceiling.json", ceiling)
-    write_json_atomic(root, "candidate-figure-contract.json", candidate_figure)
-    write_json_atomic(root, "paragraph-duty.json", candidate_figure.paragraph_duty)
+    _write_current_json(root, "qoi-results.json", analysis)
+    _write_current_json(root, "claim-ceiling.json", ceiling)
+    _write_current_json(root, "candidate-figure-contract.json", candidate_figure)
+    _write_current_json(root, "paragraph-duty.json", candidate_figure.paragraph_duty)
     outputs = {
         "analysis": str(root / ".cfdpaper/outputs/qualify/qoi-results.json"),
         "ceiling": str(root / ".cfdpaper/outputs/qualify/claim-ceiling.json"),
@@ -507,8 +574,8 @@ def approve_and_render_figure(root: Path, *, contract_id: str, author: str) -> F
         analysis=analysis,
         approval=approval,
     )
-    write_json_atomic(root, "figure-approval.json", approval)
-    write_json_atomic(root, "figure-delivery.json", delivery)
+    _write_current_json(root, "figure-approval.json", approval)
+    _write_current_json(root, "figure-delivery.json", delivery)
     _save_transition(
         ProjectStore.open(root),
         stage="figure",
@@ -556,9 +623,33 @@ def approve_final_artifact(root: Path, *, artifact: str, author: str) -> Paragra
     topic_approval = _plan_approval(root)
     if author != topic_approval.author:
         raise WorkflowInputError("The approving author must match the manuscript-topic approval.")
-    _stage_outputs(ProjectStore.open(root), "write")
+    store = ProjectStore.open(root)
+    _stage_outputs(store, "write")
+    _, _, _, _ = _current_material(root)
+    analysis = load_json_model(root, "qoi-results.json", QoIAnalysis)
+    ceiling = load_json_model(root, "claim-ceiling.json", ClaimCeilingDecision)
+    candidate = load_json_model(root, "candidate-figure-contract.json", CandidateFigureContract)
+    figure_delivery = load_json_model(root, "figure-delivery.json", FigureDelivery)
     path = root / ".cfdpaper" / "outputs" / "write" / "delivery.json"
     paragraph = ParagraphDelivery.model_validate_json(path.read_bytes())
+    rerun = f'cfdpaper write "{root}" --artifact results-paragraph'
+    try:
+        require_current_input(
+            artifact_name="results paragraph",
+            consumed_fingerprint=paragraph.scientific_input_fingerprint,
+            current_fingerprint=analysis.scientific_input_fingerprint,
+            rerun_command=rerun,
+        )
+        validate_results_paragraph_inputs(
+            duty=candidate.paragraph_duty,
+            analysis=analysis,
+            ceiling=ceiling,
+            candidate=candidate,
+            figure_delivery=figure_delivery,
+        )
+    except (ArtifactInputMismatch, ParagraphRenderError) as error:
+        _mark_stale(root, "results paragraph", rerun)
+        raise StaleArtifactError("results paragraph", rerun) from error
     _save_transition(
         ProjectStore.open(root),
         stage="write",

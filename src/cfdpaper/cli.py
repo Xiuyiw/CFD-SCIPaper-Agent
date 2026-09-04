@@ -1,5 +1,6 @@
 """CFD-Paper-Agent command-line interface."""
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated
@@ -49,6 +50,8 @@ def _workflow_error(error: Exception) -> None:
         raise typer.Exit(code=4) from error
     if isinstance(error, ScientificEvidenceError):
         raise typer.Exit(code=3) from error
+    if isinstance(error, (json.JSONDecodeError, OSError, UnicodeError)):
+        raise typer.Exit(code=2) from error
     if isinstance(
         error,
         (WorkflowInputError, GuidedIntakeCancelled, FileNotFoundError, ValidationError),

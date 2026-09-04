@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import re
 import shutil
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -21,6 +22,7 @@ class ArtifactInputMismatch(ValueError):
 
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
+ArtifactStatus = Literal["current", "stale"]
 _OUTPUT_PARTS = (".cfdpaper", "outputs", "qualify")
 _FIGURE_OUTPUT_PARTS = (".cfdpaper", "outputs", "figure")
 _WRITE_OUTPUT_PARTS = (".cfdpaper", "outputs", "write")
@@ -193,12 +195,19 @@ def write_json_atomic(
     artifact_name: str,
     value: Any,
     *,
+    artifact_status: ArtifactStatus | None = None,
     _fail_before_replace: bool = False,
 ) -> Path:
     """Write one validated qualification artifact without exposing partial bytes."""
 
     name = qualify_artifact_path(project_root, artifact_name).name
-    content = canonical_bytes(value)
+    payload = value
+    if artifact_status is not None:
+        payload = json.loads(canonical_bytes(value))
+        if not isinstance(payload, dict):
+            raise ValueError("artifact status requires a JSON object")
+        payload["artifact_status"] = artifact_status
+    content = canonical_bytes(payload)
     destination = _validated_output_dir(project_root, create=True) / name
     temporary = destination.with_name(f".{destination.name}.{uuid4().hex}.tmp")
     try:
@@ -224,12 +233,58 @@ def load_json_model(
 
     name = qualify_artifact_path(project_root, artifact_name).name
     path = _validated_output_dir(project_root, create=False) / name
-    loaded = model_type.model_validate_json(path.read_bytes())
+    payload = json.loads(path.read_bytes())
+    if isinstance(payload, dict) and payload.get("artifact_status") == "stale":
+        raise ArtifactInputMismatch(f"artifact is stale: {artifact_name}")
+    if isinstance(payload, dict):
+        payload.pop("artifact_status", None)
+        payload.pop("stale_dependency", None)
+        payload.pop("rerun_command", None)
+    loaded = model_type.model_validate(payload)
     if expected_source_sha256 is not None:
         actual = getattr(loaded, "source_sha256", None)
         if actual != expected_source_sha256:
             raise ArtifactInputMismatch("artifact source hash does not match current source hash")
     return loaded
+
+
+def mark_json_artifacts_stale(
+    project_root: Path,
+    artifact_names: tuple[str, ...],
+    *,
+    dependency: str,
+    rerun_command: str,
+) -> None:
+    """Mark existing generated JSON envelopes stale without a sidecar registry."""
+
+    for artifact_name in artifact_names:
+        path = qualify_artifact_path(project_root, artifact_name)
+        if not path.is_file():
+            continue
+        payload = json.loads(path.read_bytes())
+        if not isinstance(payload, dict):
+            continue
+        payload.update(
+            {
+                "artifact_status": "stale",
+                "stale_dependency": dependency,
+                "rerun_command": rerun_command,
+            }
+        )
+        write_json_atomic(project_root, artifact_name, payload)
+
+
+def require_current_input(
+    *,
+    artifact_name: str,
+    consumed_fingerprint: str,
+    current_fingerprint: str,
+    rerun_command: str,
+) -> None:
+    """Reject one derived artifact whose consumed scientific input has changed."""
+
+    if consumed_fingerprint != current_fingerprint:
+        raise ArtifactInputMismatch(f"{artifact_name} is stale; rerun `{rerun_command}` first")
 
 
 def scientific_input_fingerprint(

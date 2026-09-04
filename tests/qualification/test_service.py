@@ -202,8 +202,8 @@ def _initialize_project(root: Path) -> None:
 
 
 def test_service_runs_three_checkpoint_evidence_workflow(tmp_path: Path) -> None:
-    _initialize_project(tmp_path)
     records, observations, question = _write_inputs(tmp_path)
+    _initialize_project(tmp_path)
 
     qualified = run_qualify(
         tmp_path,
