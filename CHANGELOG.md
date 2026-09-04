@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Updated the GitHub Actions checkout, Python setup, and artifact upload steps to their Node.js 24
+  releases.
+
 ## [0.3.1] — 2026-09-04
 
 ### Fixed
