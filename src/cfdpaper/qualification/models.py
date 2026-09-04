@@ -625,12 +625,22 @@ class CandidateFigurePanel(QualificationModel):
         return self
 
 
+NumericFormatMode = Literal["significant-figures", "decimal-places"]
+
+
+class NumericFormattingRule(QualificationModel):
+    mode: NumericFormatMode = "significant-figures"
+    digits: int = Field(default=3, ge=1, le=15)
+
+
 class ParagraphDuty(QualificationModel):
     claim_id: str
     duty: str
     evidence_ids: tuple[str, ...]
     numeric_backlink_ids: tuple[str, ...]
     prohibited_inferences: tuple[str, ...]
+    formatting_rule: NumericFormattingRule = Field(default_factory=NumericFormattingRule)
+    approved_interpretation: str | None = None
 
     @field_validator("claim_id", "duty")
     @classmethod
@@ -638,6 +648,67 @@ class ParagraphDuty(QualificationModel):
         stripped = value.strip()
         if not stripped:
             raise ValueError("paragraph duty text must be nonblank")
+        return stripped
+
+    @field_validator("approved_interpretation")
+    @classmethod
+    def interpretation_is_nonblank(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("approved interpretation must be nonblank")
+        return stripped
+
+
+class NumericBacklink(QualificationModel):
+    backlink_id: str
+    case_id: str
+    raw_value: float
+    rendered_value: str
+    unit: str
+    qoi_result_id: str
+    evidence_id: str
+    source_locator: str
+    formatting_rule: NumericFormattingRule
+
+    @field_validator(
+        "backlink_id",
+        "case_id",
+        "rendered_value",
+        "unit",
+        "qoi_result_id",
+        "evidence_id",
+        "source_locator",
+    )
+    @classmethod
+    def backlink_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("numeric backlink text must be nonblank")
+        return stripped
+
+    @field_validator("raw_value")
+    @classmethod
+    def backlink_value_is_finite(cls, value: float) -> float:
+        if not math.isfinite(value):
+            raise ValueError("numeric backlink value must be finite")
+        return value
+
+
+class ParagraphDelivery(QualificationModel):
+    paragraph: str
+    figure_id: str
+    ceiling: V03ClaimCeiling
+    scientific_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    backlinks: tuple[NumericBacklink, ...]
+
+    @field_validator("paragraph", "figure_id")
+    @classmethod
+    def delivery_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("paragraph delivery text must be nonblank")
         return stripped
 
 

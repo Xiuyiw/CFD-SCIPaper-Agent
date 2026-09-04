@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 from typing import Any, TypeVar
 from uuid import uuid4
@@ -22,6 +23,10 @@ class ArtifactInputMismatch(ValueError):
 ModelT = TypeVar("ModelT", bound=BaseModel)
 _OUTPUT_PARTS = (".cfdpaper", "outputs", "qualify")
 _FIGURE_OUTPUT_PARTS = (".cfdpaper", "outputs", "figure")
+_WRITE_OUTPUT_PARTS = (".cfdpaper", "outputs", "write")
+_WRITE_ARTIFACT_NAMES = frozenset(
+    {"results-paragraph.txt", "numeric-backlinks.json", "delivery.json"}
+)
 
 
 def qualify_output_dir(project_root: Path) -> Path:
@@ -46,6 +51,84 @@ def figure_output_dir(project_root: Path, figure_id: str, *, create: bool = Fals
     if resolved != expected:
         raise ValueError("path escapes the figure output directory")
     return resolved
+
+
+def write_output_dir(project_root: Path, *, create: bool = False) -> Path:
+    """Return the deterministic V0.3 results-paragraph output directory."""
+
+    root = Path(project_root).resolve()
+    expected = root.joinpath(*_WRITE_OUTPUT_PARTS)
+    if create:
+        expected.mkdir(parents=True, exist_ok=True)
+    resolved = expected.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError("path escapes the write output directory") from error
+    if resolved != expected:
+        raise ValueError("path escapes the write output directory")
+    return resolved
+
+
+def write_output_artifact_atomic(
+    project_root: Path,
+    artifact_name: str,
+    content: bytes,
+) -> Path:
+    """Atomically replace one of the three V0.3 paragraph-delivery artifacts."""
+
+    name = artifact_name.strip()
+    if name not in _WRITE_ARTIFACT_NAMES:
+        raise ValueError("unsupported write artifact name")
+    destination = write_output_dir(project_root, create=True) / name
+    temporary = destination.with_name(f".{destination.name}.{uuid4().hex}.tmp")
+    try:
+        with temporary.open("xb") as stream:
+            stream.write(content)
+            stream.flush()
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return destination
+
+
+def _write_staged_artifact(path: Path, content: bytes) -> None:
+    with path.open("xb") as stream:
+        stream.write(content)
+        stream.flush()
+
+
+def write_output_bundle_atomic(
+    project_root: Path,
+    artifacts: dict[str, bytes],
+) -> Path:
+    """Publish the complete paragraph delivery with one directory swap."""
+
+    if set(artifacts) != _WRITE_ARTIFACT_NAMES:
+        raise ValueError("write bundle must contain exactly the three delivery artifacts")
+    destination = write_output_dir(project_root)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    token = uuid4().hex
+    staging = destination.with_name(f".{destination.name}.{token}.stage")
+    backup = destination.with_name(f".{destination.name}.{token}.backup")
+    staging.mkdir()
+    try:
+        for name in sorted(_WRITE_ARTIFACT_NAMES):
+            _write_staged_artifact(staging / name, artifacts[name])
+        had_previous = destination.exists()
+        if had_previous:
+            destination.replace(backup)
+        try:
+            staging.replace(destination)
+        except BaseException:
+            if had_previous and backup.exists():
+                backup.replace(destination)
+            raise
+        if backup.exists():
+            shutil.rmtree(backup, ignore_errors=True)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    return destination
 
 
 def _validated_output_dir(project_root: Path, *, create: bool) -> Path:
