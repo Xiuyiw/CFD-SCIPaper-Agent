@@ -74,7 +74,7 @@ def test_changed_observation_marks_outputs_stale_and_restores_deterministically(
     _, observations, _ = _locked_project(tmp_path)
     original = observations.read_bytes()
     observations.write_text(
-        observations.read_text(encoding="utf-8").replace(",48,", ",49,"),
+        observations.read_text(encoding="utf-8").replace(",48.0,", ",49.0,"),
         encoding="utf-8",
     )
 

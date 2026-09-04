@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -16,7 +17,7 @@ def test_v03_delivered_commands_have_real_help() -> None:
         assert result.exit_code == 0
         assert "not implemented" not in result.stdout
 
-    help_text = runner.invoke(app, ["qualify", "--help"]).stdout
+    help_text = re.sub(r"\x1b\[[0-9;]*m", "", runner.invoke(app, ["qualify", "--help"]).stdout)
     for option in (
         "--records",
         "--observations",
