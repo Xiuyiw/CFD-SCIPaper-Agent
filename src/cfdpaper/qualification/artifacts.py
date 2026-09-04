@@ -65,6 +65,18 @@ def qoi_results_path(project_root: Path) -> Path:
     return qualify_artifact_path(project_root, "qoi-results.json")
 
 
+def claim_ceiling_path(project_root: Path) -> Path:
+    return qualify_artifact_path(project_root, "claim-ceiling.json")
+
+
+def candidate_figure_contract_path(project_root: Path) -> Path:
+    return qualify_artifact_path(project_root, "candidate-figure-contract.json")
+
+
+def paragraph_duty_path(project_root: Path) -> Path:
+    return qualify_artifact_path(project_root, "paragraph-duty.json")
+
+
 def canonical_bytes(value: Any) -> bytes:
     """Return the repository's canonical compact JSON representation."""
 

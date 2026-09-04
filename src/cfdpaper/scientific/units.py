@@ -31,6 +31,7 @@ _UNITS = {
     "cm": _Unit("length", 1e-2),
     "s": _Unit("time"),
     "m/s": _Unit("velocity"),
+    "g/s": _Unit("mass-flow", 1e-3),
     "kg/s": _Unit("mass-flow"),
     "w": _Unit("power"),
     "kw": _Unit("power", 1e3),

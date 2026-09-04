@@ -9,6 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from cfdpaper.topic_generation.canonical import canonical_sha256
+
 
 class QualificationModel(BaseModel):
     """Frozen internal model; public contracts remain controller-owned."""
@@ -238,6 +240,7 @@ class VNVStatus(QualificationModel):
     basis: str | None = None
     source_locator: str | None = None
     comparison_exemption: bool = False
+    intended_use_supported: bool = False
 
     @field_validator("summary")
     @classmethod
@@ -278,6 +281,8 @@ class VNVStatus(QualificationModel):
             self.evidence_ids and self.basis and self.source_locator
         ):
             raise ValueError(f"{self.state} V&V status requires located evidence")
+        if self.intended_use_supported and self.state != "demonstrated":
+            raise ValueError("intended-use support requires demonstrated V&V")
         return self
 
 
@@ -500,18 +505,23 @@ class QoIValue(QualificationModel):
 
 class QoIAnalysis(QualificationModel):
     qoi_contract_id: str
+    qoi_name: str
+    scientific_definition: str
+    coordinate_name: str
+    qualification_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
     scientific_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
     values: tuple[QoIValue, ...]
     overall_change: float | None
     trend: DiscreteTrend | None
     restrictions: tuple[str, ...]
+    quantitative_reporting_allowed: bool
 
-    @field_validator("qoi_contract_id")
+    @field_validator("qoi_contract_id", "qoi_name", "scientific_definition", "coordinate_name")
     @classmethod
-    def analysis_id_is_nonblank(cls, value: str) -> str:
+    def analysis_text_is_nonblank(cls, value: str) -> str:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("qoi_contract_id must be nonblank")
+            raise ValueError("analysis text must be nonblank")
         return stripped
 
     @field_validator("overall_change")
@@ -520,3 +530,164 @@ class QoIAnalysis(QualificationModel):
         if value is not None and not math.isfinite(value):
             raise ValueError("overall change must be finite")
         return value
+
+
+class V03ClaimCeiling(str, Enum):
+    NO_NUMERICAL_CLAIM = "no-numerical-claim"
+    DIRECTIONAL_COMPARISON = "directional-comparison"
+    QUALIFIED_NUMERICAL_OBSERVATION = "qualified-numerical-observation"
+    SUPPORTED_PHYSICAL_INTERPRETATION = "supported-physical-interpretation"
+
+
+class ClaimCeilingDecision(QualificationModel):
+    ceiling: V03ClaimCeiling
+    reasons: tuple[str, ...]
+    allowed_sentence_duties: tuple[str, ...]
+    quantitative_reporting_allowed: bool
+    qualification_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    analysis_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    scientific_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @field_validator("reasons", "allowed_sentence_duties")
+    @classmethod
+    def decision_text_is_nonblank_and_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(item.strip() for item in value)
+        if not normalized or any(not item for item in normalized):
+            raise ValueError("claim-ceiling text must be nonblank")
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("claim-ceiling text must be unique")
+        return normalized
+
+    @model_validator(mode="after")
+    def quantitative_flag_matches_ceiling(self) -> ClaimCeilingDecision:
+        numerical = self.ceiling in {
+            V03ClaimCeiling.QUALIFIED_NUMERICAL_OBSERVATION,
+            V03ClaimCeiling.SUPPORTED_PHYSICAL_INTERPRETATION,
+        }
+        if self.quantitative_reporting_allowed != numerical:
+            raise ValueError("quantitative reporting flag must match the claim ceiling")
+        payload = self.model_dump(mode="python", exclude={"fingerprint"})
+        expected = canonical_sha256(payload, domain=b"cfdpaper-v03-claim-ceiling-decision")
+        if self.fingerprint != expected:
+            raise ValueError("claim-ceiling fingerprint must match its canonical content")
+        return self
+
+
+class BoundedClaim(QualificationModel):
+    claim_id: str
+    text: str
+    ceiling: V03ClaimCeiling
+    evidence_ids: tuple[str, ...]
+    numeric_backlink_ids: tuple[str, ...]
+
+    @field_validator("claim_id", "text")
+    @classmethod
+    def bounded_claim_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("bounded claim text must be nonblank")
+        return stripped
+
+
+class CandidateFigurePanel(QualificationModel):
+    panel_id: str
+    encoding: Literal["discrete-marker-line"] = "discrete-marker-line"
+    x_variable: str
+    x_unit: str
+    x_values: tuple[float, ...]
+    y_variable: str
+    y_definition: str
+    y_unit: str
+    case_order: tuple[str, ...]
+
+    @field_validator("panel_id", "x_variable", "x_unit", "y_variable", "y_definition", "y_unit")
+    @classmethod
+    def panel_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("panel text must be nonblank")
+        return stripped
+
+    @field_validator("x_values")
+    @classmethod
+    def panel_coordinates_are_finite(cls, value: tuple[float, ...]) -> tuple[float, ...]:
+        if not value or any(not math.isfinite(item) for item in value):
+            raise ValueError("panel coordinates must be finite and nonempty")
+        return value
+
+    @model_validator(mode="after")
+    def panel_membership_is_exact(self) -> CandidateFigurePanel:
+        if not self.case_order or len(self.case_order) != len(self.x_values):
+            raise ValueError("panel cases and coordinates must be nonempty and aligned")
+        if len(set(self.case_order)) != len(self.case_order):
+            raise ValueError("panel case order must be unique")
+        return self
+
+
+class ParagraphDuty(QualificationModel):
+    claim_id: str
+    duty: str
+    evidence_ids: tuple[str, ...]
+    numeric_backlink_ids: tuple[str, ...]
+    prohibited_inferences: tuple[str, ...]
+
+    @field_validator("claim_id", "duty")
+    @classmethod
+    def paragraph_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("paragraph duty text must be nonblank")
+        return stripped
+
+
+class CandidateFigureContract(QualificationModel):
+    figure_id: str
+    qualification_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    analysis_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    scientific_input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    claim_ceiling_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    author: str
+    primary_claim: BoundedClaim
+    evidence_ids: tuple[str, ...]
+    numeric_backlink_ids: tuple[str, ...]
+    panels: tuple[CandidateFigurePanel, ...]
+    paragraph_duty: ParagraphDuty
+    caption_duty: str
+    prohibited_inferences: tuple[str, ...]
+    fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    status: Literal["candidate"] = "candidate"
+
+    @field_validator("figure_id", "author", "caption_duty")
+    @classmethod
+    def candidate_figure_text_is_nonblank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("candidate figure text must be nonblank")
+        return stripped
+
+    @model_validator(mode="after")
+    def candidate_is_one_discrete_bounded_panel(self) -> CandidateFigureContract:
+        if len(self.panels) != 1:
+            raise ValueError("V0.3 candidate figure requires exactly one panel")
+        required = {
+            "interpolation",
+            "continuous optimum",
+            "stability boundary",
+            "unsampled prediction",
+        }
+        if set(self.prohibited_inferences) != required:
+            raise ValueError("candidate figure must retain all prohibited inferences")
+        if self.primary_claim.evidence_ids != self.evidence_ids:
+            raise ValueError("primary claim evidence must match the figure evidence")
+        if self.primary_claim.numeric_backlink_ids != self.numeric_backlink_ids:
+            raise ValueError("primary claim backlinks must match the figure backlinks")
+        if self.paragraph_duty.claim_id != self.primary_claim.claim_id:
+            raise ValueError("paragraph duty must target the primary claim")
+        if self.paragraph_duty.evidence_ids != self.evidence_ids:
+            raise ValueError("paragraph duty evidence must match the candidate")
+        if self.paragraph_duty.numeric_backlink_ids != self.numeric_backlink_ids:
+            raise ValueError("paragraph duty backlinks must match the candidate")
+        if self.paragraph_duty.prohibited_inferences != self.prohibited_inferences:
+            raise ValueError("paragraph duty prohibited inferences must match the candidate")
+        return self

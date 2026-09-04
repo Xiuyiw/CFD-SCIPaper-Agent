@@ -343,11 +343,17 @@ def analyze_qoi(
     trend = _trend(candidate, evaluated)
 
     values: list[QoIValue] = []
+    coordinate_unit = candidate.expected_members[0].coordinate_unit
     for index, (member, value) in enumerate(
         zip(candidate.expected_members, evaluated, strict=True), start=1
     ):
         rows = tuple(group[index - 1] for group in operand_rows)
         locators = tuple(row.source_locator for row in rows)
+        coordinate_value = convert_value(
+            member.coordinate_value,
+            member.coordinate_unit,
+            coordinate_unit,
+        )
         evidence_id = canonical_sha256(
             {"source_sha256": observations.source_sha256, "locators": locators},
             domain=b"cfdpaper-v03-qoi-evidence",
@@ -356,7 +362,7 @@ def analyze_qoi(
             {
                 "qoi_contract_id": candidate.qoi_contract_id,
                 "case_id": member.case_id,
-                "coordinate": (member.coordinate_value, member.coordinate_unit),
+                "coordinate": (coordinate_value, coordinate_unit),
             },
             domain=b"cfdpaper-v03-qoi-result",
         )
@@ -364,8 +370,8 @@ def analyze_qoi(
             QoIValue(
                 result_id=f"qoi-result-{result_id[:16]}",
                 case_id=member.case_id,
-                coordinate_value=member.coordinate_value,
-                coordinate_unit=member.coordinate_unit,
+                coordinate_value=coordinate_value,
+                coordinate_unit=coordinate_unit,
                 value=value,
                 unit=candidate.output_unit,
                 evidence_id=f"observation-{evidence_id[:16]}",
@@ -374,9 +380,14 @@ def analyze_qoi(
         )
     return QoIAnalysis(
         qoi_contract_id=candidate.qoi_contract_id,
+        qoi_name=candidate.qoi_name,
+        scientific_definition=candidate.scientific_definition,
+        coordinate_name=candidate.expected_members[0].coordinate_name,
+        qualification_input_fingerprint=qualification.input_fingerprint,
         scientific_input_fingerprint=contract.scientific_input_fingerprint,
         values=tuple(values),
         overall_change=evaluated[-1] - evaluated[0],
         trend=trend,
         restrictions=qualification.restrictions,
+        quantitative_reporting_allowed=candidate.allow_quantitative_reporting,
     )

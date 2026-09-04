@@ -15,6 +15,10 @@ from cfdpaper.qualification.artifacts import (
     scientific_input_fingerprint,
     write_json_atomic,
 )
+from cfdpaper.qualification.claims import (
+    assess_v03_claim_ceiling,
+    build_candidate_figure_contract,
+)
 from cfdpaper.qualification.comparison import propose_qoi_contract, qualify_comparison
 from cfdpaper.qualification.models import (
     AuthorApproval,
@@ -166,6 +170,7 @@ def _candidate(
     trend_tolerance: float = 0.0,
     qualification_status: str = "eligible",
     expected_members: tuple[ExpectedMember, ...] | None = None,
+    allow_quantitative_reporting: bool = True,
 ) -> tuple[CandidateQoIContract, object]:
     proposal = QoIProposal(
         qoi_name="pressure response",
@@ -186,6 +191,7 @@ def _candidate(
         expected_members=expected_members or _members(table),
         trend_tolerance=trend_tolerance,
         reference_member=reference_member,
+        allow_quantitative_reporting=allow_quantitative_reporting,
     )
     report = _qualification(table, status=qualification_status)
     return (
@@ -315,6 +321,70 @@ def test_identity_converts_units_and_preserves_nonuniform_coordinates() -> None:
     assert all(item.unit == "kPa" for item in result.values)
     assert result.overall_change == pytest.approx(3.0)
     assert result.trend == DiscreteTrend.MONOTONIC_INCREASING
+
+
+def test_analysis_preserves_locked_reporting_and_axis_semantics() -> None:
+    table = _table()
+    candidate, report = _candidate(table, allow_quantitative_reporting=False)
+
+    result = analyze_qoi(_lock(candidate), table, report)
+
+    assert result.quantitative_reporting_allowed is False
+    assert result.coordinate_name == "flow_rate"
+    assert result.qoi_name == "pressure response"
+    assert result.scientific_definition == "declared pressure response over the complete sequence"
+
+
+def test_analysis_normalizes_compatible_coordinate_units_without_interpolation() -> None:
+    table = _table()
+    members = (
+        ExpectedMember(
+            case_id="C1",
+            coordinate_name="flow_rate",
+            coordinate_value=0.2,
+            coordinate_unit="kg/s",
+            variable="pressure_drop",
+            unit="Pa",
+            scope="inlet-to-outlet",
+        ),
+        ExpectedMember(
+            case_id="C2",
+            coordinate_name="flow_rate",
+            coordinate_value=500.0,
+            coordinate_unit="g/s",
+            variable="pressure_drop",
+            unit="Pa",
+            scope="inlet-to-outlet",
+        ),
+        ExpectedMember(
+            case_id="C3",
+            coordinate_name="flow_rate",
+            coordinate_value=1.1,
+            coordinate_unit="kg/s",
+            variable="pressure_drop",
+            unit="Pa",
+            scope="inlet-to-outlet",
+        ),
+    )
+    candidate, report = _candidate(table, expected_members=members)
+
+    result = analyze_qoi(_lock(candidate), table, report)
+
+    assert tuple(value.coordinate_value for value in result.values) == (0.2, 0.5, 1.1)
+    assert {value.coordinate_unit for value in result.values} == {"kg/s"}
+    assert tuple(value.case_id for value in result.values) == ("C1", "C2", "C3")
+
+    decision = assess_v03_claim_ceiling(report, result)
+    figure = build_candidate_figure_contract(
+        analysis=result,
+        qualification=report,
+        ceiling=decision,
+        figure_id="fig-compatible-coordinate-units",
+        author="A. Author",
+    )
+
+    assert figure.panels[0].x_values == (0.2, 0.5, 1.1)
+    assert figure.panels[0].x_unit == "kg/s"
 
 
 def test_difference_uses_two_named_scalar_roles_after_unit_conversion() -> None:
@@ -704,7 +774,7 @@ def test_trend_tolerance_must_be_explicit_finite_and_nonnegative(bad: float) -> 
 
 def test_checkpoint_one_artifacts_are_distinct_and_strictly_reloadable(tmp_path: Path) -> None:
     table = _table()
-    candidate, _ = _candidate(table)
+    candidate, report = _candidate(table)
     candidate_path = write_json_atomic(
         tmp_path, candidate_qoi_contract_path(tmp_path).name, candidate
     )
@@ -712,11 +782,16 @@ def test_checkpoint_one_artifacts_are_distinct_and_strictly_reloadable(tmp_path:
     locked = _lock(candidate)
     analysis = QoIAnalysis(
         qoi_contract_id=candidate.qoi_contract_id,
+        qoi_name=candidate.qoi_name,
+        scientific_definition=candidate.scientific_definition,
+        coordinate_name=candidate.expected_members[0].coordinate_name,
+        qualification_input_fingerprint=report.input_fingerprint,
         scientific_input_fingerprint=candidate.scientific_input_fingerprint,
         values=(),
         overall_change=None,
         trend=None,
         restrictions=("fixture only",),
+        quantitative_reporting_allowed=candidate.allow_quantitative_reporting,
     )
 
     locked_path = write_json_atomic(tmp_path, locked_qoi_contract_path(tmp_path).name, locked)
