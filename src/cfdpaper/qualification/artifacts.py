@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, TypeVar
 from uuid import uuid4
@@ -20,10 +21,31 @@ class ArtifactInputMismatch(ValueError):
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 _OUTPUT_PARTS = (".cfdpaper", "outputs", "qualify")
+_FIGURE_OUTPUT_PARTS = (".cfdpaper", "outputs", "figure")
 
 
 def qualify_output_dir(project_root: Path) -> Path:
     return Path(project_root).resolve().joinpath(*_OUTPUT_PARTS)
+
+
+def figure_output_dir(project_root: Path, figure_id: str, *, create: bool = False) -> Path:
+    """Return the one permitted output directory for a rendered V0.3 figure."""
+
+    root = Path(project_root).resolve()
+    figure = figure_id.strip()
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", figure) is None:
+        raise ValueError("figure_id must be one safe path segment")
+    expected = root.joinpath(*_FIGURE_OUTPUT_PARTS, figure)
+    if create:
+        expected.mkdir(parents=True, exist_ok=True)
+    resolved = expected.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError("path escapes the figure output directory") from error
+    if resolved != expected:
+        raise ValueError("path escapes the figure output directory")
+    return resolved
 
 
 def _validated_output_dir(project_root: Path, *, create: bool) -> Path:

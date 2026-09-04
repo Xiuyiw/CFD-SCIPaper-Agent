@@ -369,10 +369,17 @@ def validate_figure_delivery(
         )
 
     manifest_paths = {entry.path.expanduser().resolve() for entry in manifest.entries}
-    contract_source = Path(contract.source_data_uri).expanduser().resolve()
+    contract_source = Path(contract.source_data_uri).expanduser()
+    if contract_source.is_absolute():
+        source_is_mapped = contract_source.resolve() in manifest_paths
+    else:
+        source_parts = contract_source.parts
+        source_is_mapped = any(
+            path.parts[-len(source_parts) :] == source_parts for path in manifest_paths
+        )
     check(
         "manifest-source-uri",
-        contract_source in manifest_paths,
+        source_is_mapped,
         f"contract source data is absent from manifest:{contract.source_data_uri}",
         "contract source data is present in manifest",
     )
