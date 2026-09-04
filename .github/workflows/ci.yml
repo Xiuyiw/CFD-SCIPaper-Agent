@@ -88,7 +88,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir $wheel.FullName
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.2.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.3.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -120,6 +120,6 @@ jobs:
       - name: Upload release distributions
         uses: actions/upload-artifact@v4
         with:
-          name: cfd-paper-agent-0.2.0-distributions
+          name: cfd-paper-agent-0.3.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error
