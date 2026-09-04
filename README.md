@@ -117,7 +117,9 @@ cfdpaper plan PROJECT_ROOT --regenerate
 ```
 
 The deterministic offline path requires no API key. Author files take precedence over generated
-candidates. Ordinary indexed files are not promoted automatically to verified scientific evidence.
+candidates. Generated topics remain provisional: reports retain the minimum missing-data list,
+provider transport is not real author approval, and ordinary indexed files are not promoted
+automatically to verified scientific evidence.
 
 ## Explicit non-capabilities
 
