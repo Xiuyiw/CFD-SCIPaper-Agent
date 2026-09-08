@@ -23,7 +23,9 @@ limitations. It demonstrates integration and a useful draft, not autonomous
 publication quality or a general scientific benchmark. No P04 original was modified.
 
 Local verification: 1094 tests passed, two skipped; focused specification and code
-review completed. Release still requires remote CI and isolated wheel checks.
+review completed. Isolated wheel installation and the subsection example passed.
+Candidate CI run 34183702482 passed all six Windows/Linux Python 3.10–3.12 tests
+and the release-package job, including installed-wheel subsection DOCX generation.
 
 ## Original single-figure experiment outcome sought
 

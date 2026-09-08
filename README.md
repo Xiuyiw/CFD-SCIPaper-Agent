@@ -139,10 +139,11 @@ automatically to verified scientific evidence.
 
 ## Explicit non-capabilities
 
-Version 0.3.1 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
+Version 0.4.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
 identify an operating optimum, write a complete manuscript, manage references, export submission
-documents, or submit to a journal. The `review`, `revise`, and `export` commands remain unavailable.
+packages, or submit to a journal. Subsection DOCX export and review-suggestion import are
+available through `write`; the root `review`, `revise`, and `export` commands remain unavailable.
 
 ## Public documentation
 

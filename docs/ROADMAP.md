@@ -14,7 +14,7 @@ recorded here instead of being represented as already complete.
 | `v0.2.0` | Automatic generation of 2–4 evidence-bounded topic candidates from mature structured records | Released 2026-08-31 |
 | `v0.3.0` | Structured comparison qualification, discrete QoI analysis, one reproducible figure, and one numerically backlinked results paragraph | Released 2026-09-04 |
 | `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Released |
-| `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Release candidate |
+| `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Delivered; see release tag |
 
 ## Product direction
 
