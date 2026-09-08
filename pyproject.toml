@@ -54,6 +54,9 @@ packages = ["src/cfdpaper"]
 [tool.hatch.build.targets.wheel.force-include]
 "skills" = "cfdpaper/skills"
 
+[tool.hatch.build.targets.sdist]
+exclude = ["/_local_archive", "/_local_review_packages", "/AGENTS.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

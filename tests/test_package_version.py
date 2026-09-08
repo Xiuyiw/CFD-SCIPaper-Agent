@@ -4,6 +4,14 @@ from pathlib import Path
 from types import ModuleType
 
 
+def test_source_distribution_excludes_local_workspace_assets():
+    root = Path(__file__).parents[1]
+    config = (root / "pyproject.toml").read_text(encoding="utf-8")
+    assert "[tool.hatch.build.targets.sdist]" in config
+    for name in ("/_local_archive", "/_local_review_packages", "/AGENTS.md"):
+        assert f'"{name}"' in config
+
+
 def test_source_tree_version_fallback_matches_release(monkeypatch) -> None:
     def distribution_is_not_installed(_distribution_name: str) -> str:
         raise importlib.metadata.PackageNotFoundError

@@ -16,6 +16,7 @@
 ### Fixed
 
 - Prevented case-insensitive figure-ID collisions from replacing images on Windows.
+- Excluded local archives and workspace-only instructions from source distributions.
 
 ### Changed
 

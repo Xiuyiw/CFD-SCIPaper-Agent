@@ -9,5 +9,8 @@ dist/
 *.egg-info/
 .cfdpaper/
 .worktrees/
+_local_archive/
+_local_review_packages/
+AGENTS.md
 private-fixtures/**
 !private-fixtures/README.md
