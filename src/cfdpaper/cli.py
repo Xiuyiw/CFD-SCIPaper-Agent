@@ -293,10 +293,26 @@ def write_project(
     artifact: Annotated[str, typer.Option("--artifact")] = "results-paragraph",
     approve_final: Annotated[bool, typer.Option("--approve-final")] = False,
     author: Annotated[str | None, typer.Option("--author")] = None,
+    section_input: Annotated[Path | None, typer.Option("--section-input")] = None,
+    package: Annotated[Path | None, typer.Option("--package")] = None,
+    draft: Annotated[Path | None, typer.Option("--draft")] = None,
+    output: Annotated[Path | None, typer.Option("--output")] = None,
+    docx: Annotated[bool, typer.Option("--docx")] = False,
+    review: Annotated[Path | None, typer.Option("--review")] = None,
 ) -> None:
-    """Write or approve the numerically backlinked results paragraph."""
+    """Write a results paragraph or prepare/assemble a host-assisted results section."""
 
     try:
+        if artifact == "results-section":
+            if approve_final or author is not None:
+                raise WorkflowInputError("Results sections remain candidates for author review.")
+            _write_section_action(section_input, package, draft, output, docx, review)
+            return
+        if (
+            any(item is not None for item in (section_input, package, draft, output, review))
+            or docx
+        ):
+            raise WorkflowInputError("Section options require --artifact results-section.")
         if approve_final:
             if author is None:
                 raise WorkflowInputError("--approve-final requires --author.")
@@ -312,6 +328,46 @@ def write_project(
         f"Results paragraph ready for {execution.paragraph_delivery.figure_id}",
         markup=False,
     )
+
+
+def _write_section_action(
+    section_input: Path | None,
+    package: Path | None,
+    draft: Path | None,
+    output: Path | None,
+    docx: bool,
+    review: Path | None,
+) -> None:
+    if sum((section_input is not None, draft is not None, docx, review is not None)) != 1:
+        raise WorkflowInputError("Choose one: --section-input, --draft, --docx, or --review.")
+    if output is None:
+        raise WorkflowInputError("A fresh --output path is required; existing work is preserved.")
+    if section_input is None and package is None:
+        raise WorkflowInputError(
+            "--package is required for draft assembly, DOCX, or review import."
+        )
+    if section_input is not None and package is not None:
+        raise WorkflowInputError("--package is not used with --section-input.")
+    from cfdpaper.publication.section import (
+        assemble_section,
+        export_section_docx,
+        import_section_review,
+        prepare_section,
+    )
+
+    if section_input is not None:
+        result = prepare_section(section_input, output)
+        label = "Writing package ready for host AI"
+    elif draft is not None:
+        result = assemble_section(package, draft, output)
+        label = "Results section candidate assembled"
+    elif docx:
+        result = export_section_docx(package, output)
+        label = "Editable DOCX preview ready"
+    else:
+        result = import_section_review(package, review, output)
+        label = "Review suggestions saved without changing manuscript"
+    console.print(f"{label}: {result}", markup=False)
 
 
 def _placeholder(name: str) -> None:
@@ -334,5 +390,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.3.1.",
+        help="Roadmap command; not available in v0.4.0.",
     )(_placeholder_command(_command_name))

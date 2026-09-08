@@ -40,7 +40,13 @@ def test_v03_ships_exactly_four_thin_skills() -> None:
         sorted(EXPECTED_SKILLS)
     )
     for name in EXPECTED_SKILLS:
-        assert [path.name for path in (SKILL_ROOT / name).iterdir()] == ["SKILL.md"]
+        expected = ["SKILL.md"]
+        if name == "cfd-evidence-writing":
+            expected.append("references")
+            assert sorted(path.name for path in (SKILL_ROOT / name / "references").iterdir()) == [
+                "mechanism-subsections.md"
+            ]
+        assert sorted(path.name for path in (SKILL_ROOT / name).iterdir()) == expected
 
 
 def test_each_skill_declares_the_required_contract_without_private_paths() -> None:
@@ -117,3 +123,41 @@ def test_skills_reference_the_public_fixture_stop_expectations() -> None:
         "approval override",
     ):
         assert expectation in combined
+
+
+def test_results_section_skill_has_four_actions_and_explicit_host_writing() -> None:
+    _, body = _read_skill("cfd-evidence-writing")
+    for option in ("--section-input", "--draft", "--docx", "--review"):
+        assert re.search(
+            rf"cfdpaper write PROJECT_ROOT --artifact results-section[^\n]*{option}", body
+        )
+    for phrase in (
+        "TASK.md",
+        "host AI",
+        "fresh",
+        "checkpoint 3",
+        "suggestions",
+        "references/mechanism-subsections.md",
+    ):
+        assert phrase in body
+
+
+def test_mechanism_reference_supports_single_and_multiple_evidence_without_private_data() -> None:
+    reference = SKILL_ROOT / "cfd-evidence-writing" / "references" / "mechanism-subsections.md"
+    assert reference.is_file()
+    body = reference.read_text(encoding="utf-8")
+    for phrase in (
+        "single figure",
+        "multiple figures",
+        "control volume",
+        "cell-integrated",
+        "per-volume",
+        "author-provided",
+        "evidence_notes",
+        "{{value:",
+        "{{figure:",
+        "{{cite:",
+        "alternative",
+    ):
+        assert phrase in body
+    assert not re.search(r"[A-Z]:[\\/]", body)

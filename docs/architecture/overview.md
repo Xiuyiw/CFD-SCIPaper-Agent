@@ -1,9 +1,15 @@
 # Architecture overview
 
 CFD-Paper-Agent keeps project state local and separates file discovery from scientific evidence
-qualification. In v0.3.1, the public workflow connects mature structured CFD evidence to a bounded
+qualification. The established workflow connects mature structured CFD evidence to a bounded
 research direction, an approved quantity of interest (QoI), a discrete analysis, one reproducible
 figure, and one results paragraph.
+
+In v0.4, `write --artifact results-section` also accepts a portable declared evidence
+package with existing figures. The host AI writes the subsection; the CLI resolves
+tokens, checks declared coverage, embeds figures in DOCX and separates review notes.
+This additive route does not confer the qualification status of the structured QoI
+pipeline on author-supplied evidence.
 
 ```mermaid
 flowchart LR

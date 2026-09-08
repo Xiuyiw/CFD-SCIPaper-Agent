@@ -12,7 +12,20 @@
 
 No new full-manuscript framework, source solver, database migration or permanent review service is required. Public contracts.py/schemas remain unchanged unless an actual integration need is identified. The explicit author authorization supersedes earlier experiment-only stopping points below; historical results remain partial, not retrospectively upgraded.
 
-## Intended outcome
+## Implementation result
+
+The four section operations and CLI entry are implemented. The public two-figure
+analytical example runs through package, assembly, and DOCX. A separate private
+P04 Fig.12/13 host replay produced a four-paragraph draft and embedded both images;
+Word-rendered output was inspected page by page. The replay distinguishes stronger
+reaction from weaker normalized feedback, but remains too numeric and repeats
+limitations. It demonstrates integration and a useful draft, not autonomous
+publication quality or a general scientific benchmark. No P04 original was modified.
+
+Local verification: 1094 tests passed, two skipped; focused specification and code
+review completed. Release still requires remote CI and isolated wheel checks.
+
+## Original single-figure experiment outcome sought
 
 Given an existing scientific figure, corresponding metrics and comparison definitions, produce an editable Results and Discussion subsection and a self-contained caption. Improve scientific explanation, not just text length or the number of cited values. A figure may contain several fields; this is not yet multi-figure section assembly.
 

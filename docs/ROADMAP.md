@@ -13,8 +13,8 @@ recorded here instead of being represented as already complete.
 | `v0.1.0` | Installable CLI, local project state, resumable inspection, and author-supplied topic ranking | Released 2026-08-30 |
 | `v0.2.0` | Automatic generation of 2–4 evidence-bounded topic candidates from mature structured records | Released 2026-08-31 |
 | `v0.3.0` | Structured comparison qualification, discrete QoI analysis, one reproducible figure, and one numerically backlinked results paragraph | Released 2026-09-04 |
-| `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Current release |
-| Next capability release | One author-approved product bottleneck selected after the v0.3 workflow review | Specification pending |
+| `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Released |
+| `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Release candidate |
 
 ## Product direction
 
@@ -27,7 +27,7 @@ Development follows the path from mature CFD results to an author-approved scien
 5. pre-submission review and event-driven revision after real reviewer comments;
 6. heterogeneous validation across flow, heat-transfer, and multiphase projects.
 
-The next release will narrow this list to one primary user bottleneck before implementation. This
+Further releases will narrow this list to one primary user bottleneck before implementation. This
 keeps each public increment useful and testable without presenting the long-term system as already
 complete.
 

@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-09-08
+
+### Added
+
+- Host-AI figure-grounded subsection packages and multi-evidence paragraph duties.
+- Exact evidence tokens, Markdown assembly, editable DOCX with embedded figures,
+  and external-review packets with separate suggestion import.
+- A two-figure analytical tutorial with source data and SVG/PDF/PNG/TIFF outputs.
+- On-demand mechanism-writing guidance in the existing writing skill; all four
+  skills are now included in installed wheels.
+
+### Fixed
+
+- Prevented case-insensitive figure-ID collisions from replacing images on Windows.
+
 ### Changed
 
 - Updated the GitHub Actions checkout, Python setup, and artifact upload steps to their Node.js 24

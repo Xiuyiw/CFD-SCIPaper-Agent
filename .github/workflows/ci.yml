@@ -35,7 +35,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install project and development gates
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,docs]"
       - name: Run tests
         run: python -m pytest
 
@@ -53,7 +53,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install project and release gates
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,docs]"
       - name: Lint, format-check, and build
         shell: pwsh
         run: |
@@ -86,9 +86,9 @@ jobs:
           python -m venv $smoke
           $smokePython = Join-Path $smoke "Scripts\python.exe"
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
-          & $smokePython -m pip install --no-cache-dir $wheel.FullName
+          & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.3.1'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.4.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -117,9 +117,18 @@ jobs:
           & $cfdpaper status $project
           & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\generated-topic\prepare_project.py") $generatedProject
           & $cfdpaper plan $generatedProject --provider offline
+          & $smokePython -c "from importlib.resources import files; p=files('cfdpaper').joinpath('skills'); assert len(list(p.iterdir())) == 4; assert p.joinpath('cfd-evidence-writing/references/mechanism-subsections.md').is_file()"
+          $sectionSource = Join-Path $env:RUNNER_TEMP "section-source"
+          $sectionPackage = Join-Path $env:RUNNER_TEMP "section-package"
+          $sectionOutput = Join-Path $env:RUNNER_TEMP "section-output"
+          & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\section-writing\prepare_example.py") $sectionSource
+          & $cfdpaper write $sectionSource --artifact results-section --section-input "$sectionSource/input.json" --output $sectionPackage
+          & $cfdpaper write $sectionSource --artifact results-section --package $sectionPackage --draft "$sectionSource/sample-draft.json" --output $sectionOutput
+          & $cfdpaper write $sectionSource --artifact results-section --package $sectionOutput --docx --output "$sectionOutput.docx"
+          & $smokePython -c "import zipfile; p=r'$sectionOutput.docx'; z=zipfile.ZipFile(p); assert sum(n.startswith('word/media/') for n in z.namelist()) == 2"
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.3.1-distributions
+          name: cfd-paper-agent-0.4.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

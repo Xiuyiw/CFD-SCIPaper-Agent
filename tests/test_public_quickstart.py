@@ -159,7 +159,7 @@ def test_public_docs_match_the_v031_capability_contract() -> None:
     citation = yaml.safe_load((REPOSITORY_ROOT / "CITATION.cff").read_text(encoding="utf-8"))
     assert citation["cff-version"] == "1.2.0"
     assert citation["title"] == "CFD-Paper-Agent"
-    assert citation["version"] == "0.3.1"
+    assert citation["version"] == "0.4.0"
     assert citation["license"] == "Apache-2.0"
 
     workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -167,6 +167,6 @@ def test_public_docs_match_the_v031_capability_contract() -> None:
         assert operating_system in workflow
     for python_version in ('"3.10"', '"3.11"', '"3.12"'):
         assert python_version in workflow
-    assert "cfd-paper-agent-0.3.1-distributions" in workflow
+    assert "cfd-paper-agent-0.4.0-distributions" in workflow
     assert "cfd-paper-agent-0.3.0-distributions" not in workflow
     assert "cfd-paper-agent-0.2.0-distributions" not in workflow

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfd-paper-agent"
-version = "0.3.1"
+version = "0.4.0"
 description = "Author-in-the-loop CFD evidence analysis, figure generation, and scientific writing"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -50,6 +50,9 @@ cfdpaper = "cfdpaper.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cfdpaper"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "cfdpaper/skills"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

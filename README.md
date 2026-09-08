@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. Version 0.3.1 provides the maintained v0.3
-evidence pathway:
+defensible paper topics, figures, and results prose. Version 0.4.0 adds host-AI-assisted,
+figure-grounded subsection writing and editable DOCX previews to the maintained evidence pathway:
 qualify a declared comparison, lock a quantity of interest (QoI), analyze discrete cases, render an
 evidence-bound figure, and write one numerically backlinked results paragraph.
 
@@ -22,10 +22,11 @@ the QoI and figure claim, and approve the final artifact.
 | Scientific comparison qualification | Available | Strict records, observation membership, units, locators, comparison roles, convergence, conservation, verification, and validation. |
 | Discrete QoI analysis and claim ceiling | Available | Locked observed cases only; no interpolation or continuous optimization. |
 | Figure production | Available | One evidence-bound panel with source data, runnable script, SVG, PNG, caption, and three QA results. |
-| Evidence writing | Available | One results paragraph with numeric backlinks and an author-approved reporting ceiling. |
+| Evidence writing | Available | Numeric results paragraph, or host-AI-authored multi-figure subsection with exact evidence tokens, captions, and separate notes. |
+| Subsection DOCX and external review package | Available | Editable prose, embedded supplied figures, and independent review suggestions; not a full submission package. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
-| Full-manuscript writing, literature management, review, revision, and document export | Roadmap | Not delivered by the v0.3.1 CLI. |
+| Full-manuscript writing, literature management and journal revision | Roadmap | Section writing does not provide a complete manuscript or autonomous scientific review. |
 
 ## Installation
 
@@ -36,7 +37,7 @@ python -m pip install -e .
 cfdpaper --help
 ```
 
-## Reproducible v0.3.1 Quickstart
+## Reproducible evidence Quickstart
 
 Copy `examples/steady_laminar_pipe` to a writable directory and change into the copied directory.
 The example uses synthetic, non-sensitive data for fully developed laminar pipe flow.
@@ -65,6 +66,16 @@ Negative fixture variants demonstrate that missing members, duplicate observatio
 or failed convergence stop before unsupported analysis, figure, or paragraph artifacts are created.
 
 ## Inputs
+
+For existing figures and deeper host-AI writing, follow the
+[two-figure subsection tutorial](examples/section-writing/README.md). It includes
+Word export and an external-review packet. See [v0.4.0](docs/releases/v0.4.0.md)
+for the exact scope. Install the `docs` extra for DOCX.
+
+The four bundled skills are available under `skills/` in a checkout and
+`importlib.resources.files("cfdpaper").joinpath("skills")` in an installed wheel.
+Give the writing skill and prepared package to your host AI; no API key is needed
+for local assembly.
 
 The non-interactive evidence workflow accepts:
 
