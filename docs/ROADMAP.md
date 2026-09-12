@@ -15,7 +15,7 @@ recorded here instead of being represented as already complete.
 | `v0.3.0` | Structured comparison qualification, discrete QoI analysis, one reproducible figure, and one numerically backlinked results paragraph | Released 2026-09-04 |
 | `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Released |
 | `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Delivered; see release tag |
-| `v0.5.0` | Raw-table-linked quantitative writing and manuscript-scale figures, tables, equations and DOCX layout | Implemented locally with rendered examples and private trials; release preparation ongoing, not released |
+| `v0.5.0` | Raw-table-linked quantitative writing and manuscript-scale figures, tables, equations and DOCX layout | Delivered; see the v0.5.0 release tag and notes |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection

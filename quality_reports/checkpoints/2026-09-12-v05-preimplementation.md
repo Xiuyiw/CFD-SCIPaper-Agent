@@ -1,12 +1,20 @@
 ---
 date: 2026-09-12
-branch: workstream/v05-integration
+branch: main
 plan: docs/research/V0_5_IMPLEMENTATION_PLAN.md
 session-log: none on disk
-status: in_progress
+status: release_candidate_verified
 ---
 
 # V0.5 实施恢复入口
+
+## 最新收口（优先于下方历史批次）
+
+作者已明确授权完成v0.5.0正式正确发布。M1–M5实现与候选验证完成，PR #3已合并。
+本地1195 passed、2 skipped；Ruff、从sdist构建wheel、全新虚拟环境安装与实际DOCX示例通过。
+`f02a23d`的Windows/Linux Python 3.10–3.12及包检查7项success（运行34703115690和34703228377）。
+双布局Word/PDF与四格式图件公开附件已就绪。最终公开提交、CI和附件以GitHub v0.5.0 Release为准。
+若从中断恢复，只核对main/tag/Release是否完成；不要重做M1–M4或两类私人试用。
 
 ## 当前目标和批准状态
 
