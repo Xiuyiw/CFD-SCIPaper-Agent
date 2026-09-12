@@ -14,6 +14,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.text import Text
+from PIL import Image
 
 
 def prepare(root: Path) -> None:
@@ -31,6 +33,10 @@ def prepare(root: Path) -> None:
         writer.writerows(
             zip(["A", "B", "C"], velocities, reynolds, pressures, nusselt, strict=True)
         )
+    (root / "sources").mkdir()
+    shutil.copyfile(root / "source-data.csv", root / "sources" / "source-data.csv")
+    shutil.copyfile(__file__, root / "sources" / "prepare_example.py")
+    sizing = {}
     for name, values, ylabel in (
         ("pressure", pressures, "Pressure drop (Pa)"),
         ("heat", nusselt, "Nusselt number (–)"),
@@ -48,6 +54,16 @@ def prepare(root: Path) -> None:
         for extension in ("png", "svg", "pdf", "tiff"):
             with matplotlib.rc_context({"svg.fonttype": "none", "pdf.fonttype": 42}):
                 fig.savefig(root / f"{name}.{extension}", dpi=240)
+        fig.canvas.draw()
+        with Image.open(root / f"{name}.png") as raster:
+            sizing[name] = {
+                "source_width_mm": raster.width * 25.4 / raster.info["dpi"][0],
+                "minimum_source_font_pt": min(
+                    text.get_fontsize()
+                    for text in fig.findobj(Text)
+                    if text.get_visible() and text.get_text().strip()
+                ),
+            }
         plt.close(fig)
     evidence = [
         {
@@ -86,21 +102,46 @@ def prepare(root: Path) -> None:
                     + {"dp": "pressure_drop_Pa", "re": "Re", "nu": "Nu"}[variable],
                 }
             )
+    for record in evidence:
+        record["source"] = record["source"].replace("source-data.csv:", "sources/source-data.csv:")
+        if record["id"].startswith("dp-"):
+            record.pop("value")
+            record.pop("unit")
+            record["result_ref"] = {
+                "calculation_id": "case-pressure",
+                "group": record["id"].removeprefix("dp-"),
+                "field": "mean",
+                "places": 1,
+            }
     payload = {
         "section_id": "fully-developed-reference",
         "title": "Hydraulic and thermal responses in a fully developed reference model",
         "question": "Why does increasing flow raise pressure drop without changing Nu in this specified model?",
         "context": "Explicitly synthetic analytical tutorial, not measured or solved CFD results. Geometry and properties fixed. No literature excerpts supplied; do not invent citations.",
+        "source_files": ["sources/source-data.csv", "sources/prepare_example.py"],
+        "table_calculations": [
+            {
+                "id": "case-pressure",
+                "source": "sources/source-data.csv",
+                "operation": "population",
+                "columns": {"value": "pressure_drop_Pa"},
+                "units": {"value": "Pa"},
+                "domain": "One analytical pressure-drop row per prescribed case; each group mean equals that source-row value.",
+                "group_by": "case_id",
+            }
+        ],
         "figures": [
             {
                 "id": "1",
                 "path": "pressure.png",
+                "sizing": sizing["pressure"],
                 "caption": "Analytical pressure drop at three prescribed velocities.",
                 "description": "Independent discrete reference values, not an inferred stability range.",
             },
             {
                 "id": "2",
                 "path": "heat.png",
+                "sizing": sizing["heat"],
                 "caption": "Fully developed Nusselt number for uniform wall heat flux.",
                 "description": "Constant-property reference result, not general heat-exchanger performance.",
             },
@@ -123,7 +164,7 @@ def prepare(root: Path) -> None:
         "title": payload["title"],
         "paragraphs": [
             {
-                "text": "The analytical reference separates hydraulic resistance from the fully developed thermal response. In {{figure:1}}, the pressure drop increases from {{value:dp-A}} to {{value:dp-C}} as the prescribed mean velocity increases. With geometry and viscosity fixed, the laminar momentum balance gives pressure drop proportional to mean velocity: the larger axial pressure gradient balances the increased viscous wall stress.",
+                "text": "The analytical reference separates hydraulic resistance from the fully developed thermal response. In {{figure:1}}, the pressure drop increases from {{value:dp-A}} to {{value:dp-C}} as the prescribed mean velocity increases. With geometry and viscosity fixed, the laminar momentum balance gives pressure drop proportional to mean velocity: the larger axial pressure gradient balances the increased viscous wall stress. This relation is written in {{equation:1}}, where μ is dynamic viscosity, L is pipe length, U is mean velocity and D is pipe diameter. {{table:1}} lists the corresponding case values.",
                 "evidence_ids": ["model", "pressure-trend", "dp-A", "dp-C"],
                 "figure_ids": ["1"],
             },
@@ -139,9 +180,57 @@ def prepare(root: Path) -> None:
             },
         ],
         "captions": {
-            "1": "Analytical pressure drop versus prescribed mean velocity for a fixed circular pipe under fully developed laminar flow.",
+            "1": "Analytical pressure drop versus prescribed mean velocity for a fixed circular pipe under fully developed laminar flow. The pipe diameter is 0.01 m and its length is 1.0 m; dynamic viscosity and density are fixed at 0.001 Pa s and 1000 kg m⁻³. The three velocities are 0.02, 0.04 and 0.06 m s⁻¹, giving Reynolds numbers of 200, 400 and 600. Pressure drop follows the fully developed momentum balance in Equation 1 and rises from {{value:dp-A}} to {{value:dp-C}}. Each marker is one prescribed analytical case; entrance effects are excluded from this reference model.",
             "2": "Analytical Nusselt number at the same prescribed velocities under constant properties and uniform wall heat flux.",
         },
+        "tables": [
+            {
+                "table_id": "1",
+                "caption": "Hydraulic and thermal values for the prescribed analytical cases.",
+                "columns": ["Case", "U (m s⁻¹)", "Re", "Pressure drop", "Nu"],
+                "rows": [
+                    [
+                        case,
+                        f"{velocity:.2f}",
+                        f"{{{{value:re-{case}}}}}",
+                        f"{{{{value:dp-{case}}}}}",
+                        f"{{{{value:nu-{case}}}}}",
+                    ]
+                    for case, velocity in zip(["A", "B", "C"], velocities, strict=True)
+                ],
+                "after_section_id": payload["section_id"],
+                "evidence_ids": [record["id"] for record in evidence],
+                "column_widths_mm": [20, 35, 25, 50, 30],
+                "numeric_columns": [1, 2, 3, 4],
+                "note": "Uniform wall heat flux and constant properties; Nu denotes the fully developed Nusselt number.",
+            }
+        ],
+        "equations": [
+            {
+                "equation_id": "1",
+                "evidence_ids": ["model"],
+                "expression": {
+                    "kind": "row",
+                    "children": [
+                        {"kind": "symbol", "text": "Δp"},
+                        {"kind": "text", "text": " = "},
+                        {
+                            "kind": "fraction",
+                            "children": [
+                                {"kind": "symbol", "text": "32μLU"},
+                                {
+                                    "kind": "sup",
+                                    "children": [
+                                        {"kind": "symbol", "text": "D"},
+                                        {"kind": "text", "text": "2"},
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            }
+        ],
         "evidence_notes": [
             "Synthetic analytical example, not CFD or experimental validation. The included sample draft is authored tutorial text; the CLI assembles it rather than generating this interpretation."
         ],

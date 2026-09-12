@@ -24,4 +24,4 @@ def test_source_tree_version_fallback_matches_release(monkeypatch) -> None:
     module.__spec__ = spec
     spec.loader.exec_module(module)
 
-    assert module.__version__ == "0.4.0"
+    assert module.__version__ == "0.5.0"

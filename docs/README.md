@@ -3,7 +3,8 @@
 ## Start here
 
 - [Figure-grounded subsection](../examples/section-writing/README.md): use existing
-  images and evidence with your host AI, then export editable prose and DOCX.
+  images and raw-table evidence with your host AI, then export editable prose,
+  tables, equations and DOCX.
 
 - [Quickstart](../examples/quickstart/README.md): initialize a project and rank an author-supplied
   topic file.
@@ -23,6 +24,7 @@
 
 ## Releases
 
+- [v0.5.0](releases/v0.5.0.md)
 - [v0.4.0](releases/v0.4.0.md)
 
 - [v0.3.1](releases/v0.3.1.md)

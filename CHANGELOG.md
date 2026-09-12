@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-12
+
+### Added
+
+- Declared CSV population and partition calculations, with `result_ref` bindings
+  that resolve current values, units and source records into subsection text.
+- SVG/PDF/PNG/TIFF delivery with configurable physical plot dimensions and font sizes.
+- Manuscript-scale figure sizing, near-reference or after-text placement, and an
+  optional PDF preview using an installed LibreOffice.
+- Native editable Word tables, display equations and inline mathematics through
+  a finite structured expression format.
+- A portable tutorial with original tables, four-format figures, table/equation
+  examples and both Word layouts; expanded offline writing-skill examples.
+
+### Fixed
+
+- Protected locally refined plotting scripts from automatic template replacement.
+- Kept endpoint markers visible without changing the plotted data or axis limits.
+- Removed source-checkout dependencies from packaged writing examples.
+
 ## [0.4.0] — 2026-09-08
 
 ### Added
