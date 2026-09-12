@@ -5,10 +5,10 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. Version 0.4.0 adds host-AI-assisted,
-figure-grounded subsection writing and editable DOCX previews to the maintained evidence pathway:
-qualify a declared comparison, lock a quantity of interest (QoI), analyze discrete cases, render an
-evidence-bound figure, and write one numerically backlinked results paragraph.
+defensible paper topics, figures, and results prose. Version 0.5.0 connects raw-table calculations
+to host-AI subsection writing, four-format figures, and editable Word tables and equations.
+The workflow preserves the connection between the original observations, scientific interpretation,
+and the numbers and graphics appearing in the manuscript.
 
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
@@ -21,9 +21,9 @@ the QoI and figure claim, and approve the final artifact.
 | Author-supplied or evidence-bounded topic planning | Available | Two to four provisional topics from mature structured records; author selection is required. |
 | Scientific comparison qualification | Available | Strict records, observation membership, units, locators, comparison roles, convergence, conservation, verification, and validation. |
 | Discrete QoI analysis and claim ceiling | Available | Locked observed cases only; no interpolation or continuous optimization. |
-| Figure production | Available | One evidence-bound panel with source data, runnable script, SVG, PNG, caption, and three QA results. |
-| Evidence writing | Available | Numeric results paragraph, or host-AI-authored multi-figure subsection with exact evidence tokens, captions, and separate notes. |
-| Subsection DOCX and external review package | Available | Editable prose, embedded supplied figures, and independent review suggestions; not a full submission package. |
+| Figure production | Available | One evidence-bound panel with source data, runnable script, SVG/PDF/PNG/TIFF, physical dimensions, caption, and QA results. |
+| Evidence writing | Available | Numeric paragraph or host-authored multi-figure subsection; current CSV calculations bind to evidence tokens with units and source records. |
+| Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
 | Full-manuscript writing, literature management and journal revision | Roadmap | Section writing does not provide a complete manuscript or autonomous scientific review. |
@@ -69,8 +69,9 @@ or failed convergence stop before unsupported analysis, figure, or paragraph art
 
 For existing figures and deeper host-AI writing, follow the
 [two-figure subsection tutorial](examples/section-writing/README.md). It includes
-Word export and an external-review packet. See [v0.4.0](docs/releases/v0.4.0.md)
-for the exact scope. Install the `docs` extra for DOCX.
+Word export, raw-table bindings, editable tables/equations and an external-review packet.
+See [v0.5.0](docs/releases/v0.5.0.md) for scope and the downloadable example.
+Install the `docs` extra for DOCX (`python -m pip install -e ".[docs]"`).
 
 The four bundled skills are available under `skills/` in a checkout and
 `importlib.resources.files("cfdpaper").joinpath("skills")` in an installed wheel.
@@ -106,7 +107,9 @@ qualify/paragraph-duty.json
 figure/FIGURE_ID/source-data.csv
 figure/FIGURE_ID/plot_FIGURE_ID.py
 figure/FIGURE_ID/FIGURE_ID.svg
+figure/FIGURE_ID/FIGURE_ID.pdf
 figure/FIGURE_ID/FIGURE_ID.png
+figure/FIGURE_ID/FIGURE_ID.tiff
 figure/FIGURE_ID/caption.txt
 figure/FIGURE_ID/qa-data.json
 figure/FIGURE_ID/qa-narrative.json
@@ -139,7 +142,7 @@ automatically to verified scientific evidence.
 
 ## Explicit non-capabilities
 
-Version 0.4.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
+Version 0.5.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
 identify an operating optimum, write a complete manuscript, manage references, export submission
 packages, or submit to a journal. Subsection DOCX export and review-suggestion import are
@@ -150,6 +153,8 @@ available through `write`; the root `review`, `revise`, and `export` commands re
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.5.0 release notes](docs/releases/v0.5.0.md)
+- [v0.4.0 release notes](docs/releases/v0.4.0.md)
 - [v0.3.1 release notes](docs/releases/v0.3.1.md)
 - [v0.3.0 release notes](docs/releases/v0.3.0.md)
 - [v0.2.0 release notes](docs/releases/v0.2.0.md)

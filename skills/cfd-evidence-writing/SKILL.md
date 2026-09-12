@@ -24,6 +24,9 @@ or stale figure into a plausible narrative. Section comparisons must stay within
 - The author identity only when recording final acceptance.
 - For sections: JSON with `section_id`, `title`, `question`, `figures`, `evidence`, `duties`, and
   optional `context`; relative image paths resolve from that input file. Use PNG, JPEG or TIFF.
+- For CSV exports: optional `table_calculations` declares operation, column roles, units,
+  physical domain and grouping. Select these from the actual source and method description;
+  ask the author only when an unresolved definition would change the interpretation.
 
 ## Outputs
 
@@ -73,6 +76,12 @@ in full; it guides single-figure reasoning and multi-evidence synthesis without 
    Read `writing-package/TASK.md` and `input.json`; open the actual images. The host AI writes a
    fresh `draft.json` matching `draft-template.json`, including paragraphs, captions, evidence notes
    and truthful image-observation status. Preparation does not generate this scientific draft.
+   If present, read `table-results.json` before writing. Bind calculated metric evidence with
+   `result_ref`, omitting manual `value` and `unit`; use `{{value:ID}}` in paragraphs and captions.
+   Assembly recomputes these values from the package CSVs. Population CV uses
+   equal record weights; partition sums refer to supplied regions, not automatically the full
+   physical surface. Use the offline [table example](references/mechanism-subsections.md#exported-table-example)
+   for declarations, source records and numeric selection.
 
 2. Assemble the host-authored draft:
 
@@ -126,5 +135,9 @@ The paragraph is natural scientific prose, every value is traceable to the curre
 checkpoint 3 records author acceptance without changing delivered bytes. Running this Skill alone is
 not scientific or author approval.
 For sections, the host-authored argument remains reviewable, source records and exact token values
-are retained, and reader-facing prose is separate from review notes. Supplied source data files are
-not copied or independently verified; only structured evidence and figures enter the package.
+are retained, and reader-facing prose is separate from review notes. Explicit `source_files` with
+relative `sources/` paths are copied into writing/review packages. They are not automatically
+scientifically verified. Declared table calculations run during preparation and again during
+assembly; the result, source records, units and definitions travel to the reviewer. These
+calculations support reasoning; they do not automatically establish causality, resolve a
+wall-temperature definition conflict, or check every number in free prose.

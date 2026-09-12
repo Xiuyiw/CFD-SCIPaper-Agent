@@ -299,6 +299,8 @@ def write_project(
     output: Annotated[Path | None, typer.Option("--output")] = None,
     docx: Annotated[bool, typer.Option("--docx")] = False,
     review: Annotated[Path | None, typer.Option("--review")] = None,
+    layout: Annotated[str | None, typer.Option("--layout")] = None,
+    pdf_preview: Annotated[bool, typer.Option("--pdf-preview")] = False,
 ) -> None:
     """Write a results paragraph or prepare/assemble a host-assisted results section."""
 
@@ -306,11 +308,16 @@ def write_project(
         if artifact == "results-section":
             if approve_final or author is not None:
                 raise WorkflowInputError("Results sections remain candidates for author review.")
-            _write_section_action(section_input, package, draft, output, docx, review)
+            _write_section_action(
+                section_input, package, draft, output, docx, review, layout, pdf_preview
+            )
             return
         if (
-            any(item is not None for item in (section_input, package, draft, output, review))
+            any(
+                item is not None for item in (section_input, package, draft, output, review, layout)
+            )
             or docx
+            or pdf_preview
         ):
             raise WorkflowInputError("Section options require --artifact results-section.")
         if approve_final:
@@ -337,7 +344,11 @@ def _write_section_action(
     output: Path | None,
     docx: bool,
     review: Path | None,
+    layout: str | None = None,
+    pdf_preview: bool = False,
 ) -> None:
+    if (layout is not None or pdf_preview) and not docx:
+        raise WorkflowInputError("--layout and --pdf-preview require --docx.")
     if sum((section_input is not None, draft is not None, docx, review is not None)) != 1:
         raise WorkflowInputError("Choose one: --section-input, --draft, --docx, or --review.")
     if output is None:
@@ -362,12 +373,16 @@ def _write_section_action(
         result = assemble_section(package, draft, output)
         label = "Results section candidate assembled"
     elif docx:
-        result = export_section_docx(package, output)
+        result = export_section_docx(package, output, layout=layout or "after-text")
         label = "Editable DOCX preview ready"
     else:
         result = import_section_review(package, review, output)
         label = "Review suggestions saved without changing manuscript"
     console.print(f"{label}: {result}", markup=False)
+    if pdf_preview:
+        from cfdpaper.publication.preview import preview_docx
+
+        console.print(f"LibreOffice PDF preview: {preview_docx(result)}", markup=False)
 
 
 def _placeholder(name: str) -> None:
@@ -390,5 +405,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.4.0.",
+        help="Roadmap command; not available in v0.5.0.",
     )(_placeholder_command(_command_name))

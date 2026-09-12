@@ -88,7 +88,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.4.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.5.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -125,10 +125,11 @@ jobs:
           & $cfdpaper write $sectionSource --artifact results-section --section-input "$sectionSource/input.json" --output $sectionPackage
           & $cfdpaper write $sectionSource --artifact results-section --package $sectionPackage --draft "$sectionSource/sample-draft.json" --output $sectionOutput
           & $cfdpaper write $sectionSource --artifact results-section --package $sectionOutput --docx --output "$sectionOutput.docx"
-          & $smokePython -c "import zipfile; p=r'$sectionOutput.docx'; z=zipfile.ZipFile(p); assert sum(n.startswith('word/media/') for n in z.namelist()) == 2"
+          & $cfdpaper write $sectionSource --artifact results-section --package $sectionOutput --docx --layout near-reference --output "$sectionOutput-near.docx"
+          & $smokePython -c "import zipfile, pathlib, json, xml.etree.ElementTree as E; p=pathlib.Path(r'$sectionOutput.docx'); z=zipfile.ZipFile(p); assert sum(n.startswith('word/media/') for n in z.namelist()) == 2; root=E.fromstring(z.read('word/document.xml')); ns={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main','m':'http://schemas.openxmlformats.org/officeDocument/2006/math'}; assert root.findall('.//w:tbl',ns); assert root.findall('.//m:oMath',ns); assert json.loads(p.with_suffix('.layout.json').read_text(encoding='utf-8')); source=pathlib.Path(r'$sectionSource'); assert len(list(source.glob('*.tiff'))) == 2; assert len(list(source.glob('*.svg'))) == 2"
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.4.0-distributions
+          name: cfd-paper-agent-0.5.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

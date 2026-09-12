@@ -5,9 +5,10 @@ qualification. The established workflow connects mature structured CFD evidence 
 research direction, an approved quantity of interest (QoI), a discrete analysis, one reproducible
 figure, and one results paragraph.
 
-In v0.4, `write --artifact results-section` also accepts a portable declared evidence
+`write --artifact results-section` also accepts a portable declared evidence
 package with existing figures. The host AI writes the subsection; the CLI resolves
-tokens, checks declared coverage, embeds figures in DOCX and separates review notes.
+tokens, recomputes declared CSV results, checks declared coverage, embeds figures,
+tables and structured equations in DOCX, and separates review notes.
 This additive route does not confer the qualification status of the structured QoI
 pipeline on author-supplied evidence.
 
@@ -55,8 +56,10 @@ link back to the analyzed records.
 | Scientific qualifier | Check comparability, evidence, QoI definition, and reporting limits | Missing evidence remains missing |
 | QoI analyzer | Evaluate declared scalar sequences and allowable trends | Observed discrete cases only |
 | Figure pipeline | Produce one evidence-linked figure package | No undeclared transformation or general field plotting |
-| Writing pipeline | Produce one numerically backlinked results paragraph | No complete manuscript or autonomous claim expansion |
+| Table evidence | Calculate declared CSV populations and partitions; resolve current numeric tokens | No automatic choice of scientific operator or missing-value inference |
+| Writing pipeline | Assemble numeric paragraphs or host-authored multi-evidence subsections | No complete manuscript or autonomous claim expansion |
+| Subsection export | Place figures, native tables and structured mathematics in editable DOCX | Finite elements and configurable layouts, not an arbitrary journal template engine |
 
-Native Fluent and STAR-CCM+ extraction, general field analysis, multi-figure manuscript production,
-literature management, pre-submission review, reviewer-response workflows, and document export remain
-future work. See the [public roadmap](../ROADMAP.md) and [current limitations](../limitations.md).
+Native Fluent and STAR-CCM+ extraction, general field analysis, full-manuscript production,
+literature management, pre-submission review and reviewer-response workflows remain future work.
+See the [public roadmap](../ROADMAP.md) and [current limitations](../limitations.md).

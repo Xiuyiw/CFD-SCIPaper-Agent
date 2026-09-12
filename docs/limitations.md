@@ -1,6 +1,6 @@
 # Limitations
 
-CFD-Paper-Agent v0.4.0 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent v0.5.0 is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
@@ -20,10 +20,14 @@ identify a continuous optimum, quantify a general uncertainty envelope, or perfo
 three-dimensional field analysis.
 
 Figure production delivers one evidence-bound panel with source data, a runnable Matplotlib script,
-SVG and PNG output, a caption, and focused QA records. It is not yet a general contour, profile,
+SVG/PDF/PNG/TIFF output, a caption, and focused QA records. It is not yet a general contour, profile,
 multi-panel or general field-analysis system. The new subsection path accepts supplied
 PNG/JPEG/TIFF figures and host-authored prose, resolves evidence tokens, and exports Markdown
-and editable DOCX. It does not independently validate free prose, source files, literature,
+and editable DOCX with native tables and finite structured mathematics. Declared raw-table
+calculations can supply current numeric tokens; they do not determine which operator or population
+is scientifically appropriate. Known source font sizes are checked after figure scaling; unknown
+font sizes remain unknown. PDF preview requires an existing LibreOffice installation.
+The workflow does not independently validate free prose, source files, literature,
 or actual image viewing. It is not a full manuscript or LaTeX submission system.
 
 The root `review`, `revise`, and `export` commands remain unavailable; subsection DOCX
