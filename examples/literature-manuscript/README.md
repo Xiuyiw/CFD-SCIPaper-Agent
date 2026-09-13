@@ -1,10 +1,10 @@
 # Literature-linked analytical manuscript example
 
-This example requires the v0.8 development implementation (or a later release containing it),
-not the released v0.7.0 wheel. Install this checkout with the `docs` extra and run from its root:
+This example requires v0.8.0 or later, not the older v0.7.0 wheel.
+Install this checkout with the `docs` extra and run from its root:
 
 ```text
-python -m pip install -e ".[docs]"
+python -m pip install ".[docs]"
 python examples/literature-manuscript/prepare_example.py my-source
 cfdpaper write my-source --artifact manuscript --manuscript-input my-source/manuscript-input.json --output my-package
 cfdpaper write my-source --artifact manuscript --package my-package --draft my-source/drafts.json --output my-manuscript

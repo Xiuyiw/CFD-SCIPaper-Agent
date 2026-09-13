@@ -5,9 +5,10 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. Version 0.7.0 extends source-linked
-analysis and subsection writing with a host-assisted multi-section workspace, cross-chapter
-references, portable continued editing and external drawing-task exchange.
+defensible paper topics, figures, and manuscript prose. Version 0.8.0 connects the multi-section
+workspace to shared literature, source-bound summaries, targeted change reports and optional
+numeric CSL bibliography formatting. Dedicated writing guidance covers Introduction, Discussion,
+Abstract and Conclusions alongside the existing Methods and Results workflow.
 The workflow preserves the connection between the original observations, scientific interpretation,
 and the numbers and graphics appearing in the manuscript.
 
@@ -27,16 +28,21 @@ the QoI and figure claim, and approve the final artifact.
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Existing materials to subsection analysis | Available | CSV and method profiling; portable host-AI proposals; author-selected population/partition calculations, expression choices and source-linked writing. |
-| Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; host-authored drafts, bundled Methods guidance, global figure/table/equation numbering and editable DOCX. |
+| Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
+| Shared literature workspace | Available | Local CSL JSON, DOI deduplication and aliases; claim-specific excerpts, locators, roles and author/host support decisions travel with the manuscript. Optional Pandoc imports BibLaTeX. |
+| Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
+| Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate; reassembly preserves unedited drafts. Word-only edits must be reconciled into the draft. |
 | External drawing tasks | Available | Host-facing data, conceptual and hybrid tasks; import Python, SVG or uncompressed draw.io editing sources with previews and listed supporting files. Import does not run scripts or approve figures. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
-| Literature-supported full-paper reasoning, literature management and journal revision | Roadmap | Multi-section assembly is not autonomous complete-paper writing or scientific review. |
+
+Autonomous full-paper reasoning and journal revision are not provided: the host and author develop
+the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For the v0.7 workspace, use a v0.7 checkout
-or a wheel built from the same version; the older v0.6.0 wheel does not contain these commands.
+CFD-Paper-Agent supports CPython 3.10–3.12. For the literature-linked workspace, use a v0.8 checkout
+or a wheel built from the same version; the v0.7.0 wheel does not contain these additions.
 From the checkout root, install with Word support:
 
 ```text
@@ -44,9 +50,14 @@ python -m pip install ".[docs]"
 cfdpaper --help
 ```
 
-Follow the [manuscript workspace tutorial](examples/manuscript-workspace/README.md) to prepare
-shared section tasks, assemble the supplied drafts and continue from a moved workspace.
-See the [v0.7.0 candidate notes](docs/releases/v0.7.0.md) for the version scope.
+Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
+to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
+a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
+remains available. See the [v0.8.0 notes](docs/releases/v0.8.0.md) for the version scope.
+
+The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
+install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
+PDF preview uses an existing LibreOffice installation.
 
 ## Reproducible evidence Quickstart
 
@@ -77,6 +88,44 @@ Negative fixture variants demonstrate that missing members, duplicate observatio
 or failed convergence stop before unsupported analysis, figure, or paragraph artifacts are created.
 
 ## Inputs
+
+### Literature-linked manuscripts
+
+The [seven-section example](examples/literature-manuscript/README.md) covers Abstract, Introduction,
+Methods, two Results sections, Discussion and Conclusions. It uses supplied analytical data and
+authored sample drafts, with one local explanatory source shared across chapters:
+
+```text
+python examples/literature-manuscript/prepare_example.py my-source
+cfdpaper write my-source --artifact manuscript --manuscript-input my-source/manuscript-input.json --output my-package
+cfdpaper write my-source --artifact manuscript --package my-package --draft my-source/drafts.json --output my-manuscript
+cfdpaper write my-source --artifact manuscript --package my-manuscript --docx --layout near-reference --output my-manuscript.docx
+```
+
+Run these commands from the checkout root after installation; every output path must be new.
+For your own study, give the prepared `TASK.md` and section tasks to the host AI instead of using
+the sample drafts.
+
+The manuscript's `literature` field points to a relative JSON file containing a `bibliography`
+path and `supports` records. Bibliographic identity is separate from each section's `claim`,
+`role`, source `excerpt`, `locator` and support `status`. Only `supported` records become citation
+evidence; withdrawing support prevents stale references from assembling. Exact excerpt matching
+checks where the passage occurs, while the host and author decide what it supports. Original
+source text, metadata and aliases stay with the workspace; relevant excerpts, source texts and
+reference metadata are also included in detached section review packets.
+
+Use a section's `evidence_bindings`, such as `{"dp": "results/dp"}`, to consume an owning section's
+evidence through a local `{{value:dp}}` token. `depends_on` declares which other sections the host
+should read when reconsidering the argument. On continuation, `CHANGES.md` identifies affected
+sections and paragraph positions after source, definition, literature, terminology or draft changes.
+Bound calculations refresh from the owner's current source; interpretations and plots remain
+host/author work. The manifest's `keywords` list appears after the Abstract in Markdown and Word.
+
+To apply journal bibliography formatting, add `"citation_style": "my-journal.csl"` to the manifest
+and provide that standalone local CSL file. Pandoc formats the shared metadata in current citation
+order; the style travels with the candidate. This route supports bracketed numeric citations, not
+author–date or superscript styles, and does not create Zotero fields. Omit `citation_style` to use
+neutral metadata labels. See the tutorial for exact inputs and a source-change continuation exercise.
 
 ### Existing exports to an analysis subsection
 
@@ -181,8 +230,8 @@ automatically to verified scientific evidence.
 
 CFD-Paper-Agent does not run CFD simulations, ingest arbitrary native solver cases, infer missing
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
-identify an operating optimum, autonomously write a complete paper, manage a verified literature
-library, export submission packages, or submit to a journal. Multi-section and subsection DOCX
+identify an operating optimum, autonomously write a complete paper, independently verify scientific
+support in literature, export submission packages, or submit to a journal. Multi-section and subsection DOCX
 export and subsection review-suggestion import are available through `write`; the root `review`,
 `revise`, and `export` commands remain unavailable. External drawing-task exchange does not add
 automatic complex mechanism graphics or establish broad heterogeneous CFD validation.
@@ -192,7 +241,8 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
-- [v0.7.0 candidate notes](docs/releases/v0.7.0.md)
+- [v0.8.0 notes](docs/releases/v0.8.0.md)
+- [v0.7.0 release notes](docs/releases/v0.7.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.4.0 release notes](docs/releases/v0.4.0.md)

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-09-13
+
 ### Added
 
 - Shared CSL JSON bibliographies and optional Pandoc BibTeX import, with DOI deduplication,
