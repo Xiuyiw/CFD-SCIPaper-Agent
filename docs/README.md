@@ -2,11 +2,15 @@
 
 ## Start here
 
+- [Existing-material analysis](../examples/material-analysis/README.md): start from exported
+  tables and method notes, choose a host-proposed analysis and generate a bound subsection.
 - [Figure-grounded subsection](../examples/section-writing/README.md): use existing
   images and raw-table evidence with your host AI, then export editable prose,
   tables, equations and DOCX.
 - [Manuscript workspace tutorial](../examples/manuscript-workspace/README.md): development-branch
   example coordinating Methods and two Results sections; not part of the v0.6.0 release.
+- [Host drawing guidance](../skills/cfd-figure-production/references/external-backends.md):
+  development-branch data/diagram tool selection, editable returns and local changes.
 
 - [Quickstart](../examples/quickstart/README.md): initialize a project and rank an author-supplied
   topic file.

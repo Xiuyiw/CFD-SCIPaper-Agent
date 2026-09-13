@@ -31,6 +31,11 @@ the QoI and figure claim, and approve the final artifact.
 
 ## Installation
 
+**Development branch:** the unreleased manuscript workspace adds shared section tasks,
+cross-chapter references and portable continued editing. See the
+[runnable tutorial](examples/manuscript-workspace/README.md). These features are not in the
+published v0.6.0 wheel; complete literature-supported paper writing remains on the roadmap.
+
 CFD-Paper-Agent supports CPython 3.10–3.12. From a public checkout:
 
 ```text

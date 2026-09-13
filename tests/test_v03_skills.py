@@ -35,17 +35,26 @@ def _read_skill(name: str) -> tuple[dict[str, str], str]:
     return frontmatter, match.group(2)
 
 
-def test_v03_ships_exactly_four_thin_skills() -> None:
+def test_ships_four_skills_with_current_writing_and_figure_references() -> None:
     assert tuple(sorted(path.name for path in SKILL_ROOT.iterdir() if path.is_dir())) == tuple(
         sorted(EXPECTED_SKILLS)
     )
+    references = {
+        "cfd-evidence-writing": ["mechanism-subsections.md", "methods-sections.md"],
+        "cfd-figure-production": [
+            "codex-paper-figure-MIT.txt",
+            "editable-schematic-adaptation.md",
+            "external-backends.md",
+        ],
+    }
     for name in EXPECTED_SKILLS:
         expected = ["SKILL.md"]
-        if name == "cfd-evidence-writing":
+        if name in references:
             expected.append("references")
-            assert sorted(path.name for path in (SKILL_ROOT / name / "references").iterdir()) == [
-                "mechanism-subsections.md"
-            ]
+            assert (
+                sorted(path.name for path in (SKILL_ROOT / name / "references").iterdir())
+                == references[name]
+            )
         assert sorted(path.name for path in (SKILL_ROOT / name).iterdir()) == expected
 
 

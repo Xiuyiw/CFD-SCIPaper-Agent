@@ -1,6 +1,6 @@
 # Limitations
 
-CFD-Paper-Agent v0.5.0 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent v0.6.0 is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
@@ -9,6 +9,15 @@ The public CLI supports `init`, `status`, `inspect`, `plan`, `qualify`, `analyze
 observations, a declared comparison, and a proposed QoI. It does not convert arbitrary Fluent,
 STAR-CCM+, or other native solver files into complete scientific records. Guided intake is
 experimental and still requires the author to supply the scientific meaning of the data.
+
+The v0.6 material-analysis route can also start directly from exported CSVs and method notes,
+without the structured topic-planning sequence. A host proposes the analysis and the author
+selects it; population and partition calculations still need explicit definitions and support.
+
+The unreleased v0.7 workspace assembles host-authored sections with shared context and global
+references and preserves local drafts for continued editing. Its drawing tasks exchange editable
+artwork with external tools; import does not execute scripts or validate their scientific meaning.
+Neither route supplies missing literature reasoning or automatically produces a submission-ready paper.
 
 Qualification can reject incomplete membership, unknown units, incompatible cases, missing source
 locations, or inadequate convergence, conservation, verification, and validation evidence. Passing
