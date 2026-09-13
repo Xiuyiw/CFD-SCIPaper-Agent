@@ -1,14 +1,14 @@
 # Manuscript workspace tutorial
 
-Development tutorial for the v0.7 manuscript workspace, which is not yet released. Use the
-current `workstream/v07-writing-figures` checkout; the published v0.6.0 package does not contain
-this workflow. The example uses a public analytical pipe reference and three supplied sample
+Tutorial for the v0.7 manuscript workspace. Use a v0.7 checkout or a wheel built from the same
+version; the older v0.6.0 package does not contain this workflow. The example uses a public
+analytical pipe reference and three supplied sample
 drafts. The CLI prepares writing tasks, assembles drafts and exports Word; a host AI and the
 author supply scientific prose when using your own evidence.
 
 ## Install and prepare the example
 
-Use a Python 3.10–3.12 environment. From the repository root, install this checkout with the
+Use a Python 3.10–3.12 environment. From the v0.7 repository root, install this checkout with the
 `docs` extra and check that the manuscript option is present:
 
 ```text
@@ -16,8 +16,14 @@ python -m pip install ".[docs]"
 cfdpaper write --help
 ```
 
-This is a normal, non-editable installation built from the checkout. An installed wheel built
-from the same development code also works; editable installation is not required. Keep both
+This is a normal, non-editable installation built from the checkout. Alternatively, install a
+same-version wheel with its `docs` extra (replace the path with your actual wheel path):
+
+```text
+python -m pip install "path/to/cfd_paper_agent-0.7.0-py3-none-any.whl[docs]"
+```
+
+Editable installation is not required. Keep both
 `examples/manuscript-workspace/` and `examples/section-writing/` available for the preparation
 script, which reuses the latter's public reference generator. Examples are not inside the wheel.
 
@@ -73,8 +79,8 @@ indent and zero paragraph spacing; figure captions, tables, equations and headin
 ## Continue after moving the workspace
 
 Copy the entire assembled `my-manuscript` directory to a new location named `working-copy`,
-keeping the original candidate unchanged. On a new computer, install the same development
-code with the `docs` extra first; copying the manuscript does not install the CLI.
+keeping the original candidate unchanged. On a new computer, install the same v0.7 version
+with the `docs` extra first; copying the manuscript does not install the CLI.
 
 Read `working-copy/CONTINUE.md`, `manuscript.md` and `manuscript-input.json`. Before editing,
 read `working-copy/sections/SECTION_ID/TASK.md`, its `manuscript-context.json`, Skill,

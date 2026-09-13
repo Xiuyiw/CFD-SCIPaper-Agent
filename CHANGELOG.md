@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-09-13
+
 ### Added
 
 - Multi-section manuscript workspaces with a shared paper spine, terminology and

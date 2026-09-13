@@ -5,8 +5,9 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. Version 0.6.0 connects existing exported
-materials to host-assisted scientific analysis, reproducible calculations and editable Word subsections.
+defensible paper topics, figures, and results prose. The v0.7.0 candidate extends source-linked
+analysis and subsection writing with a host-assisted multi-section workspace, cross-chapter
+references, portable continued editing and external drawing-task exchange.
 The workflow preserves the connection between the original observations, scientific interpretation,
 and the numbers and graphics appearing in the manuscript.
 
@@ -26,22 +27,26 @@ the QoI and figure claim, and approve the final artifact.
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Existing materials to subsection analysis | Available | CSV and method profiling; portable host-AI proposals; author-selected population/partition calculations, expression choices and source-linked writing. |
+| Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; host-authored drafts, bundled Methods guidance, global figure/table/equation numbering and editable DOCX. |
+| Portable continued editing | Available | Local drafts, sources and task context travel with the candidate; reassembly preserves unedited drafts. Word-only edits must be reconciled into the draft. |
+| External drawing tasks | Available | Host-facing data, conceptual and hybrid tasks; import Python, SVG or uncompressed draw.io editing sources with previews and listed supporting files. Import does not run scripts or approve figures. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
-| Full-manuscript writing, literature management and journal revision | Roadmap | Section writing does not provide a complete manuscript or autonomous scientific review. |
+| Literature-supported full-paper reasoning, literature management and journal revision | Roadmap | Multi-section assembly is not autonomous complete-paper writing or scientific review. |
 
 ## Installation
 
-**Development branch:** the unreleased manuscript workspace adds shared section tasks,
-cross-chapter references and portable continued editing. See the
-[runnable tutorial](examples/manuscript-workspace/README.md). These features are not in the
-published v0.6.0 wheel; complete literature-supported paper writing remains on the roadmap.
-
-CFD-Paper-Agent supports CPython 3.10–3.12. From a public checkout:
+CFD-Paper-Agent supports CPython 3.10–3.12. For the v0.7 workspace, use a v0.7 checkout
+or a wheel built from the same version; the older v0.6.0 wheel does not contain these commands.
+From the checkout root, install with Word support:
 
 ```text
-python -m pip install -e .
+python -m pip install ".[docs]"
 cfdpaper --help
 ```
+
+Follow the [manuscript workspace tutorial](examples/manuscript-workspace/README.md) to prepare
+shared section tasks, assemble the supplied drafts and continue from a moved workspace.
+See the [v0.7.0 candidate notes](docs/releases/v0.7.0.md) for the version scope.
 
 ## Reproducible evidence Quickstart
 
@@ -75,7 +80,7 @@ or failed convergence stop before unsupported analysis, figure, or paragraph art
 
 ### Existing exports to an analysis subsection
 
-Version 0.6.0 accepts a folder of exported CSV tables, method notes and
+The material-analysis route accepts a folder of exported CSV tables, method notes and
 existing raster figures, without a prewritten scientific-records envelope:
 
 ```text
@@ -174,17 +179,20 @@ automatically to verified scientific evidence.
 
 ## Explicit non-capabilities
 
-Version 0.6.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
+CFD-Paper-Agent does not run CFD simulations, ingest arbitrary native solver cases, infer missing
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
-identify an operating optimum, write a complete manuscript, manage references, export submission
-packages, or submit to a journal. Subsection DOCX export and review-suggestion import are
-available through `write`; the root `review`, `revise`, and `export` commands remain unavailable.
+identify an operating optimum, autonomously write a complete paper, manage a verified literature
+library, export submission packages, or submit to a journal. Multi-section and subsection DOCX
+export and subsection review-suggestion import are available through `write`; the root `review`,
+`revise`, and `export` commands remain unavailable. External drawing-task exchange does not add
+automatic complex mechanism graphics or establish broad heterogeneous CFD validation.
 
 ## Public documentation
 
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.7.0 candidate notes](docs/releases/v0.7.0.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
 - [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.4.0 release notes](docs/releases/v0.4.0.md)
