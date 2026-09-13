@@ -297,3 +297,51 @@ def test_bad_drafts_fail_without_partial_output(tmp_path, change):
     with pytest.raises(ValueError):
         assemble_manuscript(package, drafts, tmp_path / "output")
     assert not (tmp_path / "output").exists()
+
+
+def test_cross_section_objects_rebind_after_reordering(tmp_path):
+    source, drafts = fixture(tmp_path)
+    path = tmp_path / "response/draft.json"
+    draft = read(path)
+    draft["paragraphs"][0]["text"] += (
+        " Defined in {{equation:methods/same}}; compare {{table:transport/same}}"
+        " and {{figure:transport/same}}. Literal Equation 1 stays."
+    )
+    write(path, draft)
+    package = prepare_manuscript(source, tmp_path / "package")
+    output = assemble_manuscript(package, drafts, tmp_path / "first")
+    text = read(output / "section.json")["paragraphs"][3]["text"]
+    assert "Defined in Equation 1; compare Table 3 and Figure 3" in text
+    assert "Literal Equation 1 stays" in text
+    manifest = read(package / "manuscript-input.json")
+    manifest["spine"]["sections"].reverse()
+    write(package / "manuscript-input.json", manifest)
+    output = assemble_manuscript(package, drafts, tmp_path / "reordered")
+    text = read(output / "section.json")["paragraphs"][3]["text"]
+    assert "Defined in Equation 3; compare Table 1 and Figure 1" in text
+    assert "Literal Equation 1 stays" in text
+    refs = read(output / "numbering.json")["sections"]["response"]["cross_references"]
+    assert refs[0] == {"kind": "equation", "section_id": "methods", "id": "same", "number": "3"}
+    assert "{{equation:methods/same}}" in (output / "sections/response/draft.json").read_text()
+
+
+@pytest.mark.parametrize("target", ["missing/same", "methods/missing"])
+def test_unknown_cross_section_object_is_not_guessed(tmp_path, target):
+    source, drafts = fixture(tmp_path)
+    path = tmp_path / "response/draft.json"
+    draft = read(path)
+    draft["paragraphs"][0]["text"] += " {{equation:" + target + "}}"
+    write(path, draft)
+    package = prepare_manuscript(source, tmp_path / "package")
+    with pytest.raises(ValueError, match="Unknown cross-section"):
+        assemble_manuscript(package, drafts, tmp_path / "output")
+    assert not (tmp_path / "output").exists()
+
+
+def test_markdown_keeps_objects_with_their_section(tmp_path):
+    source, drafts = fixture(tmp_path)
+    package = prepare_manuscript(source, tmp_path / "package")
+    output = assemble_manuscript(package, drafts, tmp_path / "output")
+    markdown = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert markdown.index("   (1)") < markdown.index("## Response")
+    assert markdown.index("![Figure 1]") < markdown.index("## Response")

@@ -22,6 +22,10 @@ and assemble to a different directory to inspect `numbering.json`; literal numbe
 are deliberately not rewritten. Editing source CSVs triggers recomputation of bound result values,
 but the host must reconsider associated trend statements and interpretations.
 
+To refer to a Methods equation from Results, use `{{equation:methods/local-equation-id}}`.
+The same `section_id/local_id` qualification works for table and figure tokens, including forward
+references. Use IDs from the input/draft, not the numbers of an earlier assembled version.
+
 This demonstrates organization, source-bound numbers and editable document structure. The simple
 reference plots are not examples of complex mechanism graphics, and the short tutorial is not
 a publication-ready full manuscript. Its DOCX style uses the project's default two-character body

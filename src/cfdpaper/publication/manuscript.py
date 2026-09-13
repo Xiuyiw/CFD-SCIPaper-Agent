@@ -152,6 +152,9 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
             "draft paths relative to that mapping file. Do not invent missing evidence. "
             "Keep source and author edits unchanged; assemble into a new output directory. "
             "Use supported figure/table/equation/cite tokens for automatic global numbering. "
+            "For an object in another section use {{equation:section_id/local_id}}, "
+            "{{table:section_id/local_id}} or {{figure:section_id/local_id}}; "
+            "unqualified IDs refer to the current section. "
             "Literal reference labels in prose are not renumbered.\n",
             encoding="utf-8",
         )
@@ -200,26 +203,52 @@ def _markdown(data):
     from cfdpaper.publication.export import _markdown_table
 
     lines = [f"# {data['title']}"]
+    placed = {"equations": set(), "tables": set(), "figures": set()}
+
+    def append_objects(ownership, figure_ids):
+        for equation in data["equations"]:
+            key = equation["equation_id"]
+            if key in ownership.get("equations", []) and key not in placed["equations"]:
+                model = SectionEquation.model_validate(equation)
+                lines.append(f"{math_text(model.expression)}   ({model.equation_id})")
+                placed["equations"].add(key)
+        for table in data["tables"]:
+            key = table["table_id"]
+            if key in ownership.get("tables", []) and key not in placed["tables"]:
+                lines.append(f"Table {key}.")
+                lines.append(_markdown_table(SectionTable.model_validate(table)))
+                if table["note"]:
+                    lines.append(table["note"])
+                placed["tables"].add(key)
+        for figure in data["figures"]:
+            key = figure["id"]
+            if key in figure_ids and key not in placed["figures"]:
+                lines.extend(
+                    [f"![Figure {key}]({figure['path']})", f"Figure {key}. {figure['caption']}"]
+                )
+                placed["figures"].add(key)
+
+    owner, figure_ids = {}, set()
     for paragraph in data["paragraphs"]:
+        if "section_heading" in paragraph:
+            append_objects(owner, figure_ids)
+            owner = data.get("section_objects", {}).get(paragraph.get("section_id"), {})
+            figure_ids = set()
+        else:
+            figure_ids.update(paragraph.get("figure_ids", []))
         lines.append(
             f"## {paragraph['section_heading']}"
             if "section_heading" in paragraph
             else paragraph["text"]
         )
-    for equation in data["equations"]:
-        model = SectionEquation.model_validate(equation)
-        lines.append(f"{math_text(model.expression)}   ({model.equation_id})")
-    for table in data["tables"]:
-        lines.append(_markdown_table(SectionTable.model_validate(table)))
-        if table["note"]:
-            lines.append(table["note"])
-    for figure in data["figures"]:
-        lines.extend(
-            [
-                f"![Figure {figure['id']}]({figure['path']})",
-                f"Figure {figure['id']}. {figure['caption']}",
-            ]
-        )
+    append_objects(owner, figure_ids)
+    append_objects(
+        {
+            "tables": [t["table_id"] for t in data["tables"]],
+            "equations": [e["equation_id"] for e in data["equations"]],
+        },
+        {f["id"] for f in data["figures"]},
+    )
     if data["references"]:
         lines.extend(
             [
@@ -231,6 +260,50 @@ def _markdown(data):
             ]
         )
     return "\n\n".join(lines) + "\n"
+
+
+def _object_numbers(spine, loaded, raw_drafts):
+    """Index declared objects once so forward cross-section references are also stable."""
+    counters = {"figure": 0, "table": 0, "equation": 0}
+    numbers = {}
+    for contract in spine.sections:
+        sid = contract.section_id
+        draft = _Draft.model_validate(raw_drafts[sid])
+        _, section = loaded[sid]
+        for kind, ids in (
+            ("figure", [f.id for f in section.figures]),
+            ("table", [t.table_id for t in draft.tables]),
+            ("equation", [e.equation_id for e in draft.equations]),
+        ):
+            if len(ids) != len(set(ids)):
+                raise ValueError(f"Duplicate {kind} IDs in section {sid}")
+            for identifier in ids:
+                counters[kind] += 1
+                numbers[(kind, sid, identifier)] = str(counters[kind])
+    return numbers
+
+
+def _cross_references(raw, numbers):
+    used = []
+
+    def resolve(text):
+        def replace(match):
+            kind, sid, identifier = match.groups()
+            key = (kind, sid, identifier)
+            if key not in numbers:
+                raise ValueError(f"Unknown cross-section {kind}: {sid}/{identifier}")
+            record = {"kind": kind, "section_id": sid, "id": identifier, "number": numbers[key]}
+            if record not in used:
+                used.append(record)
+            return f"{kind.title()} {numbers[key]}"
+
+        return re.sub(
+            r"\{\{(figure|table|equation):([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)\}\}",
+            replace,
+            text,
+        )
+
+    return _strings(raw, resolve), used
 
 
 def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) -> Path:
@@ -249,8 +322,9 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         raise ValueError("Draft section IDs must exactly match the spine sections")
     if any(not isinstance(value, str) for value in drafts.values()):
         raise ValueError("Draft mapping values must be relative JSON paths")
+    raw_drafts = {sid: _read(_relative(drafts_path.parent, path)) for sid, path in drafts.items()}
+    object_numbers = _object_numbers(data.spine, loaded, raw_drafts)
     numbering = {"sections": {}, "references": []}
-    counters = {"figure": 0, "table": 0, "equation": 0}
     reference_sources = {}
     combined = {
         "section_id": "manuscript",
@@ -272,7 +346,7 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         for contract in data.spine.sections:
             sid = contract.section_id
             draft_path = _relative(drafts_path.parent, drafts[sid])
-            raw = _read(draft_path)
+            raw, cross_references = _cross_references(raw_drafts[sid], object_numbers)
             draft = _Draft.model_validate(raw)
             if contract.role == "methods":
                 body = "\n".join(p.text for p in draft.paragraphs)
@@ -295,14 +369,14 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             marked_path.unlink()
             result = _read(local / "section.json")
             mapping = {"figure": {}, "table": {}, "equation": {}, "cite": {}, "evidence": {}}
+            mapping["cross_references"] = cross_references
             for kind, field, id_field in (
                 ("figure", "figures", "id"),
                 ("table", "tables", "table_id"),
                 ("equation", "equations", "equation_id"),
             ):
                 for item in result[field]:
-                    counters[kind] += 1
-                    mapping[kind][item[id_field]] = str(counters[kind])
+                    mapping[kind][item[id_field]] = object_numbers[(kind, sid, item[id_field])]
             for record in result["references"]:
                 identity = record["source"].strip().casefold()
                 if identity not in reference_sources:

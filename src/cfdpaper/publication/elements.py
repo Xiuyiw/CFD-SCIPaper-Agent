@@ -31,7 +31,9 @@ class SectionTable(ManuscriptTable):
 
 class MathNode(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    kind: Literal["text", "symbol", "row", "sub", "sup", "subsup", "fraction", "sqrt"]
+    kind: Literal[
+        "text", "symbol", "row", "sub", "sup", "subsup", "fraction", "sqrt", "dot", "overbar"
+    ]
     text: str | None = None
     children: list[MathNode] = Field(default_factory=list)
 
@@ -41,7 +43,15 @@ class MathNode(BaseModel):
             if not self.text or self.children:
                 raise ValueError("Text/symbol nodes require text and no children")
         else:
-            counts = {"sub": 2, "sup": 2, "subsup": 3, "fraction": 2, "sqrt": 1}
+            counts = {
+                "sub": 2,
+                "sup": 2,
+                "subsup": 3,
+                "fraction": 2,
+                "sqrt": 1,
+                "dot": 1,
+                "overbar": 1,
+            }
             if self.text is not None or not self.children:
                 raise ValueError("Composite math nodes require children and no text")
             if self.kind in counts and len(self.children) != counts[self.kind]:
@@ -62,6 +72,8 @@ def math_text(node: MathNode) -> str:
     values = [math_text(child) for child in node.children]
     if node.kind == "row":
         return "".join(values)
+    if node.kind in {"dot", "overbar"}:
+        return f"{node.kind}({values[0]})"
     if node.kind == "sqrt":
         return f"√({values[0]})"
     if node.kind == "fraction":
@@ -88,6 +100,16 @@ def math_xml(node: MathNode):
         return [run]
     if node.kind == "row":
         return [element for child in node.children for element in math_xml(child)]
+    if node.kind in {"dot", "overbar"}:
+        accent = OxmlElement("m:acc")
+        props, character = OxmlElement("m:accPr"), OxmlElement("m:chr")
+        character.set(qn("m:val"), "\u0307" if node.kind == "dot" else "\u0305")
+        props.append(character)
+        accent.append(props)
+        base = OxmlElement("m:e")
+        base.extend(math_xml(node.children[0]))
+        accent.append(base)
+        return [accent]
     tags = {
         "sub": ("sSub", ["e", "sub"]),
         "sup": ("sSup", ["e", "sup"]),
@@ -168,4 +190,9 @@ def add_table(document, table: SectionTable, style):
                 cell_borders.append(bottom)
                 cell._tc.get_or_add_tcPr().append(cell_borders)
     if table.note:
+        # Keep the note with the final data row, not on an otherwise empty page.
+        item.rows[-1]._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
+        for cell in item.rows[-1].cells:
+            for paragraph in cell.paragraphs:
+                paragraph.paragraph_format.keep_with_next = True
         document.add_paragraph(table.note, style="Caption")

@@ -27,7 +27,20 @@ than writing an isolated 'see table'. Use `{{figure:ID}}`, `{{equation:ID}}` and
 `{{cite:ID}}` for automatic manuscript numbering. IDs are stable local identifiers,
 not publication numbers: manuscript assembly assigns global labels in spine order.
 Do not manually type reference numbers expecting them to be renumbered.
+For cross-section objects use, for example, `{{equation:methods/resistance}}`.
+Build dotted rates and overlined averages with one-child `dot` and `overbar` math nodes,
+including nested accents, rather than composing decorated Unicode text in a long math run.
+These export as editable equation accents; inspect the rendered formula, not only its XML.
 
 Keep reader-facing methods prose separate from `evidence_notes`. Notes should
 name the missing source or setting and the minimum author information needed.
 Do not manufacture missing images, measurements, model parameters or citations.
+
+When the supplied records establish only comparison and postprocessing methods,
+title and scope the section accordingly. Do not present a reproducible diagnostic
+definition as a complete reproducible simulation setup. A single-record table
+mean can bind an exported scalar, but does not verify the cross-column formula
+that originally produced it. State that distinction in evidence notes when it
+matters. If recalculation uses a partition-sum denominator while the original
+report used a separate whole-domain total, declare the chosen denominator even
+when both values agree after rounding.

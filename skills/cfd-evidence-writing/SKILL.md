@@ -127,6 +127,10 @@ text does not demonstrate independent scientific writing.
 
 Use supported figure/table/equation/citation tokens for cross-references. Workspace assembly
 rebinds them to global numbering in spine order; local free-text numbers are not silently rewritten.
+For an object in another section, qualify its ID, for example
+`{{equation:methods/resistance}}`, `{{table:methods/design}}` or
+`{{figure:results/heat-partition}}`. These three object types support forward references as well.
+Keep ordinary local tokens unchanged; cross-section citation/value tokens are not supported.
 Inspect `numbering.json` and the rendered pages after reordering. This path coordinates sections and
 exports an editable candidate, not a finished or author-approved full paper.
 
