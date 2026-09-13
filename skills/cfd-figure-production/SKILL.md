@@ -1,6 +1,6 @@
 ---
 name: cfd-figure-production
-description: Lock an author-accepted figure claim and produce its source data, runnable plot, editable figure, caption, and QA bundle.
+description: Select evidence and visual encoding for a CFD argument, assess scientific information density, and produce an author-accepted reproducible figure bundle.
 ---
 
 # CFD figure production
@@ -9,6 +9,40 @@ description: Lock an author-accepted figure claim and produce its source data, r
 
 Use after analysis when the author has accepted the exact candidate figure contract and its bounded
 claim.
+
+Also use when choosing or assessing figures for host-assisted analysis/subsections. The legacy
+approval CLI below applies only to its existing candidate pipeline, not to every supplied figure.
+
+## Scientific figure selection
+
+Before rendering, state the question and what the reader should learn from seeing the figure
+rather than reading a sentence or table. Select quantities and comparisons from that purpose,
+not from the first available scalar output or the renderer's default chart.
+
+- Match information density to scientific purpose and final manuscript size. A two-value contrast
+  can be useful, but does not automatically deserve a full-width standalone plot. Consider a sentence,
+  small table, compact panel or combination with related evidence. Do not impose minimum point counts.
+- If the argument depends on opposing responses, a spatial redistribution or a decomposition,
+  show the necessary complementary quantities together where the evidence permits. Do not plot one
+  convenient metric while leaving the decisive relationship invisible. Use aligned panels for unlike
+  units; an algebraic decomposition is not, by itself, evidence of a causal mechanism.
+- Choose encoding by the actual relationship: region-by-case comparisons for spatial allocation,
+  contribution charts for defined additive parts, paired comparisons for change, and scatter only
+  when its coordinates or categories reveal the intended relation. More panels, colors or glyphs
+  are not inherently better. Never invent uncertainty, smooth discrete cases or duplicate readings
+  merely to fill space.
+- Keep full spatial/operating context when needed to understand a local change; do not cherry-pick
+  a region because its contrast is visually attractive. Use the relevant P04 lesson, not its visual
+  template: contributions, sampled distributions and complementary diagnostics serve different roles.
+- If the available renderer cannot express the proposed relationship, identify that specific product
+  gap. A default plot is a preliminary visualization, not a publication-quality figure. For an already
+  accepted or manually edited figure, propose a semantic redesign to the author before changing it.
+
+At final embedded size inspect both scientific readability and typography: can the reader see the
+main relationship without relying on the prose; are labels/units/legend readable, marker weights
+consistent, whitespace proportionate, and neighboring panels aligned? Successful export and absence
+of clipping are necessary checks, not sufficient evidence of figure quality. Keep this assessment
+in the existing figure contract/review notes; do not create another approval registry.
 
 ## Do not trigger
 

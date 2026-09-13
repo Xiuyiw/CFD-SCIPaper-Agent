@@ -71,6 +71,12 @@ def test_each_skill_declares_the_required_contract_without_private_paths() -> No
 
 def test_skills_only_call_the_delivered_v03_cli_sequence() -> None:
     bodies = {name: _read_skill(name)[1] for name in EXPECTED_SKILLS}
+    # The independent materials/analysis entry added in v0.6 does not require
+    # initialization or topic approval. Preserve this test for the original path;
+    # tests/test_analysis_cli.py exercises the new entry through real commands.
+    for name, body in bodies.items():
+        if "## Existing strict qualification pathway" in body:
+            bodies[name] = body.split("## Existing strict qualification pathway", 1)[1]
     expected_commands = {
         "cfd-evidence-intake": (
             "cfdpaper init PROJECT_ROOT",

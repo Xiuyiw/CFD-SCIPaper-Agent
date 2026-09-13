@@ -1,18 +1,73 @@
 ---
 name: cfd-qoi-physics
-description: Evaluate a locked QoI across declared CFD cases and derive an evidence-bounded claim ceiling and figure candidate.
+description: Help an author select method-backed analysis of existing CFD materials, compile it through deterministic table calculations, or evaluate an existing locked QoI.
 ---
 
 # CFD QoI physics
 
 ## Trigger
 
-Use after checkpoint 1 when the author has accepted the exact QoI definition and the located
-observation sequence is ready for evaluation.
+Use when the author is choosing a method-backed analysis proposal from existing materials, or
+after checkpoint 1 on the existing locked-QoI route.
+
+## Host-assisted analysis route
+
+Read the package produced by `cfd-evidence-intake`, including the actual definitions and tables.
+The host may propose a new QoI or analysis direction; it must not fabricate its missing physical
+definition. Distinguish observed features, relationships supported by declared quantities, and
+interpretations still needing evidence. Do not treat an algebraic identity as causal proof.
+
+For the author-selected proposal, check the mapped quantity and operator, units, spatial/statistical
+domain, member and group identities, boundary/comparison basis, applicable cases and interpretation
+limits. Ask only about consequential unresolved definitions. Preserve known not-comparable status;
+the existence of a method path does not independently verify semantics.
+
+Compile the selected proposal:
+
+```text
+cfdpaper plan PROJECT_ROOT --artifact analysis --package PACKAGE_DIR --proposal PROPOSAL_JSON --select CANDIDATE_ID --output OUTPUT_DIR
+```
+
+The numeric operations reuse the existing table engine: `population` uses equal records and
+population standard deviation (`ddof=0`); `partition` sums declared area and already-integrated
+rate and derives flux/shares. Neither infers an area integral, converts units, reconstructs a
+field, establishes physical partition coverage, or excludes inconvenient records. Missing units,
+domains, definition locations, duplicate declared identities, missing declared members or
+unsupported comparison status must be resolved for the selected calculation. Independent
+supported candidates remain available.
+
+Prefer a few purposeful result-bound metrics. If automatic scalar anchors are provided, they are
+a selection pool, not a request to narrate every value. Inspect `table-results.json`; no hand-copied
+numeric claims should replace `result_ref`. Keep zero-mean CV undefined rather than reporting zero.
+Changing copied source values requires recalculation and fresh downstream figure/writing output.
+
+Distinguish numeric anchors for prose from the evidence needed in a figure. Before selecting
+figure_plan.metric_ids, identify which relationship is central and whether the selected metrics
+actually display it. For example, increased regional integrated transfer and decreased mean flux
+require consideration of allocation, area and flux together, not automatic selection of just two
+share values. Use complete relevant partitions when the claim concerns redistribution. Do not
+inflate the number of plots or indicators; a sentence or table is appropriate for a simple contrast.
+Consult cfd-figure-production for this decision. If its design exceeds the implemented renderer,
+record the concrete gap rather than silently accepting the renderer's default as the final design.
+
+In the host proposal, set presentation to plot, prose, table or custom and explain the choice in
+presentation_reason. Only plot invokes the current automatic comparison renderer; table/prose
+continue to host writing with the same computed evidence, while custom records unfinished figure
+work without substituting a default chart. This does not automatically generate a custom figure.
+
+Use the existing figure-production and evidence-writing skills for actual plots and the subsection.
+Explain why the relationship matters and what alternatives remain, without claiming that a larger
+metric always means better performance or that discrete cases define a continuous operating window.
+Compilation is deterministic numerical evaluation, not automatic physical validation or author
+approval. No new approval registry is introduced.
+
+## Existing locked-QoI route
+
+The remaining requirements apply to the original locked-contract path and remain unchanged.
 
 ## Do not trigger
 
-Do not use to invent a QoI, interpolate an unobserved state, smooth discrete cases, infer an
+Do not use to invent missing QoI definitions, interpolate an unobserved state, smooth discrete cases, infer an
 undeclared spatial aggregate, or claim an optimum or operating boundary.
 
 ## Inputs

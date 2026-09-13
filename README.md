@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. Version 0.5.0 connects raw-table calculations
-to host-AI subsection writing, four-format figures, and editable Word tables and equations.
+defensible paper topics, figures, and results prose. Version 0.6.0 connects existing exported
+materials to host-assisted scientific analysis, reproducible calculations and editable Word subsections.
 The workflow preserves the connection between the original observations, scientific interpretation,
 and the numbers and graphics appearing in the manuscript.
 
@@ -25,6 +25,7 @@ the QoI and figure claim, and approve the final artifact.
 | Evidence writing | Available | Numeric paragraph or host-authored multi-figure subsection; current CSV calculations bind to evidence tokens with units and source records. |
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
+| Existing materials to subsection analysis | Available | CSV and method profiling; portable host-AI proposals; author-selected population/partition calculations, expression choices and source-linked writing. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
 | Full-manuscript writing, literature management and journal revision | Roadmap | Section writing does not provide a complete manuscript or autonomous scientific review. |
 
@@ -66,6 +67,32 @@ Negative fixture variants demonstrate that missing members, duplicate observatio
 or failed convergence stop before unsupported analysis, figure, or paragraph artifacts are created.
 
 ## Inputs
+
+### Existing exports to an analysis subsection
+
+Version 0.6.0 accepts a folder of exported CSV tables, method notes and
+existing raster figures, without a prewritten scientific-records envelope:
+
+```text
+cfdpaper inspect STUDY --materials --output profile
+cfdpaper plan STUDY --artifact analysis --output analysis-materials
+```
+
+Give `analysis-materials/host-task.md` to your local AI. The package includes the analysis
+and figure-selection skills. The host reads the definitions, proposes useful comparisons,
+and writes the proposal; the author selects a direction and resolves essential ambiguities.
+Selection recomputes the declared quantities and prepares a portable writing task, including
+the writing skill and its mechanism guidance. No API key or manually written JSON is required
+from the author when using a capable local host.
+
+Follow the [material-analysis tutorial](examples/material-analysis/README.md) for selection,
+writing and DOCX export. A compact table or prose can replace an unnecessary plot; custom
+figure requests remain pending until their actual artwork is supplied. Body formatting defaults
+to two-character first-line indentation and zero paragraph spacing, with explicit template overrides.
+This route supports declared population and partition calculations, not arbitrary
+solver extraction or automatic causal inference. The existing evidence-first workflow remains available.
+
+### Supplied evidence and figures
 
 For existing figures and deeper host-AI writing, follow the
 [two-figure subsection tutorial](examples/section-writing/README.md). It includes
@@ -142,7 +169,7 @@ automatically to verified scientific evidence.
 
 ## Explicit non-capabilities
 
-Version 0.5.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
+Version 0.6.0 does not run CFD simulations, ingest arbitrary native solver cases, infer missing
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
 identify an operating optimum, write a complete manuscript, manage references, export submission
 packages, or submit to a journal. Subsection DOCX export and review-suggestion import are
@@ -154,6 +181,7 @@ available through `write`; the root `review`, `revise`, and `export` commands re
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
 - [v0.5.0 release notes](docs/releases/v0.5.0.md)
+- [v0.6.0 release notes](docs/releases/v0.6.0.md)
 - [v0.4.0 release notes](docs/releases/v0.4.0.md)
 - [v0.3.1 release notes](docs/releases/v0.3.1.md)
 - [v0.3.0 release notes](docs/releases/v0.3.0.md)

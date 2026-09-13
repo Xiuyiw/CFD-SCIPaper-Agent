@@ -16,11 +16,19 @@ recorded here instead of being represented as already complete.
 | `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Released |
 | `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Delivered; see release tag |
 | `v0.5.0` | Raw-table-linked quantitative writing and manuscript-scale figures, tables, equations and DOCX layout | Delivered; see the v0.5.0 release tag and notes |
+| Developing `v0.6.0` | Existing exported materials to host-assisted scientific analysis selection and the subsection workflow | Implemented and exercised locally; release and new heterogeneous validation pending |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
 workflow, not an autonomous full-paper system. Completed private manuscript repairs are distinct
 from product changes and new-task evaluation. Earlier release scopes and long-term goals remain.
+
+The [next development plan](research/V0_6_DEVELOPMENT_PLAN.md) targets the remaining manual
+input-preparation burden: inspect existing tables and definitions, propose meaningful analyses,
+and connect the author's choice to the existing calculation, figure and DOCX path. This chain is
+implemented locally, with a recorded synthetic example and a known cooling-case regression.
+It does not promise arbitrary native-solver extraction or autonomous full papers; new cross-domain
+validation and release checks remain separate work.
 
 ## Product direction
 

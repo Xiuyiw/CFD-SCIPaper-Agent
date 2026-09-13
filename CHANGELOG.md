@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-09-13
+
+### Added
+
+- Material profiling and portable host-assisted analysis proposals from exported CSVs,
+  readable method notes and existing figures, connected to deterministic table calculations
+  and results-subsection writing.
+- Explicit plot, prose, table or custom presentation choices; non-plot choices no longer
+  require placeholder images. Custom artwork is not automatically generated.
+- Analysis and writing skills travel with their respective task packages, including
+  the writing reference for physical interpretation and editable tables/equations.
+- A reproducible synthetic material-analysis example with an optional plot route.
+
+### Fixed
+
+- Body paragraphs use configurable first-line indentation and before/after spacing,
+  independently of captions, headings, tables and references.
+- Area and compound flux units use readable scientific display notation without changing values.
+
 ## [0.5.0] — 2026-09-12
 
 ### Added

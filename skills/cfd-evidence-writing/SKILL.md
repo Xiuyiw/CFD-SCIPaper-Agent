@@ -106,6 +106,31 @@ Section assembly checks references, tokens, assets and declared duty coverage, n
 It neither creates checkpoint 3 nor accepts `--approve-final`. Review import does not revise or
 approve the manuscript; apply author-selected revisions in a new draft and fresh output.
 
+## Manuscript paragraph and page formatting
+
+Use the author's requested format first, or the target venue's supplied template; do not present
+one house style as a universal SCI requirement. For this project's requested manuscript style,
+body paragraphs use a two-character first-line indent and 0 pt before/after spacing. Implement
+indentation as paragraph formatting, not inserted spaces, tabs or blank paragraphs. Keep line
+spacing separate from paragraph spacing. Explicit venue/author overrides must remain possible.
+The input style fields are body_first_line_indent_chars, body_space_before_pt and
+body_space_after_pt; the exporter applies them only to body paragraphs. A zero-figure section is
+valid when prose or a native table carries the argument; do not create a placeholder image.
+Current table/equation IDs are displayed literally; assign publication labels (1, 2, S1 as
+appropriate) rather than internal slugs, and use the same IDs in tokens. Do not manually renumber
+only the caption or only a cross-reference.
+
+Scope body formatting to body paragraphs: headings, captions, table cells, references, equations
+and image anchor paragraphs have their own alignment, indentation and spacing. A generic Word
+Normal style or exporter default must not silently decide manuscript typography.
+
+Verify the actual paragraph properties and the rendered pages, including indentation, before/after
+spacing, readable figure size, caption proximity and page breaks. No clipping alone is not a format
+pass. If the exporter cannot implement a required property, report the specific implementation gap;
+do not mark formatting complete or quietly substitute manual repair for an Agent capability.
+When the user requests rule/skill improvements, update those instructions and record implementation
+follow-up without editing their example document or redrawing its figures.
+
 ## Stop conditions
 
 - Legacy paragraph: stop when the figure delivery is missing, failed, or stale.

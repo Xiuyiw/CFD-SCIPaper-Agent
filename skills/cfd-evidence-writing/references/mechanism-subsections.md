@@ -210,7 +210,7 @@ definition needs to be explicit. Merge this fragment into the draft above, with 
 ```json
 {
   "tables": [{
-    "table_id": "t1", "caption": "Case a diagnostics",
+    "table_id": "1", "caption": "Case a diagnostics",
     "after_section_id": "heat-results",
     "columns": ["Quantity", "Value"],
     "rows": [["Outlet-flow CV", "{{value:outlet-cv}}"],
@@ -220,7 +220,7 @@ definition needs to be explicit. Merge this fragment into the draft above, with 
     "note": "The heat-share denominator includes all supplied regions."
   }],
   "equations": [{
-    "equation_id": "eq1", "evidence_ids": [],
+    "equation_id": "1", "evidence_ids": [],
     "expression": {"kind": "row", "children": [
       {"kind": "symbol", "text": "s"},
       {"kind": "text", "text": " = "},
@@ -236,8 +236,9 @@ definition needs to be explicit. Merge this fragment into the draft above, with 
 ```
 
 Here `s` is the regional heat share, `Q_r` the selected region's integrated heat, and `Q` the
-supplied-region total. Reference these objects in a paragraph with `{{table:t1}}` and
-`{{equation:eq1}}`. IDs identify objects declared in this draft. Tables reuse `ManuscriptTable`:
+supplied-region total. Reference these objects in a paragraph with `{{table:1}}` and
+`{{equation:1}}`. IDs are printed literally; use publication labels rather than internal slugs.
+Tables reuse `ManuscriptTable`:
 `after_section_id` must equal the input `section_id`, every row must match `columns`, and cell
 values are strings. `evidence_ids` declares the evidence used by value tokens in cells, caption
 and note; values resolve through the same calculation references as prose. Optional column widths
@@ -265,7 +266,7 @@ For a variable or expression inside a sentence, declare `inline_math` on that pa
 }
 ```
 
-`{{math:share}}` inserts editable inline OMML from this paragraph's nodes; `{{equation:eq1}}`
+`{{math:share}}` inserts editable inline OMML from this paragraph's nodes; `{{equation:1}}`
 inserts a numbered reference to a declared equation. Subscripts are explicit nodes, not inferred
 from underscores. Value tokens in inline nodes use the paragraph's `evidence_ids` and current
 table bindings, just as prose does.

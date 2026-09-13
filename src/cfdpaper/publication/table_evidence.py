@@ -2,9 +2,21 @@
 
 import csv
 import math
+import re
 import statistics
 from decimal import ROUND_HALF_EVEN, Decimal
 from pathlib import Path
+
+
+def display_unit(unit: str) -> str:
+    """Typeset a small supported SI quotient without converting its numerical scale."""
+    area = re.fullmatch(r"(m|cm|mm)(?:\^?2|²)", unit)
+    if area:
+        return f"{area[1]}²"
+    match = re.fullmatch(r"\(([^()]+)\)/\((m|cm|mm)(?:\^?2|²)\)", unit)
+    if match:
+        return f"{match[1]} {match[2]}⁻²"
+    return unit
 
 
 def calculate_table(path, *, operation, columns, group_by=None):
