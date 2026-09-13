@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-09-13
+
+### Added
+
+- Multi-section manuscript workspaces with a shared paper spine, terminology and
+  Methods-specific writing guidance. Section-qualified figure, table and equation
+  references follow the current chapter order.
+- Portable continued writing: assembled candidates retain local inputs, source
+  files, drafts and Skills, with a continuation guide and relative draft paths.
+- Host drawing tasks for data figures and conceptual diagrams, with external-tool
+  guidance and import of editable artwork and previews. Returned artwork is not
+  automatically treated as scientifically approved.
+- A three-section analytical manuscript tutorial and installed-wheel CI coverage.
+
+### Fixed
+
+- Editable dotted and overbar math expressions and table-note pagination in Word.
+
+The manuscript workspace organizes host-authored sections; whole-paper literature
+reasoning and autonomous publication-quality drafting remain outside this update.
+
 ## [0.6.0] — 2026-09-13
 
 ### Added

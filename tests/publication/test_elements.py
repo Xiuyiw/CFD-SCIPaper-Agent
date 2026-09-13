@@ -15,6 +15,8 @@ def symbol(text):
         ("subsup", 3, "sSubSup"),
         ("fraction", 2, "f"),
         ("sqrt", 1, "rad"),
+        ("dot", 1, "acc"),
+        ("overbar", 1, "acc"),
     ],
 )
 def test_math_nodes_are_editable_structures(kind, count, tag):
@@ -54,3 +56,34 @@ def test_table_retains_rectangular_semantics_and_widths():
             after_section_id="s1",
             column_widths_mm=[float("nan")],
         )
+
+
+def test_nested_flow_accents_and_table_note_pagination():
+    docx = pytest.importorskip("docx")
+    from docx.oxml.ns import qn
+
+    from cfdpaper.publication.elements import add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    node = MathNode(kind="overbar", children=[MathNode(kind="dot", children=[symbol("m")])])
+    xml = math_xml(node)[0]
+    assert [e.get(qn("m:val")) for e in xml.iter(qn("m:chr"))] == ["\u0305", "\u0307"]
+    assert [e.text for e in xml.iter(qn("m:t"))] == ["m"]
+    document = docx.Document()
+    add_table(
+        document,
+        SectionTable(
+            table_id="1",
+            caption="Data",
+            columns=["x"],
+            rows=[["1"], ["2"]],
+            after_section_id="s",
+            note="Definition.",
+        ),
+        PublicationStyle(),
+    )
+    table = document.tables[0]
+    assert table.rows[-1]._tr.find(qn("w:trPr")).find(qn("w:cantSplit")) is not None
+    assert table.rows[-1].cells[0].paragraphs[0].paragraph_format.keep_with_next is True
+    assert table.rows[-2].cells[0].paragraphs[0].paragraph_format.keep_with_next is None
+    assert document.paragraphs[-1].text == "Definition."

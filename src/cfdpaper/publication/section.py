@@ -579,6 +579,7 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
         ("Normal", config.body_pt),
         ("Title", config.title_pt),
         ("Caption", config.caption_pt),
+        ("Heading 1", config.heading_pt),
         ("Heading 2", config.heading_pt),
     ):
         style = document.styles[name]
@@ -600,6 +601,12 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
     document.styles["Normal"].paragraph_format.space_after = Pt(config.space_after_pt)
     document.styles["Caption"].paragraph_format.line_spacing = 1.2
     document.styles["Caption"].paragraph_format.space_after = Pt(config.space_after_pt)
+    for name in ("Heading 1", "Heading 2"):
+        heading = document.styles[name].paragraph_format
+        heading.first_line_indent = Pt(0)
+        heading.space_before = Pt(8)
+        heading.space_after = Pt(4)
+        heading.keep_with_next = True
     page = document.sections[0]
     page.page_width, page.page_height = Mm(config.page_width_mm), Mm(config.page_height_mm)
     page.left_margin = page.right_margin = Mm(config.margin_mm)
@@ -630,8 +637,35 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
             document.paragraphs[-1].paragraph_format.page_break_before = True
         document.add_paragraph(caption, style="Caption")
 
-    placed = set()
+    from cfdpaper.publication.elements import add_equation, add_table
+
+    placed, placed_tables, placed_equations = set(), set(), set()
+    current_section = None
+
+    def add_section_objects(section_id):
+        # Multi-section near-reference layout keeps Methods definitions before Results.
+        ownership = data.get("section_objects", {}).get(section_id, {})
+        for equation in data.get("equations", []):
+            key = equation["equation_id"]
+            if key in ownership.get("equations", []) and key not in placed_equations:
+                add_equation(document, SectionEquation.model_validate(equation))
+                placed_equations.add(key)
+        for table in data.get("tables", []):
+            key = table["table_id"]
+            if key in ownership.get("tables", []) and key not in placed_tables:
+                add_table(document, SectionTable.model_validate(table), config)
+                placed_tables.add(key)
+
     for paragraph in data["paragraphs"]:
+        if "section_heading" in paragraph:
+            if layout == "near-reference" and current_section is not None:
+                add_section_objects(current_section)
+            current_section = paragraph.get("section_id")
+            level = paragraph.get("level", 1)
+            if level not in (1, 2):
+                raise ValueError("Manuscript headings must use level 1 or 2")
+            document.add_heading(paragraph["section_heading"], level=level)
+            continue
         p = document.add_paragraph()
         p.paragraph_format.space_before = Pt(config.body_space_before_pt)
         p.paragraph_format.space_after = Pt(config.body_space_after_pt)
@@ -662,12 +696,14 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
                 if figure["id"] in paragraph["figure_ids"] and figure["id"] not in placed:
                     add_figure(figure)
                     placed.add(figure["id"])
-    from cfdpaper.publication.elements import add_equation, add_table
-
+    if layout == "near-reference" and current_section is not None:
+        add_section_objects(current_section)
     for equation in data.get("equations", []):
-        add_equation(document, SectionEquation.model_validate(equation))
+        if equation["equation_id"] not in placed_equations:
+            add_equation(document, SectionEquation.model_validate(equation))
     for table in data.get("tables", []):
-        add_table(document, SectionTable.model_validate(table), config)
+        if table["table_id"] not in placed_tables:
+            add_table(document, SectionTable.model_validate(table), config)
     for figure in data["figures"]:
         if figure["id"] not in placed:
             add_figure(figure)

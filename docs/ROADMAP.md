@@ -16,20 +16,34 @@ recorded here instead of being represented as already complete.
 | `v0.3.1` | Cross-platform CI and public-documentation maintenance for the v0.3 workflow | Released |
 | `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Delivered; see release tag |
 | `v0.5.0` | Raw-table-linked quantitative writing and manuscript-scale figures, tables, equations and DOCX layout | Delivered; see the v0.5.0 release tag and notes |
-| `v0.6.0` | Existing exported materials to host-assisted scientific analysis selection and the subsection workflow | Implemented; see the v0.6.0 release tag and notes for delivery |
+| `v0.6.0` | Existing exported materials to host-assisted scientific analysis selection and the subsection workflow | Released; see the v0.6.0 release tag and notes |
+| `v0.7.0` | Multi-section manuscript workspace, portable continued editing and external drawing-task integration | Implemented; see the v0.7.0 notes and release tag for distribution status |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
 workflow, not an autonomous full-paper system. Completed private manuscript repairs are distinct
 from product changes and new-task evaluation. Earlier release scopes and long-term goals remain.
 
-The [next development plan](research/V0_6_DEVELOPMENT_PLAN.md) targets the remaining manual
+The [v0.6 development plan](research/V0_6_DEVELOPMENT_PLAN.md) addressed the manual
 input-preparation burden: inspect existing tables and definitions, propose meaningful analyses,
 and connect the author's choice to the existing calculation, figure and DOCX path. This chain is
 implemented, with a recorded synthetic example and a known cooling-case regression.
 It does not promise arbitrary native-solver extraction or autonomous full papers; new cross-domain
 validation remains separate from software release checks. The [v0.6.0 notes](releases/v0.6.0.md)
 describe the delivered inputs, presentation choices and remaining limits.
+
+## Approved post-v0.6 writing direction
+
+The [full-writing development proposal](research/POST_V060_WRITING_PLAN.md) reviews the actual
+subsection capability, historical P04 and cooling-trial lessons, and the remaining manuscript gaps.
+The [figure-skill integration study](research/FIGURE_SKILL_INTEGRATION_STUDY.md) identifies reusable
+editable-diagram and data-figure workflows. The v0.7 candidate includes a portable drawing-task
+adapter, Methods/multi-section assembly, global references and continued editing after relocation.
+
+The approved sequence is a manuscript workspace plus figure integration, literature-supported
+whole-paper writing, then real manuscript trials and bounded pre-submission review. Version targets
+v0.8–v0.9 remain development targets, not delivered whole-paper capabilities.
+Native solver platforms and submission automation are not prerequisites for this writing route.
 
 ## Product direction
 

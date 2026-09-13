@@ -93,6 +93,30 @@ these settings together in `PLOT_STYLE`; editable local scripts retain priority 
 figure `sizing`; let the document layer choose the actual embedding width. Raster rounding can differ
 from the vector canvas by up to one pixel. Raising dpi does not increase the embedded text size.
 
+## External drawing tools: portable tasks and editable returns
+
+Use this route when the scientific argument needs a layout or schematic outside the existing
+data renderer. Read the packaged external-tool reference; choose the tool by the scientific
+relationship rather than starting a new canvas engine.
+
+```text
+cfdpaper figure PROJECT_ROOT --task-input figure-task.json --output figure-package
+cfdpaper figure PROJECT_ROOT --package figure-package --delivery delivery.json --output figure-candidate
+```
+
+The task states `figure_id`, `kind` (`data`, `schematic`, or `hybrid`), `purpose`, `claim_ceiling`,
+source files and their roles, exact labels/units, optional relationships and final width. Follow
+`prompt.md` and the bundled references using an available host drawing tool. Data charts must come
+from source records and runnable plotting code. Conceptual arrows convey only declared physical
+relationships; distinguish hypotheses from measured observations. A concept illustration must never
+be passed off as a CFD field. Keep original field images unchanged in mixed layouts.
+
+Return `delivery-template.json` with the actual editable source files, raster preview and caption.
+Import copies these files; it does not run arbitrary returned code, generate the figure, judge
+scientific truth or record author approval. Inspect the real image at intended print size. If a
+tool is unavailable, retain the task and report the missing backend; do not substitute a fabricated
+execution status. No image-generation API is mandatory for this path.
+
 ## Stop conditions
 
 - Stop when approval does not match the current candidate.

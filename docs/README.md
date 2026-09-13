@@ -2,9 +2,15 @@
 
 ## Start here
 
+- [Existing-material analysis](../examples/material-analysis/README.md): start from exported
+  tables and method notes, choose a host-proposed analysis and generate a bound subsection.
 - [Figure-grounded subsection](../examples/section-writing/README.md): use existing
   images and raw-table evidence with your host AI, then export editable prose,
   tables, equations and DOCX.
+- [Manuscript workspace tutorial](../examples/manuscript-workspace/README.md): v0.7 example
+  coordinating Methods and two Results sections, cross-chapter numbering and portable continued editing.
+- [Host drawing guidance](../skills/cfd-figure-production/references/external-backends.md):
+  v0.7 data/diagram tool selection, editable-source returns and local changes.
 
 - [Quickstart](../examples/quickstart/README.md): initialize a project and rank an author-supplied
   topic file.
@@ -19,11 +25,15 @@
 
 - [Current limitations](limitations.md)
 - [Public roadmap](ROADMAP.md)
+- [Approved post-v0.6 writing plan and progress](research/POST_V060_WRITING_PLAN.md)
+- [External figure Skill integration study](research/FIGURE_SKILL_INTEGRATION_STUDY.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Changelog](../CHANGELOG.md)
 
 ## Releases
 
+- [v0.7.0 candidate](releases/v0.7.0.md)
+- [v0.6.0](releases/v0.6.0.md)
 - [v0.5.0](releases/v0.5.0.md)
 - [v0.4.0](releases/v0.4.0.md)
 
