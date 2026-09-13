@@ -1,0 +1,5 @@
+case,region,area [m2],rate [W]
+Reference,lower,2,20
+Reference,upper,3,30
+Modified,lower,4,28
+Modified,upper,6,42

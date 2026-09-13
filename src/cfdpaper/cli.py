@@ -105,9 +105,29 @@ def inspect_project(
             help="Hash every file; defaults to strict in scientific/publication stages",
         ),
     ] = None,
+    materials: Annotated[
+        bool, typer.Option("--materials", help="Profile exported study materials")
+    ] = False,
+    output: Annotated[Path | None, typer.Option("--output")] = None,
 ) -> None:
     """Discover project files and incrementally refresh the offline index."""
 
+    if materials:
+        if output is None:
+            raise typer.BadParameter("--materials requires --output DIR")
+        from cfdpaper.materials import profile_materials
+        from cfdpaper.publication.section import _stage, _write
+
+        try:
+            summary = profile_materials(root)
+            with _stage(output) as staged:
+                _write(staged / "materials.json", summary)
+        except (ValueError, OSError, RuntimeError) as error:
+            _workflow_error(error)
+        console.print(f"Material profile: {output / 'materials.json'}", markup=False)
+        return
+    if output is not None:
+        raise typer.BadParameter("--output requires --materials")
     try:
         store = ProjectStore.open(root)
     except (FileNotFoundError, RuntimeError) as error:
@@ -141,9 +161,24 @@ def plan_project(
     author: Annotated[str | None, typer.Option("--author")] = None,
     provider: Annotated[str, typer.Option("--provider")] = "offline",
     regenerate: Annotated[bool, typer.Option("--regenerate")] = False,
+    artifact: Annotated[str, typer.Option("--artifact", help="topic or analysis")] = "topic",
+    question: Annotated[str, typer.Option("--question")] = "",
+    package: Annotated[Path | None, typer.Option("--package")] = None,
+    proposal: Annotated[Path | None, typer.Option("--proposal")] = None,
+    select: Annotated[str | None, typer.Option("--select")] = None,
+    output: Annotated[Path | None, typer.Option("--output")] = None,
 ) -> None:
     """Rank author inputs or evidence-bounded generated topics after a fast inspection."""
 
+    if artifact == "analysis":
+        if candidates or approve_topic or author or provider != "offline" or regenerate:
+            raise typer.BadParameter("Analysis selection is separate from topic/provider options")
+        _analysis_plan_action(root, question, package, proposal, select, output)
+        return
+    if artifact != "topic":
+        raise typer.BadParameter("--artifact must be topic or analysis")
+    if question or package or proposal or select or output:
+        raise typer.BadParameter("Analysis options require --artifact analysis")
     try:
         execution = run_plan(
             root,
@@ -194,6 +229,36 @@ def plan_project(
             soft_wrap=True,
         )
     console.print(f"report {execution.report_path}", markup=False, soft_wrap=True)
+
+
+def _analysis_plan_action(root, question, package, proposal, select, output):
+    from cfdpaper.analysis_suggestions import compile_analysis, prepare_analysis
+    from cfdpaper.publication.analysis_section import build_analysis_section
+    from cfdpaper.publication.section import _stage
+
+    if output is None:
+        raise typer.BadParameter("Analysis preparation/selection requires --output DIR")
+    selecting = any(v is not None for v in (package, proposal, select))
+    if selecting and not all(v is not None for v in (package, proposal, select)):
+        raise typer.BadParameter("Selection requires --package, --proposal and --select")
+    if selecting and question:
+        raise typer.BadParameter("--question belongs to preparation, not selection")
+    try:
+        if selecting:
+            with _stage(output) as staged:
+                path = compile_analysis(package, proposal, select, staged / "compiled")
+                build_analysis_section(path, staged / "section-input")
+            result = output / "section-input" / "writing"
+            console.print(f"Selected analysis writing package: {result}", markup=False)
+            console.print(
+                "Read TASK.md; draft with the host AI, then use write --artifact results-section."
+            )
+        else:
+            result = prepare_analysis(root, output, question=question)
+            console.print(f"Analysis materials: {result}", markup=False)
+            console.print("Read host-task.md with the host AI and choose an analysis.")
+    except (ValueError, OSError, RuntimeError) as error:
+        _workflow_error(error)
 
 
 @app.command("qualify")
@@ -405,5 +470,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.5.0.",
+        help="Roadmap command; not available in v0.6.0.",
     )(_placeholder_command(_command_name))

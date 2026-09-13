@@ -1,14 +1,53 @@
 ---
 name: cfd-evidence-intake
-description: Inspect an initialized CFD paper project, qualify a declared comparison, and prepare an author-reviewable QoI contract from located observations.
+description: Read existing CFD materials and propose grounded subsection analyses, or qualify a declared comparison through the existing locked-QoI pathway.
 ---
 
 # CFD evidence intake
 
 ## Trigger
 
-Use when an initialized project has solver-exported observations plus declared case, boundary,
-model, convergence, conservation, verification, validation, and source records.
+Use when an author provides existing CSV exports, readable method notes and figures, even before
+they have organized a full scientific question or column mapping. Also use the strict pathway
+below when an initialized project already has declared scientific records and observations.
+
+## Existing-materials analysis entry
+
+1. Read the material summary and actual method sources; prepare a portable host package:
+
+   ```text
+   cfdpaper inspect PROJECT_ROOT --materials --output PROFILE_DIR
+   cfdpaper plan PROJECT_ROOT --artifact analysis --question "AUTHOR_QUESTION" --output PACKAGE_DIR
+   ```
+
+   The question is optional. `PACKAGE_DIR/materials.json` lists raw column names, explicit units,
+   missing values, category hints and source locations. Read `host-task.md` and the relevant
+   `sources/` documents in full when excerpts are truncated. Open relevant figures when possible;
+   otherwise state that they were not viewed. The summary does not establish physical meaning.
+
+2. As the host, write `proposal.json` using the packaged example/schema. Present one to three
+   useful analyses, or zero with minimum evidence gaps. Ground mappings in method passages via
+   `definition_source` paths and line locators, and state the operator, units, domain, member IDs,
+   group column and comparison scope/status. Column names alone cannot establish these facts.
+   Include expected members/groups when specified by the method. A source locator is traceability,
+   not proof that the interpretation is correct. Keep observed, calculable and interpretive claims
+   distinct. Recommend by scientific usefulness, not by the count of available statistics.
+
+3. Let the author choose a candidate ID, or clarify only gaps affecting that choice. The host
+   constructs the JSON; the author need not hand-write it. If their question is already explicit,
+   develop that analysis without forcing a new topic exercise. A supported independent candidate
+   can proceed while another candidate has unknown definitions. Do not set unknown or known
+   not-comparable calculations to supported merely to obtain output.
+
+4. Hand the chosen proposal to `cfd-qoi-physics`. This is a subsection-analysis choice, not a new
+   manuscript-topic approval, locked QoI contract or checkpoint. It does not bypass an existing
+   comparison restriction. Do not run a solver or invent missing definitions.
+
+## Existing strict qualification pathway
+
+The inputs, commands and checkpoint stop conditions below apply to the existing records-based
+pathway; they do not require authors to rebuild a complete records envelope to propose analyses
+from already available material.
 
 ## Do not trigger
 

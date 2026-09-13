@@ -101,6 +101,18 @@ def test_portable_multi_figure_lifecycle(tmp_path):
     assert result["evidence"][0]["source"] == "data.csv row 2, T"
 
 
+def test_writing_package_carries_its_skill_and_linked_reference(tmp_path):
+    from pathlib import Path
+
+    source, _ = fixture_input(tmp_path)
+    package = api().prepare_section(source, tmp_path / "package")
+    skill = package / "skills/cfd-evidence-writing"
+    original = Path(__file__).resolve().parents[2] / "skills/cfd-evidence-writing"
+    for name in ("SKILL.md", "references/mechanism-subsections.md"):
+        assert (skill / name).read_bytes() == (original / name).read_bytes()
+    assert "skills/cfd-evidence-writing/SKILL.md" in (package / "TASK.md").read_text()
+
+
 @pytest.mark.parametrize(
     "change", ["unknown", "malformed", "undeclared", "coverage", "caption", "observation"]
 )

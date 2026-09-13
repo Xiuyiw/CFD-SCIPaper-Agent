@@ -21,6 +21,10 @@ class PublicationStyle(BaseModel):
     caption_pt: float = Field(default=10, gt=0)
     reference_pt: float = Field(default=10, gt=0)
     space_after_pt: float = Field(default=8, ge=0)
+    # Body-only settings: captions, images, tables and references retain their spacing.
+    body_first_line_indent_chars: float = Field(default=2, ge=0)
+    body_space_before_pt: float = Field(default=0, ge=0)
+    body_space_after_pt: float = Field(default=0, ge=0)
     line_spacing: float = Field(default=1.08, ge=1)
     figure_width_mm: float = Field(default=160, gt=0)
     minimum_figure_font_pt: float = Field(default=8, gt=0)

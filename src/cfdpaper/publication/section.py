@@ -79,7 +79,7 @@ class _Evidence(_Record):
 class _Duty(_Record):
     purpose: str = Field(min_length=1)
     evidence_ids: list[str] = Field(min_length=1)
-    figure_ids: list[str] = Field(min_length=1)
+    figure_ids: list[str]
 
 
 class _TableCalculation(_Record):
@@ -105,7 +105,7 @@ class _Input(_Record):
     section_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     question: str = Field(min_length=1)
-    figures: list[_Figure] = Field(min_length=1)
+    figures: list[_Figure]
     evidence: list[_Evidence] = Field(min_length=1)
     duties: list[_Duty] = Field(min_length=1)
     context: str = ""
@@ -255,6 +255,8 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
 
 TASK = """# Write a figure-grounded subsection with the host AI
 
+Read skills/cfd-evidence-writing/SKILL.md and its linked mechanism-subsections reference.
+Both are included in this package; use their section route, not the legacy paragraph CLI.
 Read input.json, then actually open every figure when image viewing is available.
 Figure descriptions are author-provided observations, not proof that you viewed an image.
 Record each figure as viewed, author-provided, or not-viewed in image_observations.
@@ -283,6 +285,13 @@ Round each display directly from the original number. Different decimal places c
 Design plots at their final physical size with common scales and readable labels; source pixels
 alone do not ensure document readability. DOCX is a general review layout, not a journal template;
 render and inspect every page, reporting the actual renderer and any font substitution separately.
+Apply the explicit input style: body defaults are two-character first-line indentation and
+0 pt before/after spacing, implemented as paragraph properties rather than leading whitespace.
+Author or journal-template overrides take precedence. Captions, headings, tables, equations,
+references and image paragraphs retain their own formatting and do not inherit body indentation.
+An explicitly selected prose/table-only section may have no figures; do not invent placeholders.
+If a supplied figure cannot support the core claim, report the specific evidence or presentation
+gap in evidence_notes. A readable or structurally valid figure is not automatic scientific approval.
 Check units, boundary conditions, comparison basis and numerical limitations. A sum of
 cell-integrated heat rates is not a sum of per-volume heat-release rates: the latter requires
 cell-volume weighting. Keep all compared quantities on a consistent control-volume basis.
@@ -294,6 +303,8 @@ Token syntax inside paragraph text and captions:
   Use explicit sub/sup/fraction nodes for scientific notation, not underscore strings in prose.
 - Optional tables/equations use the finite structures in the packaged writing reference.
   {{table:ID}} and {{equation:ID}} reference their identifiers; these are not inline expressions.
+  Table/equation IDs are currently printed literally: use publication labels such as 1 or S1,
+  not internal slugs such as wall-comparison. Keep every token and object ID consistent.
 - {{figure:figure_id}} inserts Figure followed by the declared figure ID.
 - {{cite:evidence_id}} inserts a numbered literature citation; kind must be literature.
 Use these tokens for supplied quantitative values, figure references and literature citations.
@@ -314,6 +325,10 @@ def prepare_section(input_path: Path, output_dir: Path) -> Path:
         _copy_sources(data, input_path.parent, staged)
         _calculate_sources(data, staged)
         _write(staged / "input.json", data.model_dump())
+        skill = Path(__file__).resolve().parents[1] / "skills/cfd-evidence-writing"
+        if not skill.is_dir():
+            skill = Path(__file__).resolve().parents[3] / "skills/cfd-evidence-writing"
+        shutil.copytree(skill, staged / "skills/cfd-evidence-writing")
         (staged / "TASK.md").write_text(TASK, encoding="utf-8")
         _write(
             staged / "draft-template.json",
@@ -366,14 +381,18 @@ def assemble_section(package_dir: Path, draft_path: Path, output_dir: Path) -> P
             record = evidence[identifier]
             if kind == "value":
                 if record.result_ref is not None:
-                    from cfdpaper.publication.table_evidence import resolve_table_result
+                    from cfdpaper.publication.table_evidence import (
+                        display_unit,
+                        resolve_table_result,
+                    )
 
                     try:
                         resolved = resolve_table_result(reports, **record.result_ref.model_dump())
                     except ValueError as exc:
                         raise ValueError(f"Evidence {identifier}: {exc}") from exc
                     resolved_values[identifier] = resolved
-                    return resolved["value"] + (f" {resolved['unit']}" if resolved["unit"] else "")
+                    unit = display_unit(resolved["unit"])
+                    return resolved["value"] + (f" {unit}" if unit else "")
                 if record.value is None or not record.value.strip():
                     raise ValueError(f"Missing value for {identifier}")
                 return record.value + (f" {record.unit}" if record.unit else "")
@@ -614,9 +633,20 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
     placed = set()
     for paragraph in data["paragraphs"]:
         p = document.add_paragraph()
+        p.paragraph_format.space_before = Pt(config.body_space_before_pt)
+        p.paragraph_format.space_after = Pt(config.body_space_after_pt)
+        # Word stores character indentation in hundredths of a character. Keep a
+        # point-based fallback for renderers that do not implement firstLineChars.
+        p.paragraph_format.first_line_indent = Pt(
+            config.body_pt * config.body_first_line_indent_chars
+        )
+        p._p.get_or_add_pPr().get_or_add_ind().set(
+            qn("w:firstLineChars"), str(round(config.body_first_line_indent_chars * 100))
+        )
         for run in paragraph.get("runs", [{"text": paragraph["text"]}]):
             if "text" in run:
-                p.add_run(run["text"])
+                # Keep a percentage symbol with its value at Word line breaks.
+                p.add_run(re.sub(r"(?<=\d) +(?=%)", "\u00a0", run["text"]))
             else:
                 from docx.oxml import OxmlElement
 
