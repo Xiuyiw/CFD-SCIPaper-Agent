@@ -96,3 +96,35 @@ Detached section review packets include the relevant literature records, claim-s
 decisions and original text files. Reviewers can therefore check the cited passage without the
 parent manuscript directory. Unknown metadata stays unknown; the analytical note in this tutorial
 is not turned into a fictitious journal article by choosing a journal style.
+
+## Whole-manuscript external review (v0.9 development checkout)
+
+After assembling the unchanged candidate above, prepare the complete review folder:
+
+```text
+cfdpaper review my-source --package my-manuscript --output my-review
+```
+
+Upload the folder as an archive to your chosen reviewer and use its `review-prompt.md`.
+The package includes the whole reading text, global-to-local object mapping, paragraph
+locators and each section's source tables and relevant literature. No API key or initialized
+database is needed. If inputs changed since assembly, reassemble first; review export will
+not silently update the manuscript. Currentness refers to the supplied portable candidate,
+not an unavailable original solver file.
+
+Export Word/PDF using the existing writing command and include those previews for a visual
+review. Text-only material cannot establish page-format quality. A Word-only manual edit
+must first be reconciled with the authoring draft before generating a matching review snapshot.
+
+Save the full returned report, including all prose and appendices, then run:
+
+```text
+cfdpaper review my-source --package my-review --report external-report.md --output review-return
+```
+
+Text, Markdown and JSON reports are retained without requiring a shortened finding schema.
+PDF/DOCX originals can also be retained; readable extraction remains a host task where needed.
+Read the generated task and the entire original report, map findings to manuscript locations,
+and decide which suggestions are supported. Import does not edit the manuscript, establish
+author approval or start a journal revision. Keep disputed or ambiguous recommendations visible.
+The existing single-section JSON suggestion route is unchanged.

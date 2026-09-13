@@ -1,7 +1,8 @@
 # v0.9 first batch: real manuscript input and whole-paper review
 
 2026-09-13. Scope: 9A/9B only. The author approved the version direction and preparation
-of this specification; implementation and release have not started.
+of this specification and the hotspot-led scientific focus. First-batch implementation is
+authorized and underway; no v0.9 release has been made.
 Baseline: v0.8.0. The parent plan is [POST_V060_WRITING_PLAN.md](POST_V060_WRITING_PLAN.md).
 
 ## 1. Intended outcome
@@ -17,7 +18,7 @@ private trial brief; no private values or source documents enter this specificat
 
 ## 2. 9A: first real-material manuscript input
 
-Proposed question: how does a cooling structure's thermal advantage depend on flow rate,
+Approved question: how does a cooling structure's thermal advantage depend on flow rate,
 reduced height and a specified nonuniform heat source? Localized heating is the principal
 stress test; compactness is a complementary design comparison, not another isolated dashboard.
 
@@ -44,7 +45,7 @@ Only new, observed product defects justify additional operators or writing chang
 
 ## 3. 9B: two thin CLI actions
 
-Proposed interface, not yet available:
+First-batch interface:
 
 ```text
 cfdpaper review PROJECT --package CANDIDATE --output REVIEW_PACKAGE
@@ -131,7 +132,24 @@ the existing supported-platform release checks only when the version is ready.
 ## 6. Current handoff
 
 The private inventory now confirms additional comparisons; it does not resolve all scientific
-limitations. The exact first paper question is still an author choice. Review infrastructure can
-proceed independently once implementation is authorized; there is no need to wait for new simulation.
+limitations. The author has confirmed the hotspot-led question. Implementation proceeds on
+`workstream/v09-writing-review`: the controller owns CLI and integration, the scientific input
+task owns the private trial, and the review task owns the new review module and focused tests.
+There is no need to wait for new simulation. The first generated draft must remain preserved.
 This document is the concise first-batch specification. Do not expand it into a multi-thousand-line
 implementation script or repeat the v0.8 validation to approve it.
+
+### First implementation checkpoint
+
+9B now exports a whole-paper snapshot with global/local locators and retains complete raw review
+reports. It reuses actual manuscript assembly for currentness and the existing section packets;
+no new database, revision engine or approval workflow was added. The writing Skill includes a
+whole-manuscript review reference. The root CLI and installed-wheel import/export were exercised.
+89 focused CLI, manuscript, Skill and review tests passed. This is a local development result,
+not a supported-platform release or proof of scientific writing quality.
+
+9A has a prepared eight-section input built from a selected subset of the existing real cases.
+The first generator has no prior cooling manuscript or evaluator text. A private builder supplies
+explicit cross-row differences before standard scalar bindings; the public assembler has not
+gained a general cross-row formula engine. Manuscript quality and actual Word/PDF inspection remain
+the next part of this same batch. Original scientific sources and first drafts are preserved.

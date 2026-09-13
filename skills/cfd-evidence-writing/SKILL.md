@@ -154,6 +154,17 @@ definitions. Keep the shared spine/terms current. Source or definition changes r
 scientific reading of dependent claims, not only numeric replacement. Word-only edits are not
 automatically imported: reconcile them with the authoring draft before exporting again.
 
+## Whole-manuscript review
+
+For a complete candidate use `cfdpaper review PROJECT --package CANDIDATE --output REVIEW_PACKAGE`.
+Read [manuscript-review.md](references/manuscript-review.md) and the generated review prompt.
+Give the external reader the whole package, not only selected results or a short finding list.
+Use the global manuscript numbering and paragraph locators when discussing section-local evidence.
+Provide matching Word/PDF pages for formatting assessment; text inspection cannot replace it.
+Return the full original report with `--package REVIEW_PACKAGE --report REPORT --output REVIEW_RETURN`.
+Read every finding in context before proposing targeted changes; preserve disagreement and unresolved
+definitions. Imported recommendations do not authorize changes or start the journal revision path.
+
 ## Manuscript paragraph and page formatting
 
 Use the author's requested format first, or the target venue's supplied template; do not present

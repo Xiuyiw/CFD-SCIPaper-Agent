@@ -531,6 +531,31 @@ def _write_section_action(
         console.print(f"LibreOffice PDF preview: {preview_docx(result)}", markup=False)
 
 
+@app.command("review")
+def review_manuscript(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    package: Annotated[Path, typer.Option("--package")],
+    output: Annotated[Path, typer.Option("--output")],
+    report: Annotated[Path | None, typer.Option("--report")] = None,
+) -> None:
+    """Prepare whole-paper review material or retain a complete returned report."""
+    from cfdpaper.publication.manuscript_review import (
+        import_manuscript_review,
+        prepare_manuscript_review,
+    )
+
+    try:
+        if report is None:
+            result = prepare_manuscript_review(package, output)
+            label = "Whole-manuscript review package ready"
+        else:
+            result = import_manuscript_review(package, report, output)
+            label = "Complete review retained; manuscript unchanged"
+    except Exception as error:
+        _workflow_error(error)
+    console.print(f"{label}: {output} ({result['package_id']})", markup=False)
+
+
 def _placeholder(name: str) -> None:
     console.print(f"{name}: not implemented in this milestone")
     raise typer.Exit(code=2)
@@ -545,7 +570,6 @@ def _placeholder_command(name: str) -> Callable[[], None]:
 
 
 for _command_name in (
-    "review",
     "revise",
     "export",
 ):

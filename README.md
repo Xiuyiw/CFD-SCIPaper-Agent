@@ -232,8 +232,9 @@ CFD-Paper-Agent does not run CFD simulations, ingest arbitrary native solver cas
 values, construct undeclared spatial integrals, smooth discrete cases into a continuous response,
 identify an operating optimum, autonomously write a complete paper, independently verify scientific
 support in literature, export submission packages, or submit to a journal. Multi-section and subsection DOCX
-export and subsection review-suggestion import are available through `write`; the root `review`,
-`revise`, and `export` commands remain unavailable. External drawing-task exchange does not add
+export and subsection review-suggestion import are available through `write`. The v0.9 development
+checkout adds root `review` for complete manuscript packages and lossless report return; this
+route is not in the v0.8 release. Root `revise` and `export` remain unavailable. External drawing-task exchange does not add
 automatic complex mechanism graphics or establish broad heterogeneous CFD validation.
 
 ## Public documentation

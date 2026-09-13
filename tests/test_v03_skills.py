@@ -43,6 +43,7 @@ def test_ships_four_skills_with_current_writing_and_figure_references() -> None:
         "cfd-evidence-writing": [
             "abstract-conclusions.md",
             "literature-sections.md",
+            "manuscript-review.md",
             "mechanism-subsections.md",
             "methods-sections.md",
         ],
