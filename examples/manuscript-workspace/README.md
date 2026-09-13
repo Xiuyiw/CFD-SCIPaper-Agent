@@ -102,3 +102,81 @@ assembly. Use `drafts.json`, not the historical `author-drafts.json` mapping. Ed
 drafts, not the generated `manuscript.md` or `section.json`; reconcile any Word-only edits into
 the corresponding draft before re-exporting. The CLI does not import Word edits, rewrite
 scientific interpretations, or infer author approval.
+
+## Shared literature (v0.8 development branch)
+
+This addition is not in the released v0.7.0 wheel. The existing commands stay the same.
+Add `"literature": "literature/literature.json"` to the manuscript input. The shared file uses:
+
+```json
+{
+  "bibliography": "references.json",
+  "supports": [
+    {
+      "section_id": "methods",
+      "evidence_id": "definition-source",
+      "reference_id": "author-export-id",
+      "source": "excerpts.txt",
+      "locator": "Section 2, paragraph 1",
+      "excerpt": "The exact passage supplied in excerpts.txt.",
+      "claim": "The specific statement this passage supports",
+      "role": "method basis",
+      "status": "supported"
+    }
+  ]
+}
+```
+
+This is an input-format illustration, not a real bibliographic claim. Replace it with your
+exported records and readable passages. `references.json` is a CSL JSON array exported by your
+reference manager; `reference_id` matches its `id`. For `.bib` input, conversion uses an optional
+Pandoc executable on PATH. Without Pandoc, export CSL JSON instead. Source files are UTF-8 text
+or Markdown, relative to the literature manifest. PDF text extraction is a separate host task.
+
+DOI variants share one identity; metadata conflicts are reported instead of silently picking a
+version. Missing metadata remains missing. Preparation includes the supported entry as local
+literature evidence: declare `definition-source` in the paragraph's `evidence_ids` and cite it as
+`{{cite:definition-source}}`. Other sections may assign their own evidence ID and claim to the
+same reference. Assembly numbers that source once across the manuscript.
+
+`supported`, `unsupported` and `needs-review` are supplied assessments, not automatic approvals.
+The loader confirms that the excerpt occurs in the supplied file; it does not verify a manually
+provided page locator or the claim's scientific meaning. The host must read the passage and its
+qualifications. Unresolved uses remain in section `literature-support.json`, not citation output.
+Changing a support to unsupported/needs-review, or deleting its mapping in an existing workspace,
+prevents reassembly of drafts still citing it. Revise only those uses, then assemble anew.
+
+The candidate carries shared metadata, source excerpts and aliases when moved. Generated reference
+labels currently use only supplied metadata; they are not a journal CSL style or Zotero live fields.
+Full journal CSL formatting remains subsequent v0.8 work.
+
+## Reuse body evidence in summaries (v0.8 development)
+
+Declare direct evidence ownership in the manuscript's section entry:
+
+```json
+{
+  "section_id": "abstract",
+  "input": "abstract-input.json",
+  "evidence_bindings": {"pressure": "hydraulics/dp-A"},
+  "depends_on": ["hydraulics", "discussion"]
+}
+```
+
+The local draft uses `{{value:pressure}}` and declares `pressure` in its evidence IDs.
+Do not enter a separate local metric with that ID. The owner may appear later in publication
+order. Its current calculation supplies the value and unit each time the manuscript is assembled;
+no summary CSV copy is needed. Bind directly to the owner, not to another summary's copy.
+Literature uses need their own claim-specific shared support, not an evidence binding.
+
+Use `depends_on` for interpretive reading dependencies. Following an edit in a working copy,
+assemble into a new candidate and read `CHANGES.md`: it lists affected sections and draft paragraph
+positions. `changes.json` supplies machine-readable details. Only declared dependencies are followed;
+free-text scientific meaning is reviewed by the host, not automatically rewritten. Related figures
+must be checked separately after source changes. The first assembly establishes a comparison
+baseline; it does not claim that an earlier manuscript was unchanged.
+
+An optional manuscript-level `keywords` list appears after the Abstract in Markdown and Word.
+Standalone section review packets include original owner definitions and copied small source
+materials for bound values. The complete seven-section runnable example is in
+[`../literature-manuscript`](../literature-manuscript/README.md).

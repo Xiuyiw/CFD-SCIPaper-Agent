@@ -40,7 +40,12 @@ def test_ships_four_skills_with_current_writing_and_figure_references() -> None:
         sorted(EXPECTED_SKILLS)
     )
     references = {
-        "cfd-evidence-writing": ["mechanism-subsections.md", "methods-sections.md"],
+        "cfd-evidence-writing": [
+            "abstract-conclusions.md",
+            "literature-sections.md",
+            "mechanism-subsections.md",
+            "methods-sections.md",
+        ],
         "cfd-figure-production": [
             "codex-paper-figure-MIT.txt",
             "editable-schematic-adaptation.md",

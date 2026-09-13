@@ -164,8 +164,23 @@ def _stage(output: Path):
         staged.rename(output)
 
 
-def _load_input(path: Path) -> _Input:
-    data = _Input.model_validate(_read(path))
+def _load_input(
+    path: Path, *, evidence_overrides: dict | None = None, bound_evidence: dict | None = None
+) -> _Input:
+    raw = _read(path)
+    # Manuscript bindings are resolved from their owning section before local validation.
+    if bound_evidence:
+        raw["evidence"] = [
+            record for record in raw.get("evidence", []) if record["id"] not in bound_evidence
+        ] + [record for record in bound_evidence.values() if record is not None]
+    if evidence_overrides:
+        for record in raw.get("evidence", []):
+            if record["id"] in evidence_overrides and record.get("kind") != "literature":
+                raise ValueError("Shared literature cannot replace non-literature evidence")
+        raw["evidence"] = [
+            record for record in raw.get("evidence", []) if record["id"] not in evidence_overrides
+        ] + [record for record in evidence_overrides.values() if record is not None]
+    data = _Input.model_validate(raw)
     calc_ids = [c.id for c in data.table_calculations]
     if len(calc_ids) != len(set(calc_ids)):
         raise ValueError("Calculation IDs must be unique")
@@ -315,11 +330,19 @@ Return only the JSON draft, with no approval claim. A human reviews the assemble
 """
 
 
-def prepare_section(input_path: Path, output_dir: Path) -> Path:
+def prepare_section(
+    input_path: Path,
+    output_dir: Path,
+    *,
+    evidence_overrides: dict | None = None,
+    bound_evidence: dict | None = None,
+) -> Path:
     """Copy declared inputs and valid raster figures into a fresh writing package."""
     input_path, output_dir = Path(input_path), Path(output_dir)
     _fresh(output_dir)
-    data = _load_input(input_path)
+    data = _load_input(
+        input_path, evidence_overrides=evidence_overrides, bound_evidence=bound_evidence
+    )
     with _stage(output_dir) as staged:
         _copy_figures(data, input_path.parent, staged)
         _copy_sources(data, input_path.parent, staged)
@@ -346,11 +369,22 @@ def prepare_section(input_path: Path, output_dir: Path) -> Path:
     return output_dir
 
 
-def assemble_section(package_dir: Path, draft_path: Path, output_dir: Path) -> Path:
+def assemble_section(
+    package_dir: Path,
+    draft_path: Path,
+    output_dir: Path,
+    *,
+    evidence_overrides: dict | None = None,
+    bound_evidence: dict | None = None,
+) -> Path:
     """Resolve declared references without synthesizing or approving the draft prose."""
     package_dir, draft_path, output_dir = map(Path, (package_dir, draft_path, output_dir))
     _fresh(output_dir)
-    data = _load_input(package_dir / "input.json")
+    data = _load_input(
+        package_dir / "input.json",
+        evidence_overrides=evidence_overrides,
+        bound_evidence=bound_evidence,
+    )
     draft = _Draft.model_validate(_read(draft_path))
     evidence = {e.id: e for e in data.evidence}
     figures = {f.id for f in data.figures}
@@ -520,7 +554,10 @@ def assemble_section(package_dir: Path, draft_path: Path, output_dir: Path) -> P
             lines.extend(
                 [
                     "### References",
-                    *[f"[{r['number']}] {r['text']} — {r['source']}" for r in references],
+                    *[
+                        f"[{r['number']}] {r['text']}" + reference_source_suffix(r)
+                        for r in references
+                    ],
                 ]
             )
         (staged / "section.md").write_text("\n\n".join(lines) + "\n", encoding="utf-8")
@@ -551,6 +588,17 @@ def assemble_section(package_dir: Path, draft_path: Path, output_dir: Path) -> P
         for name in ("section.md", "review-prompt.md", "evidence-notes.md"):
             shutil.copyfile(staged / name, packet / name)
     return output_dir
+
+
+def reference_source_suffix(record):
+    """Show a source once when a bibliography label already contains its DOI."""
+    source = record["source"].strip()
+    text = record["text"].strip().casefold()
+    if "formatted_runs" in record or source.casefold() == text:
+        return ""
+    if source.lower().startswith("doi:") and source.casefold() in text:
+        return ""
+    return f" — {source}"
 
 
 def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-text") -> Path:
@@ -656,10 +704,18 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
                 add_table(document, SectionTable.model_validate(table), config)
                 placed_tables.add(key)
 
+    def add_keywords(section_id):
+        if data.get("section_objects", {}).get(section_id, {}).get("role") == "abstract":
+            if data.get("keywords"):
+                p = document.add_paragraph("Keywords: " + "; ".join(data["keywords"]))
+                p.paragraph_format.first_line_indent = Pt(0)
+                p.paragraph_format.space_before = p.paragraph_format.space_after = Pt(0)
+
     for paragraph in data["paragraphs"]:
         if "section_heading" in paragraph:
             if layout == "near-reference" and current_section is not None:
                 add_section_objects(current_section)
+            add_keywords(current_section)
             current_section = paragraph.get("section_id")
             level = paragraph.get("level", 1)
             if level not in (1, 2):
@@ -696,6 +752,7 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
                 if figure["id"] in paragraph["figure_ids"] and figure["id"] not in placed:
                     add_figure(figure)
                     placed.add(figure["id"])
+    add_keywords(current_section)
     if layout == "near-reference" and current_section is not None:
         add_section_objects(current_section)
     for equation in data.get("equations", []):
@@ -710,9 +767,14 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
     if data["references"]:
         document.add_heading("References", level=2)
         for record in data["references"]:
-            p = document.add_paragraph(
-                f"[{record['number']}] {record['text']} — {record['source']}"
-            )
+            p = document.add_paragraph(f"[{record['number']}] ")
+            if "formatted_runs" in record:
+                for item in record["formatted_runs"]:
+                    run = p.add_run(item["text"])
+                    run.italic = item.get("italic", False)
+                    run.bold = item.get("bold", False)
+            else:
+                p.add_run(record["text"] + reference_source_suffix(record))
             for run in p.runs:
                 run.font.size = Pt(config.reference_pt)
     output_path.parent.mkdir(parents=True, exist_ok=True)

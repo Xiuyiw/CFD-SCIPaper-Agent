@@ -1,6 +1,6 @@
 # Limitations
 
-CFD-Paper-Agent v0.7.0 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent v0.8.0 is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
@@ -14,18 +14,36 @@ The v0.6 material-analysis route can also start directly from exported CSVs and 
 without the structured topic-planning sequence. A host proposes the analysis and the author
 selects it; population and partition calculations still need explicit definitions and support.
 
-The v0.7 workspace assembles host-authored sections with shared paper-spine context, terminology,
-section duties and Methods guidance. Supported tokens receive global figure, table and equation
-numbers, including qualified cross-chapter references. Literal numbers and scientific claims in
-free prose are not automatically rewritten. Recomputed values still require the host and author
-to reconsider affected interpretations and figures.
+The manuscript workspace assembles host-authored sections with shared paper-spine context,
+terminology and section duties. Its writing guidance covers Introduction, Methods, Results,
+Discussion, Abstract and Conclusions; keywords appear after the Abstract. Supported tokens receive
+global figure, table, equation and citation numbers. Guidance organizes supplied evidence but
+does not supply missing model, mesh, validation or literature evidence.
+
+Cross-section bindings refer directly to owning evidence. Declared table calculations are
+recomputed when assembling a new candidate, and explicit section dependencies guide the change
+report. `CHANGES.md` identifies sections and paragraph positions to reconsider; it does not infer
+undeclared dependencies or verify the meaning of the prose. Literal numbers, interpretations and
+figures are not automatically rewritten or regenerated.
 
 An assembled candidate carries local drafts, sources and instructions for continued editing after
 moving it. The destination needs a compatible CLI installation. Word-only edits must be reconciled
-into the local drafts before re-export; there is no automatic Word-edit merge. Methods guidance
-helps organize supplied evidence, but cannot supply missing model, mesh or validation evidence.
-This workspace does not provide complete literature reasoning, cross-chapter argument revision
-or autonomous submission-ready paper writing.
+into the local drafts before re-export; there is no automatic Word-edit merge.
+
+The local literature workspace preserves CSL JSON metadata and claim-specific support records.
+It normalizes DOI identities, keeps aliases, and checks supplied excerpts against UTF-8 text files.
+Without a DOI, only unambiguous complete title–author–year matches are merged; incomplete records
+remain distinct and conflicting metadata requires correction. An excerpt match establishes
+location, not scientific support. `supported`, `unsupported` and `needs-review` are author/host
+decisions; only supported records can be cited. The software does not search or independently
+verify full texts, fill missing metadata, or determine novelty and causal relevance.
+
+Optional BibLaTeX import and numeric CSL formatting require an existing Pandoc installation.
+Journal formatting needs shared metadata for every cited reference and a standalone local CSL
+file. Supported styles use bracketed numeric citations in first-citation order and a leading
+numeric bibliography label. Author–date, superscript, reordered numbering and unsupported
+formatting are rejected rather than approximated. References remain static text, not Zotero
+fields. Without a selected CSL style, the bibliography uses supplied metadata labels.
 
 Qualification can reject incomplete membership, unknown units, incompatible cases, missing source
 locations, or inadequate convergence, conservation, verification, and validation evidence. Passing
@@ -45,7 +63,7 @@ scripts, verify physical meaning or grant author approval. Limited host-produced
 data-combination examples do not establish automatic complex mechanism-figure production.
 
 The subsection and manuscript paths accept supplied
-PNG/JPEG/TIFF figures and host-authored prose, resolves evidence tokens, and exports Markdown
+PNG/JPEG/TIFF figures and host-authored prose, resolve evidence tokens, and export Markdown
 and editable DOCX with native tables and finite structured mathematics. Declared raw-table
 calculations can supply current numeric tokens; they do not determine which operator or population
 is scientifically appropriate. Known source font sizes are checked after figure scaling; unknown
