@@ -164,8 +164,16 @@ def _stage(output: Path):
         staged.rename(output)
 
 
-def _load_input(path: Path) -> _Input:
-    data = _Input.model_validate(_read(path))
+def _load_input(path: Path, *, evidence_overrides: dict | None = None) -> _Input:
+    raw = _read(path)
+    if evidence_overrides:
+        for record in raw.get("evidence", []):
+            if record["id"] in evidence_overrides and record.get("kind") != "literature":
+                raise ValueError("Shared literature cannot replace non-literature evidence")
+        raw["evidence"] = [
+            record for record in raw.get("evidence", []) if record["id"] not in evidence_overrides
+        ] + [record for record in evidence_overrides.values() if record is not None]
+    data = _Input.model_validate(raw)
     calc_ids = [c.id for c in data.table_calculations]
     if len(calc_ids) != len(set(calc_ids)):
         raise ValueError("Calculation IDs must be unique")
@@ -315,11 +323,13 @@ Return only the JSON draft, with no approval claim. A human reviews the assemble
 """
 
 
-def prepare_section(input_path: Path, output_dir: Path) -> Path:
+def prepare_section(
+    input_path: Path, output_dir: Path, *, evidence_overrides: dict | None = None
+) -> Path:
     """Copy declared inputs and valid raster figures into a fresh writing package."""
     input_path, output_dir = Path(input_path), Path(output_dir)
     _fresh(output_dir)
-    data = _load_input(input_path)
+    data = _load_input(input_path, evidence_overrides=evidence_overrides)
     with _stage(output_dir) as staged:
         _copy_figures(data, input_path.parent, staged)
         _copy_sources(data, input_path.parent, staged)
@@ -346,11 +356,13 @@ def prepare_section(input_path: Path, output_dir: Path) -> Path:
     return output_dir
 
 
-def assemble_section(package_dir: Path, draft_path: Path, output_dir: Path) -> Path:
+def assemble_section(
+    package_dir: Path, draft_path: Path, output_dir: Path, *, evidence_overrides: dict | None = None
+) -> Path:
     """Resolve declared references without synthesizing or approving the draft prose."""
     package_dir, draft_path, output_dir = map(Path, (package_dir, draft_path, output_dir))
     _fresh(output_dir)
-    data = _load_input(package_dir / "input.json")
+    data = _load_input(package_dir / "input.json", evidence_overrides=evidence_overrides)
     draft = _Draft.model_validate(_read(draft_path))
     evidence = {e.id: e for e in data.evidence}
     figures = {f.id for f in data.figures}

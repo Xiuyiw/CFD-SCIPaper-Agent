@@ -17,6 +17,11 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from cfdpaper.publication.elements import SectionEquation, SectionTable, math_text
+from cfdpaper.publication.literature import (
+    copy_literature,
+    literature_evidence,
+    load_literature,
+)
 from cfdpaper.publication.section import (
     TASK as SECTION_TASK,
 )
@@ -46,6 +51,7 @@ class _ManuscriptInput(BaseModel):
     sections: list[_SectionInput] = Field(min_length=1)
     context: str = ""
     terms: dict[str, str] = Field(default_factory=dict)
+    literature: str | None = None
 
 
 def _relative(base: Path, value: str) -> Path:
@@ -65,10 +71,16 @@ def _inputs(path: Path):
     if set(ids) != {item.section_id for item in data.spine.sections}:
         raise ValueError("Section inputs must exactly match the spine sections")
     entries = {item.section_id: item for item in data.sections}
+    library = load_literature(_relative(path.parent, data.literature)) if data.literature else None
+    if library and any(s["section_id"] not in entries for s in library["supports"]):
+        raise ValueError("Literature support section IDs must belong to the spine")
     loaded = {}
     for contract in data.spine.sections:
         source = _relative(path.parent, entries[contract.section_id].input)
-        section = _load_input(source)
+        section = _load_input(
+            source,
+            evidence_overrides=_literature_overrides(library, contract.section_id, source.parent),
+        )
         if section.section_id != contract.section_id:
             raise ValueError(f"Section input identity mismatch: {contract.section_id}")
         if not set(contract.required_claim_ids) <= {e.id for e in section.evidence}:
@@ -79,10 +91,29 @@ def _inputs(path: Path):
     central = data.spine.central_claim_id
     if not any(central in item.required_claim_ids for item in data.spine.sections):
         raise ValueError(f"Central claim must be assigned to a section: {central}")
-    return data, loaded
+    return data, loaded, library
 
 
-def _section_context(package, data, contract):
+def _literature_overrides(library, sid, previous=None):
+    if library is None:
+        return None
+    overrides = {}
+    if previous is not None and (previous / "literature-support.json").is_file():
+        overrides.update(
+            {
+                s["evidence_id"]: None
+                for s in _read(previous / "literature-support.json")["supports"]
+                if s["section_id"] == sid
+            }
+        )
+    overrides.update(
+        {s["evidence_id"]: None for s in library["supports"] if s["section_id"] == sid}
+    )
+    overrides.update({e["id"]: e for e in literature_evidence(library, sid)})
+    return overrides
+
+
+def _section_context(package, data, contract, library=None):
     _write(
         package / "manuscript-context.json",
         {
@@ -93,13 +124,34 @@ def _section_context(package, data, contract):
             "section": contract.model_dump(),
         },
     )
-    route = (
-        "Read skills/cfd-evidence-writing/references/methods-sections.md before "
-        "drafting this Methods section. Its method-specific route takes precedence "
-        "over the generic mechanism-subsection narrative.\n"
-        if contract.role == "methods"
-        else ""
-    )
+    references = {
+        "methods": "methods-sections.md",
+        "introduction": "literature-sections.md",
+        "discussion": "literature-sections.md",
+        "abstract": "abstract-conclusions.md",
+        "conclusion": "abstract-conclusions.md",
+    }
+    route = ""
+    if contract.role in references:
+        route = (
+            "Read skills/cfd-evidence-writing/references/"
+            + references[contract.role]
+            + " first. This section-specific route takes precedence over the generic "
+            "mechanism-subsection narrative.\n"
+        )
+    if library is not None:
+        supports = [s for s in library["supports"] if s["section_id"] == contract.section_id]
+        ids = {s["reference_id"] for s in supports}
+        _write(
+            package / "literature-support.json",
+            {"supports": supports, "records": [r for r in library["records"] if r["id"] in ids]},
+        )
+        route += (
+            "Read literature-support.json: compare each intended claim with its actual "
+            "excerpt, locator and role. Only supported entries are available for cite tokens. "
+            "A matched excerpt proves its location, not the truth or transferability of a claim. "
+            "Source paths there are relative to the shared literature manifest.\n"
+        )
     (package / "TASK.md").write_text(
         f"# Manuscript section: {contract.title}\n\n"
         f"Role: {contract.role}\n\nPurpose: {contract.purpose}\n\n"
@@ -121,13 +173,21 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
     """
     input_path, output_dir = Path(input_path), Path(output_dir)
     _fresh(output_dir)
-    data, loaded = _inputs(input_path)
+    data, loaded, library = _inputs(input_path)
     with _stage(output_dir) as staged:
+        if library is not None:
+            copy_literature(_relative(input_path.parent, data.literature), staged / "literature")
+            data.literature = "literature/literature.json"
+            library = load_literature(staged / data.literature)
         entries = []
         for contract in data.spine.sections:
             sid = contract.section_id
             source, _ = loaded[sid]
-            package = prepare_section(source, staged / "sections" / sid)
+            package = prepare_section(
+                source,
+                staged / "sections" / sid,
+                evidence_overrides=_literature_overrides(library, sid, source.parent),
+            )
             shutil.copyfile(source, package / "author-input.json")
             section = _read(package / "input.json")
             # Make spine duties enforceable by the existing assembly coverage check.
@@ -140,7 +200,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
                     }
                 )
             _write(package / "input.json", section)
-            _section_context(package, data, contract)
+            _section_context(package, data, contract, library)
             entries.append({"section_id": sid, "input": f"sections/{sid}/input.json"})
         manifest = {**data.model_dump(), "sections": entries}
         _write(staged / "manuscript-input.json", manifest)
@@ -154,7 +214,9 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
         )
         (staged / "TASK.md").write_text(
             "# Prepare the manuscript with the host AI\n\n"
-            "Read manuscript-input.json and follow the PaperSpine order. Read every section's "
+            "Read manuscript-input.json for the PaperSpine publication order. Draft Methods "
+            "and Results before Discussion, then revise Introduction against the answers; "
+            "write Abstract and Conclusions from those current sections last. Read every section's "
             "TASK.md, packaged Skill and manuscript-context.json before drafting. Produce "
             "one fresh draft JSON for each section; use drafts-template.json to list the "
             "draft paths relative to that mapping file. Do not invent missing evidence. "
@@ -324,7 +386,7 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
     """
     package_dir, drafts_path, output_dir = map(Path, (package_dir, drafts_path, output_dir))
     _fresh(output_dir)
-    data, loaded = _inputs(package_dir / "manuscript-input.json")
+    data, loaded, library = _inputs(package_dir / "manuscript-input.json")
     drafts = _read(drafts_path)
     if not isinstance(drafts, dict) or set(drafts) != set(loaded):
         raise ValueError("Draft section IDs must exactly match the spine sections")
@@ -349,6 +411,10 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         "section_objects": {},
     }
     with _stage(output_dir) as staged:
+        if library is not None:
+            copy_literature(_relative(package_dir, data.literature), staged / "literature")
+            data.literature = "literature/literature.json"
+            library = load_literature(staged / data.literature)
         notes = staged / "notes"
         notes.mkdir()
         for contract in data.spine.sections:
@@ -373,7 +439,12 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             marked_path = staged / "marked-draft.json"
             _write(marked_path, marked)
             source, _ = loaded[sid]
-            local = assemble_section(source.parent, marked_path, staged / "sections" / sid)
+            local = assemble_section(
+                source.parent,
+                marked_path,
+                staged / "sections" / sid,
+                evidence_overrides=_literature_overrides(library, sid, source.parent),
+            )
             marked_path.unlink()
             result = _read(local / "section.json")
             mapping = {"figure": {}, "table": {}, "equation": {}, "cite": {}, "evidence": {}}
@@ -433,8 +504,9 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             shutil.copyfile(draft_path, local / "review-packet" / "draft.json")
             # Retain the prepared inputs, not the numbered output, for the next edit.
             # All figure/source paths already resolve in this section directory.
-            shutil.copyfile(source, local / "input.json")
-            _section_context(local, data, contract)
+            # Keep the refreshed shared references rather than the historical bibliography text.
+            _write(local / "input.json", loaded[sid][1].model_dump())
+            _section_context(local, data, contract, library)
             if (source.parent / "skills").is_dir():
                 shutil.copytree(source.parent / "skills", local / "skills")
             shutil.copyfile(local / "evidence-notes.md", notes / f"{sid}.md")

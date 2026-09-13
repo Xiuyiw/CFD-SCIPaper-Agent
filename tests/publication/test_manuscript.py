@@ -157,6 +157,126 @@ def fixture(tmp_path):
     return write(tmp_path / "input.json", manifest), write(tmp_path / "drafts.json", drafts)
 
 
+def shared_literature_fixture(tmp_path):
+    source, drafts = fixture(tmp_path)
+    (tmp_path / "excerpt.txt").write_text("Synthetic study: the mean is defined over equal rows.")
+    write(
+        tmp_path / "bibliography.json",
+        [
+            {
+                "id": "paper",
+                "type": "article-journal",
+                "title": "Synthetic reference",
+                "DOI": "10.1234/test",
+            },
+            {
+                "id": "alias",
+                "type": "article-journal",
+                "title": "Synthetic reference",
+                "DOI": "https://doi.org/10.1234/TEST",
+            },
+        ],
+    )
+    write(
+        tmp_path / "literature.json",
+        {
+            "bibliography": "bibliography.json",
+            "supports": [
+                {
+                    "section_id": sid,
+                    "evidence_id": "ref",
+                    "reference_id": "alias" if sid == "transport" else "paper",
+                    "source": "excerpt.txt",
+                    "locator": "paragraph 1",
+                    "excerpt": "the mean is defined over equal rows",
+                    "claim": "Definition of the fixture mean",
+                    "role": "method basis",
+                    "status": "supported",
+                }
+                for sid in ("methods", "response", "transport")
+            ],
+        },
+    )
+    manifest = read(source)
+    manifest["literature"] = "literature.json"
+    write(source, manifest)
+    return source, drafts
+
+
+def test_shared_bibliography_aliases_and_portable_supported_citations(tmp_path):
+    source, drafts = shared_literature_fixture(tmp_path)
+    package = prepare_manuscript(source, tmp_path / "package")
+    output = assemble_manuscript(package, drafts, tmp_path / "candidate")
+    references = read(output / "section.json")["references"]
+    shared = [r for r in references if r["source"] == "doi:10.1234/test"]
+    assert len(shared) == 1
+    assert shared[0]["text"] != "Definition of the fixture mean"
+    for sid in ("methods", "response", "transport"):
+        support = read(output / "sections" / sid / "literature-support.json")
+        assert support["supports"][0]["reference_id"] == "paper"
+        assert "literature-support.json" in (output / "sections" / sid / "TASK.md").read_text()
+    moved = tmp_path / "moved"
+    shutil.copytree(output, moved)
+    for directory in (
+        package,
+        output,
+        tmp_path / "methods",
+        tmp_path / "response",
+        tmp_path / "transport",
+    ):
+        shutil.rmtree(directory)
+    for name in ("bibliography.json", "literature.json", "excerpt.txt"):
+        (tmp_path / name).unlink()
+    resumed = assemble_manuscript(moved, moved / "drafts.json", tmp_path / "resumed")
+    assert read(resumed / "section.json")["references"] == references
+
+
+@pytest.mark.parametrize("withdrawal", ["unsupported", "needs-review", "deleted"])
+def test_withdrawing_shared_support_prevents_stale_citation(tmp_path, withdrawal):
+    source, drafts = shared_literature_fixture(tmp_path)
+    package = prepare_manuscript(source, tmp_path / "package")
+    output = assemble_manuscript(package, drafts, tmp_path / "candidate")
+    path = output / "literature/literature.json"
+    data = read(path)
+    if withdrawal == "deleted":
+        data["supports"].pop(0)
+    else:
+        data["supports"][0]["status"] = withdrawal
+    write(path, data)
+    with pytest.raises(ValueError, match="Unresolved IDs"):
+        assemble_manuscript(output, output / "drafts.json", tmp_path / "rejected")
+    assert not (tmp_path / "rejected").exists()
+
+
+def test_shared_literature_cannot_replace_metric(tmp_path):
+    source, _ = shared_literature_fixture(tmp_path)
+    path = tmp_path / "literature.json"
+    data = read(path)
+    data["supports"][0]["evidence_id"] = "metric"
+    write(path, data)
+    with pytest.raises(ValueError, match="non-literature"):
+        prepare_manuscript(source, tmp_path / "package")
+
+
+def test_role_guidance_is_routed_and_included(tmp_path):
+    source, _ = fixture(tmp_path)
+    data = read(source)
+    for record, role in zip(
+        data["spine"]["sections"], ("introduction", "abstract", "conclusion"), strict=True
+    ):
+        record["role"] = role
+    write(source, data)
+    package = prepare_manuscript(source, tmp_path / "package")
+    for sid, ref in (
+        ("methods", "literature-sections.md"),
+        ("response", "abstract-conclusions.md"),
+        ("transport", "abstract-conclusions.md"),
+    ):
+        path = package / "sections" / sid
+        assert ref in (path / "TASK.md").read_text()
+        assert (path / "skills/cfd-evidence-writing/references" / ref).is_file()
+
+
 def test_three_sections_portable_methods_math_numbering_and_notes(tmp_path):
     source, drafts = fixture(tmp_path)
     package = prepare_manuscript(source, tmp_path / "package")

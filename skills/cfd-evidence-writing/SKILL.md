@@ -10,6 +10,8 @@ description: Write evidence-linked CFD sections or coordinate a host-authored ma
 Use after checkpoint 2 when a current figure delivery has passing QA and a matching paragraph duty.
 Alternatively, use the results-section path for one or several supplied figures with declared
 evidence and writing duties; it does not require the legacy checkpoint pipeline.
+Use the manuscript path for supplied section roles and a paper spine, including literature-based
+Introduction/Discussion and evidence-bounded Abstract/Conclusions; figures are not mandatory.
 
 ## Do not trigger
 
@@ -121,7 +123,11 @@ input path; optional `context` and `terms` carry the whole-paper question and sh
 Read the workspace TASK and each section's TASK. Write to the section's purpose and role, not a
 repeated results-paragraph template. For Methods read
 [methods-sections.md](references/methods-sections.md); for Results read the mechanism subsection
-reference. Keep missing physical definitions in notes, not invented prose. The drafts JSON maps
+reference. For Introduction, literature-supported Discussion or claim-support review, read
+[literature-sections.md](references/literature-sections.md). For Abstract/Conclusions, read
+[abstract-conclusions.md](references/abstract-conclusions.md) after the current Results/Discussion.
+These references guide host judgment; they do not certify literature support or automate dependent
+scientific revisions. Keep missing physical definitions in notes, not invented prose. The drafts JSON maps
 every section ID to its host-authored draft path. Preserve drafts and inputs; assembling existing
 text does not demonstrate independent scientific writing.
 
