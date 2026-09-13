@@ -284,3 +284,39 @@ cross-engine reproduction remains unresolved. Original field-artwork labels and 
 image resolution remain in the next batch, alongside native-field dependency completion.
 
 No public release, new solver run, geometry/property change or scientific-readiness approval.
+
+## 9. Portable figure dependencies: product-first follow-up
+
+The author explicitly reiterated that this trial must improve the Agent, not become an
+indefinite private-manuscript editing job. This batch addresses an existing portable figure
+task defect: relocating every source into an ID-specific folder breaks relative script/helper/
+field paths. New tasks retain declared input paths under `sources/`; existing imported task
+paths remain readable. No new registry, solver adapter or arbitrary script runner is introduced.
+
+The importer additionally reports raster pixel dimensions and effective ppi at the task's final
+width, independent of image DPI tags. This does not measure later Word/PDF downsampling. The
+builtin figure Skill covers native-array/geometry/helper dependencies, domain and unit identity,
+geometry assumptions in regional statistics, panel/colorbar labels and final embedded size.
+
+Public tests run a declared script with its sibling helper and nested source data after both
+task relocation and delivery relocation, with original source directories removed. A separate
+test verifies that an inflated DPI tag cannot inflate calculated effective resolution.
+The private four-field trial exercises the same public task/import path, using original native
+facets and isolated outputs. It is a regression example, not a new universal field-analysis
+adapter, automatic mechanism discovery or a substitute for model/mesh evidence.
+
+### Portable figure batch outcome
+
+50 relevant figure-task, CLI, whole-review and builtin-Skill tests pass; Ruff, formatting and
+Skill validation pass. The native trial used the public prepare/import functions and reran its
+host-authored script after relocation. Recomputed records and preview pixels remained identical.
+All four native facet files were retained, without duplicate field copies within a bundle.
+
+The field trial reproduced supplied interface SD to floating precision; mean and regional mean
+differences at export/arithmetic precision were retained, not relabeled as physical error bounds
+or used to change the manuscript. Its four-format figure changes only degree/panel labels. At
+160 mm width the 1980-pixel preview gives 314.325 ppi, regardless of its stored DPI tag. Original
+Word/PDF embedding remains unchanged and still needs later final-output verification.
+
+This batch changes reusable interchange behavior and the shipped figure guidance. It does not
+add a universal native-field analysis engine, modify the current manuscript, or release v0.9.

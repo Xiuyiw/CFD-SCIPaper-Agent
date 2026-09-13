@@ -77,6 +77,4 @@ def test_figure_task_cli_imports_editable_candidate_without_approval(tmp_path):
     assert "candidate imported" in result.stdout
     record = json.loads((imported / "delivery.json").read_text())
     assert record["scientific_approval"] is False
-    assert (imported / "sources/data/source.csv").read_bytes() == (
-        tmp_path / "source.csv"
-    ).read_bytes()
+    assert (imported / "sources/source.csv").read_bytes() == (tmp_path / "source.csv").read_bytes()

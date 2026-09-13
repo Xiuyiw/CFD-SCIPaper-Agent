@@ -25,6 +25,14 @@ Retain a Python source, original table dependencies and preview. Prefer SVG/PDF
 with live text and high-resolution PNG/TIFF as additional exports. A Python file
 accepted by import has only been parsed, not executed or scientifically checked.
 
+For native field plots, include the selected field arrays, mesh/facet geometry and
+helper modules actually used by the plot, with case, variable, unit and surface/domain
+identities. A scalar summary or PNG does not replace these dependencies. Preserve
+mesh-defined field values and common comparison limits; do not reconstruct fields
+from pixels. If a derived regional statistic uses rectangular face bounding boxes,
+verify that geometry assumption before using it for the selected faces. Use the
+solver-native operator or appropriate polygon treatment when that assumption fails.
+
 ## Conceptual layers
 
 Read [editable-schematic-adaptation.md](editable-schematic-adaptation.md).
@@ -39,11 +47,28 @@ Use `delivery-template.json`. Artifact paths are relative to delivery.json and a
 preserved on import. Keep unchanged input files in `sources/`; the importer copies
 them automatically. List any new supporting file in `exports`. A figure script
 should resolve its source paths relative to its own location, not the shell cwd.
+Preparation preserves each declared input path under `sources/`, including sibling
+helpers and subdirectories; consult task.json rather than deriving a path from a
+source ID. List the dependencies explicitly, then run the known plotting script in
+a relocated copy with its source directory unavailable. That establishes this
+bundle's reproducibility, not arbitrary-code execution permission during import.
 Unlisted files are not imported. For an author label edit, work from their editable
 source and change only the named text; compare source data and other geometry with
 the supplied version. Record raster components honestly in delivery notes.
+When sending the figure onward for section/manuscript review, include the plotting
+script and its required files through that section's `source_files` under `sources/`.
+The existing review exporter carries those declared paths; attaching the PNG alone
+does not carry the reproducible figure bundle.
 
 Inspect the actual preview at final manuscript width. Check label/unit fidelity,
 arrow meaning, legend and marker consistency, and overlap. Import checks readable
 editing formats and preview pixels, not these scientific or visual relationships.
 Its result is always a candidate, never author approval.
+
+Use the delivery's `preview_geometry` (pixels, intended width and effective ppi)
+against the target venue's image requirements. Changing a file's DPI tag does not
+add pixels, and Word/PDF conversion may downsample again: inspect the embedded image
+at its actual page size before final delivery. Keep colorbar units typographically
+correct (for example, °C for absolute Celsius temperature and K for differences).
+When captions refer to panels, put matching panel letters in the actual artwork.
+These checks do not justify changing an accepted palette, axis range or layout.

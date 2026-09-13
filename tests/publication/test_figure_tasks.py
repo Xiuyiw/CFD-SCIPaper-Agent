@@ -1,4 +1,7 @@
 import json
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -78,7 +81,7 @@ def test_portable_task_and_candidate_delivery(tmp_path, kind):
     record = json.loads((result / "delivery.json").read_text())
     assert record["status"] == "imported_candidate"
     assert record["scientific_approval"] is False
-    assert (result / "sources/raw/data.csv").read_bytes() == (tmp_path / "data.csv").read_bytes()
+    assert (result / "sources/data.csv").read_bytes() == (tmp_path / "data.csv").read_bytes()
     assert (result / record["editable_sources"][0]).read_bytes() == (
         returned.parent / record["editable_sources"][0]
     ).read_bytes()
@@ -193,6 +196,92 @@ def test_return_cannot_replace_task_sources(tmp_path):
 def test_return_source_provenance_required_even_if_preview_exists(tmp_path):
     package = prepare(tmp_path)
     returned = delivery(tmp_path)
-    (package / "sources/raw/data.csv").unlink()
+    (package / "sources/data.csv").unlink()
     with pytest.raises(ValueError, match="Missing"):
         import_figure_task(package, returned, tmp_path / "imported")
+
+
+def test_nested_dependencies_execute_after_task_and_delivery_relocation(tmp_path):
+    original = tmp_path / "original"
+    original.mkdir()
+    data = make_task(original)
+    (original / "scripts").mkdir()
+    (original / "fields").mkdir()
+    (original / "fields/value.csv").write_text("2,3\n", encoding="utf-8")
+    (original / "scripts/helper.py").write_text(
+        "def total(text):\n    return sum(int(x) for x in text.strip().split(','))\n",
+        encoding="utf-8",
+    )
+    (original / "scripts/read.py").write_text(
+        "from pathlib import Path\nfrom helper import total\n"
+        "print(total((Path(__file__).resolve().parents[1] / 'fields/value.csv').read_text()))\n",
+        encoding="utf-8",
+    )
+    data["sources"] = [
+        {"id": "field", "path": "fields/value.csv", "role": "data", "description": "Values"},
+        {
+            "id": "reader",
+            "path": "scripts/read.py",
+            "role": "editable_source",
+            "description": "Reader",
+        },
+        {
+            "id": "helper",
+            "path": "scripts/helper.py",
+            "role": "editable_source",
+            "description": "Helper",
+        },
+    ]
+    package = prepare_figure_task(write_json(original / "input.json", data), tmp_path / "task")
+    moved = tmp_path / "moved task"
+    shutil.move(package, moved)
+    shutil.rmtree(original)
+    script = moved / "sources/scripts/read.py"
+    result = subprocess.run(
+        [sys.executable, str(script)], cwd=tmp_path, capture_output=True, text=True, check=True
+    )
+    assert result.stdout.strip() == "5"
+    returned = delivery(tmp_path)
+    imported = import_figure_task(moved, returned, tmp_path / "candidate")
+    relocated = tmp_path / "relocated candidate"
+    shutil.move(imported, relocated)
+    shutil.rmtree(moved)
+    result = subprocess.run(
+        [sys.executable, str(relocated / "sources/scripts/read.py")],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == "5"
+
+
+def test_preview_resolution_uses_pixels_and_final_width_not_image_dpi(tmp_path):
+    package = prepare(tmp_path)
+    returned = delivery(tmp_path)
+    preview = returned.parent / "preview.png"
+    with Image.open(preview) as image:
+        image.save(preview, dpi=(1200, 1200))
+    candidate = import_figure_task(package, returned, tmp_path / "candidate")
+    record = json.loads((candidate / "delivery.json").read_text())
+    geometry = record["preview_geometry"]
+    assert geometry["width_px"] == 100
+    assert geometry["height_px"] == 60
+    assert geometry["final_width_mm"] == 160
+    assert geometry["final_height_mm"] == 96
+    assert geometry["effective_ppi"] == pytest.approx(100 * 25.4 / 160)
+    assert record["scientific_approval"] is False
+
+
+def test_existing_id_based_task_can_still_be_imported(tmp_path):
+    package = prepare(tmp_path)
+    task = json.loads((package / "task.json").read_text())
+    source = task["sources"][0]
+    old_path = package / "sources/raw/data.csv"
+    old_path.parent.mkdir()
+    shutil.move(package / source["path"], old_path)
+    source["path"] = "sources/raw/data.csv"
+    write_json(package / "task.json", task)
+    returned = delivery(tmp_path)
+    candidate = import_figure_task(package, returned, tmp_path / "candidate")
+    assert (candidate / source["path"]).read_bytes() == (tmp_path / "data.csv").read_bytes()
