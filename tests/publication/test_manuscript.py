@@ -309,7 +309,11 @@ def test_three_sections_portable_methods_math_numbering_and_notes(tmp_path):
     assert len(result["evidence"]) == 9
     for index, sid in enumerate(("methods", "response", "transport"), 1):
         assert result["paragraphs"][2 * index - 2]["section_id"] == sid
-        assert result["section_objects"][sid] == {"tables": [str(index)], "equations": [str(index)]}
+        assert result["section_objects"][sid] == {
+            "role": "methods" if sid == "methods" else "results",
+            "tables": [str(index)],
+            "equations": [str(index)],
+        }
         paragraph = result["paragraphs"][2 * index - 1]
         assert f"Figure {index}, Table {index}, Equation {index}" in paragraph["text"]
         assert "Literal Figure 1 / Table 1 / Equation 1 / [1] / 12.3 stays." in paragraph["text"]
@@ -569,3 +573,201 @@ def test_assembled_manuscript_carries_continuation_inputs_tasks_and_skills(tmp_p
         assert (local / skill).read_bytes() == (prepared / "sections" / sid / skill).read_bytes()
     methods_reference = "skills/cfd-evidence-writing/references/methods-sections.md"
     assert (output / "sections/methods" / methods_reference).is_file()
+
+
+def bound_fixture(tmp_path):
+    source, drafts = fixture(tmp_path)
+    data, mapping = read(source), read(drafts)
+    for sid, role in (("summary", "abstract"), ("conclusions", "conclusion")):
+        root = tmp_path / sid
+        root.mkdir()
+        write(
+            root / "input.json",
+            {
+                "section_id": sid,
+                "title": sid.title(),
+                "question": "What follows from the result?",
+                "figures": [],
+                "evidence": [],
+                "duties": [{"purpose": "Summarize", "evidence_ids": ["shared"], "figure_ids": []}],
+            },
+        )
+        write(
+            root / "draft.json",
+            {
+                "title": sid.title(),
+                "paragraphs": [
+                    {
+                        "text": "Mean: {{value:shared}}.",
+                        "evidence_ids": ["shared"],
+                        "figure_ids": [],
+                    }
+                ],
+                "captions": {},
+                "image_observations": {},
+                "evidence_notes": [],
+            },
+        )
+        mapping[sid] = f"{sid}/draft.json"
+        data["sections"].append(
+            {
+                "section_id": sid,
+                "input": f"{sid}/input.json",
+                "evidence_bindings": {"shared": "response/metric"},
+            }
+        )
+        contract = {
+            "section_id": sid,
+            "role": role,
+            "title": sid.title(),
+            "purpose": "Summarize current evidence",
+            "required_claim_ids": ["shared"],
+        }
+        data["spine"]["sections"].insert(
+            0 if sid == "summary" else len(data["spine"]["sections"]), contract
+        )
+    data["keywords"] = ["Synthetic transport", "Evidence-linked writing"]
+    return write(source, data), write(drafts, mapping)
+
+
+def test_bound_source_updates_summaries_without_editing_other_drafts(tmp_path):
+    source, drafts = bound_fixture(tmp_path)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    first = assemble_manuscript(prepared, drafts, tmp_path / "first")
+    assert not read(first / "changes.json")["baseline_available"]
+    assert "Mean: 2.00 K." in (first / "manuscript.md").read_text(encoding="utf-8")
+    assert not (first / "sections/summary/sources").exists()
+    working = tmp_path / "working"
+    shutil.copytree(first, working)
+    # Local rendered snapshots must never override their owner's current calculation.
+    local = read(working / "sections/summary/input.json")
+    local["evidence"][0]["value"] = "9999"
+    write(working / "sections/summary/input.json", local)
+    (working / "sections/response/sources/values.csv").write_text("case,value\na,5\na,7\n")
+    output = assemble_manuscript(working, working / "drafts.json", tmp_path / "second")
+    result = read(output / "section.json")
+    text = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert text.count("Mean: 6.00 K.") == 2
+    assert "9999" not in text
+    change = read(output / "changes.json")
+    assert set(change["affected_sections"]) == {"response", "summary", "conclusions"}
+    assert change["unchanged_sections"] == ["methods", "transport"]
+    assert change["affected_passages"]["summary"][0]["paragraph"] == 1
+    for sid in ("methods", "transport", "summary", "conclusions"):
+        assert (first / f"sections/{sid}/draft.json").read_bytes() == (
+            output / f"sections/{sid}/draft.json"
+        ).read_bytes()
+    value = result["resolved_values"][json.dumps(["summary", "shared"], separators=(",", ":"))]
+    assert value["source"] == "sections/response/sources/values.csv"
+    assert value["owner_evidence"] == "metric"
+    assert value["raw_value"] == 6
+    assert (first / "sections/response/sources/values.csv").read_text() == "case,value\na,1\na,3\n"
+    third = assemble_manuscript(output, output / "drafts.json", tmp_path / "third")
+    assert read(third / "changes.json")["changes"] == []
+
+
+@pytest.mark.parametrize(
+    "target,message",
+    [
+        ("summary/shared", "self evidence"),
+        ("missing/metric", "Unknown"),
+        ("response/missing", "Unknown bound"),
+        ("response/ref", "shared literature"),
+        ("conclusions/shared", "chain"),
+        ("response", "owner-section"),
+    ],
+)
+def test_invalid_bindings_do_not_make_candidates(tmp_path, target, message):
+    source, _ = bound_fixture(tmp_path)
+    data = read(source)
+    data["sections"][-2]["evidence_bindings"]["shared"] = target
+    write(source, data)
+    with pytest.raises(ValueError, match=message):
+        prepare_manuscript(source, tmp_path / "out")
+    assert not (tmp_path / "out").exists()
+
+
+def test_dependency_cycle_and_author_evidence_overwrite_rejected(tmp_path):
+    source, _ = bound_fixture(tmp_path)
+    data = read(source)
+    data["sections"][1]["depends_on"] = ["summary"]
+    write(source, data)
+    with pytest.raises(ValueError, match="cycle"):
+        prepare_manuscript(source, tmp_path / "cycle")
+    data["sections"][1]["depends_on"] = []
+    write(source, data)
+    summary = tmp_path / "summary/input.json"
+    raw = read(summary)
+    raw["evidence"] = [
+        {
+            "id": "shared",
+            "kind": "metric",
+            "text": "Author metric",
+            "source": "author",
+            "value": "9",
+        }
+    ]
+    write(summary, raw)
+    with pytest.raises(ValueError, match="author-owned"):
+        prepare_manuscript(source, tmp_path / "overwrite")
+
+
+def test_removed_binding_cannot_keep_old_numeric_copy(tmp_path):
+    source, drafts = bound_fixture(tmp_path)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    first = assemble_manuscript(prepared, drafts, tmp_path / "first")
+    manifest = read(first / "manuscript-input.json")
+    next(s for s in manifest["sections"] if s["section_id"] == "summary")["evidence_bindings"] = {}
+    write(first / "manuscript-input.json", manifest)
+    with pytest.raises(ValueError):
+        assemble_manuscript(first, first / "drafts.json", tmp_path / "invalid")
+
+
+def test_keywords_follow_abstract_in_markdown_and_docx(tmp_path):
+    from docx import Document
+
+    from cfdpaper.publication.section import export_section_docx
+
+    source, drafts = bound_fixture(tmp_path)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    output = assemble_manuscript(prepared, drafts, tmp_path / "assembled")
+    text = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert text.index("Mean: 2.00 K.") < text.index("Keywords:") < text.index("## Methods")
+    docx = export_section_docx(output, tmp_path / "manuscript.docx", layout="near-reference")
+    paragraphs = Document(docx).paragraphs
+    index = next(i for i, p in enumerate(paragraphs) if p.text.startswith("Keywords:"))
+    assert paragraphs[index - 1].text == "Mean: 2.00 K."
+    assert paragraphs[index + 1].text == "Methods"
+    assert paragraphs[index].paragraph_format.first_line_indent.pt == 0
+
+
+def test_table_only_binding_keeps_source_and_standalone_review_materials(tmp_path):
+    source, drafts = bound_fixture(tmp_path)
+    data = read(source)
+    entry = next(s for s in data["sections"] if s["section_id"] == "summary")
+    entry["evidence_bindings"]["table-mean"] = "response/metric"
+    write(source, data)
+    path = tmp_path / "summary/draft.json"
+    draft = read(path)
+    draft["tables"] = [
+        {
+            "table_id": "summary-values",
+            "caption": "Fixture mean",
+            "columns": ["Metric", "Value"],
+            "rows": [["Mean", "{{value:table-mean}}"]],
+            "after_section_id": "summary",
+            "evidence_ids": ["table-mean"],
+        }
+    ]
+    write(path, draft)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    output = assemble_manuscript(prepared, drafts, tmp_path / "out")
+    combined = read(output / "section.json")
+    key = json.dumps(["summary", "table-mean"], separators=(",", ":"))
+    assert combined["resolved_values"][key]["source"] == "sections/response/sources/values.csv"
+    packet = output / "sections/summary/review-packet"
+    bound = read(packet / "bound-evidence.json")["table-mean"]
+    assert (packet / bound["resolved"]["source"]).read_text() == "case,value\na,1\na,3\n"
+    assert bound["definition"]["result_ref"]["calculation_id"] == "mean"
+    assert bound["calculations"][0]["units"] == {"value": "K"}
+    assert "bound-evidence.json" in (packet / "review-prompt.md").read_text()

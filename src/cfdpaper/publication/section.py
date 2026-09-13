@@ -164,8 +164,15 @@ def _stage(output: Path):
         staged.rename(output)
 
 
-def _load_input(path: Path, *, evidence_overrides: dict | None = None) -> _Input:
+def _load_input(
+    path: Path, *, evidence_overrides: dict | None = None, bound_evidence: dict | None = None
+) -> _Input:
     raw = _read(path)
+    # Manuscript bindings are resolved from their owning section before local validation.
+    if bound_evidence:
+        raw["evidence"] = [
+            record for record in raw.get("evidence", []) if record["id"] not in bound_evidence
+        ] + [record for record in bound_evidence.values() if record is not None]
     if evidence_overrides:
         for record in raw.get("evidence", []):
             if record["id"] in evidence_overrides and record.get("kind") != "literature":
@@ -324,12 +331,18 @@ Return only the JSON draft, with no approval claim. A human reviews the assemble
 
 
 def prepare_section(
-    input_path: Path, output_dir: Path, *, evidence_overrides: dict | None = None
+    input_path: Path,
+    output_dir: Path,
+    *,
+    evidence_overrides: dict | None = None,
+    bound_evidence: dict | None = None,
 ) -> Path:
     """Copy declared inputs and valid raster figures into a fresh writing package."""
     input_path, output_dir = Path(input_path), Path(output_dir)
     _fresh(output_dir)
-    data = _load_input(input_path, evidence_overrides=evidence_overrides)
+    data = _load_input(
+        input_path, evidence_overrides=evidence_overrides, bound_evidence=bound_evidence
+    )
     with _stage(output_dir) as staged:
         _copy_figures(data, input_path.parent, staged)
         _copy_sources(data, input_path.parent, staged)
@@ -357,12 +370,21 @@ def prepare_section(
 
 
 def assemble_section(
-    package_dir: Path, draft_path: Path, output_dir: Path, *, evidence_overrides: dict | None = None
+    package_dir: Path,
+    draft_path: Path,
+    output_dir: Path,
+    *,
+    evidence_overrides: dict | None = None,
+    bound_evidence: dict | None = None,
 ) -> Path:
     """Resolve declared references without synthesizing or approving the draft prose."""
     package_dir, draft_path, output_dir = map(Path, (package_dir, draft_path, output_dir))
     _fresh(output_dir)
-    data = _load_input(package_dir / "input.json", evidence_overrides=evidence_overrides)
+    data = _load_input(
+        package_dir / "input.json",
+        evidence_overrides=evidence_overrides,
+        bound_evidence=bound_evidence,
+    )
     draft = _Draft.model_validate(_read(draft_path))
     evidence = {e.id: e for e in data.evidence}
     figures = {f.id for f in data.figures}
@@ -668,10 +690,18 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
                 add_table(document, SectionTable.model_validate(table), config)
                 placed_tables.add(key)
 
+    def add_keywords(section_id):
+        if data.get("section_objects", {}).get(section_id, {}).get("role") == "abstract":
+            if data.get("keywords"):
+                p = document.add_paragraph("Keywords: " + "; ".join(data["keywords"]))
+                p.paragraph_format.first_line_indent = Pt(0)
+                p.paragraph_format.space_before = p.paragraph_format.space_after = Pt(0)
+
     for paragraph in data["paragraphs"]:
         if "section_heading" in paragraph:
             if layout == "near-reference" and current_section is not None:
                 add_section_objects(current_section)
+            add_keywords(current_section)
             current_section = paragraph.get("section_id")
             level = paragraph.get("level", 1)
             if level not in (1, 2):
@@ -708,6 +738,7 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
                 if figure["id"] in paragraph["figure_ids"] and figure["id"] not in placed:
                     add_figure(figure)
                     placed.add(figure["id"])
+    add_keywords(current_section)
     if layout == "near-reference" and current_section is not None:
         add_section_objects(current_section)
     for equation in data.get("equations", []):

@@ -148,4 +148,35 @@ prevents reassembly of drafts still citing it. Revise only those uses, then asse
 
 The candidate carries shared metadata, source excerpts and aliases when moved. Generated reference
 labels currently use only supplied metadata; they are not a journal CSL style or Zotero live fields.
-Full CSL formatting and cross-chapter semantic update suggestions remain subsequent v0.8 work.
+Full journal CSL formatting remains subsequent v0.8 work.
+
+## Reuse body evidence in summaries (v0.8 development)
+
+Declare direct evidence ownership in the manuscript's section entry:
+
+```json
+{
+  "section_id": "abstract",
+  "input": "abstract-input.json",
+  "evidence_bindings": {"pressure": "hydraulics/dp-A"},
+  "depends_on": ["hydraulics", "discussion"]
+}
+```
+
+The local draft uses `{{value:pressure}}` and declares `pressure` in its evidence IDs.
+Do not enter a separate local metric with that ID. The owner may appear later in publication
+order. Its current calculation supplies the value and unit each time the manuscript is assembled;
+no summary CSV copy is needed. Bind directly to the owner, not to another summary's copy.
+Literature uses need their own claim-specific shared support, not an evidence binding.
+
+Use `depends_on` for interpretive reading dependencies. Following an edit in a working copy,
+assemble into a new candidate and read `CHANGES.md`: it lists affected sections and draft paragraph
+positions. `changes.json` supplies machine-readable details. Only declared dependencies are followed;
+free-text scientific meaning is reviewed by the host, not automatically rewritten. Related figures
+must be checked separately after source changes. The first assembly establishes a comparison
+baseline; it does not claim that an earlier manuscript was unchanged.
+
+An optional manuscript-level `keywords` list appears after the Abstract in Markdown and Word.
+Standalone section review packets include original owner definitions and copied small source
+materials for bound values. The complete seven-section runnable example is in
+[`../literature-manuscript`](../literature-manuscript/README.md).

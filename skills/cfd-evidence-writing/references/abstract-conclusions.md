@@ -65,6 +65,13 @@ an old promise. If no body passage supports a summary claim, remove or defer tha
 Use supported value tokens when available; separately read free-text quantities and qualitative
 claims. Token binding and global numbering cannot detect every stale interpretation.
 
+In manuscript tasks, `evidence_bindings` maps a local evidence ID to its owning section/evidence
+in `manuscript-context.json`. Use that local ID in value tokens and paragraph evidence lists;
+read the owner rather than entering a second numeric copy. `depends_on` identifies body sections
+whose argument the summary consumes. Read `CHANGES.md` on continuation and reconsider the listed
+passages, including whether an old image or a free-text direction still agrees with current data.
+Do not describe source-driven numeric refresh as automatic revision of the scientific argument.
+
 Preserve author edits and record unresolved scientific choices in existing evidence notes. Re-read
 affected summary statements after a source, comparison or body argument changes; do not claim that
 the software automatically propagates scientific meaning across all chapters.
