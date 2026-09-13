@@ -1,6 +1,7 @@
 """Synthetic lifecycle checks: these fixtures are not AI-produced scientific prose."""
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -345,3 +346,106 @@ def test_markdown_keeps_objects_with_their_section(tmp_path):
     markdown = (output / "manuscript.md").read_text(encoding="utf-8")
     assert markdown.index("   (1)") < markdown.index("## Response")
     assert markdown.index("![Figure 1]") < markdown.index("## Response")
+
+
+def test_assembled_manuscript_can_move_edit_and_reassemble_without_originals(tmp_path):
+    original = tmp_path / "original-project"
+    original.mkdir()
+    source, drafts = fixture(original)
+    author_mapping = drafts.read_bytes()
+    prepared = prepare_manuscript(source, original / "prepared")
+    assembled = assemble_manuscript(prepared, drafts, original / "assembled")
+    moved = Path(shutil.copytree(assembled, tmp_path / "moved-manuscript"))
+    before = read(moved / "section.json")
+    kept_drafts = {
+        sid: (moved / f"sections/{sid}/draft.json").read_bytes() for sid in ("methods", "transport")
+    }
+    source_bytes = {
+        sid: (original / sid / "sources/values.csv").read_bytes()
+        for sid in ("methods", "response", "transport")
+    }
+    shutil.rmtree(original)
+    path = moved / "sections/response/draft.json"
+    edited = read(path)
+    edited["paragraphs"][0]["text"] += " Author revision of this section only."
+    write(path, edited)
+    continued = assemble_manuscript(moved, moved / "drafts.json", tmp_path / "continued")
+    after = read(continued / "section.json")
+    assert after["paragraphs"][3]["text"].endswith("Author revision of this section only.")
+    assert after["references"] == before["references"]
+    assert after["resolved_values"] == before["resolved_values"]
+    assert after["tables"] == before["tables"]
+    assert after["equations"] == before["equations"]
+    for index, sid in enumerate(("methods", "response", "transport"), 1):
+        assert (continued / f"sections/{sid}/sources/values.csv").read_bytes() == source_bytes[sid]
+        paragraph = after["paragraphs"][2 * index - 1]
+        expected = f"Synthetic 2.00 K: Figure {index}, Table {index}, Equation {index}"
+        assert expected in paragraph["text"]
+        assert paragraph["runs"][1]["math"]["children"][1]["text"] == "[2]"
+        assert "Literal Figure 1 / Table 1 / Equation 1 / [1] / 12.3 stays." in paragraph["text"]
+        if sid in kept_drafts:
+            assert (continued / f"sections/{sid}/draft.json").read_bytes() == kept_drafts[sid]
+            assert paragraph == before["paragraphs"][2 * index - 1]
+    assert (moved / "author-drafts.json").read_bytes() == author_mapping
+
+
+def test_moved_assembled_manuscript_preserves_cross_section_tokens(tmp_path):
+    original = tmp_path / "original-project"
+    original.mkdir()
+    source, drafts = fixture(original)
+    path = original / "response/draft.json"
+    draft = read(path)
+    draft["paragraphs"][0]["text"] += (
+        " Defined in {{equation:methods/same}}; compare {{table:transport/same}}"
+        " and {{figure:transport/same}}. Literal Equation 1 stays."
+    )
+    write(path, draft)
+    prepared = prepare_manuscript(source, original / "prepared")
+    assembled = assemble_manuscript(prepared, drafts, original / "assembled")
+    moved = Path(shutil.copytree(assembled, tmp_path / "moved-manuscript"))
+    shutil.rmtree(original)
+    manifest = read(moved / "manuscript-input.json")
+    manifest["spine"]["sections"].reverse()
+    write(moved / "manuscript-input.json", manifest)
+    continued = assemble_manuscript(moved, moved / "drafts.json", tmp_path / "continued")
+    paragraph = read(continued / "section.json")["paragraphs"][3]["text"]
+    assert "Defined in Equation 3; compare Table 1 and Figure 1" in paragraph
+    assert "Literal Equation 1 stays" in paragraph
+    assert "{{equation:methods/same}}" in (continued / "sections/response/draft.json").read_text()
+    references = read(continued / "numbering.json")["sections"]["response"]["cross_references"]
+    assert references[0] == {
+        "kind": "equation",
+        "section_id": "methods",
+        "id": "same",
+        "number": "3",
+    }
+    for sid in ("methods", "response", "transport"):
+        context = read(continued / f"sections/{sid}/manuscript-context.json")
+        assert [section["section_id"] for section in context["spine"]["sections"]] == [
+            "transport",
+            "response",
+            "methods",
+        ]
+
+
+def test_assembled_manuscript_carries_continuation_inputs_tasks_and_skills(tmp_path):
+    source, drafts = fixture(tmp_path)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    output = assemble_manuscript(prepared, drafts, tmp_path / "assembled")
+    assert read(output / "drafts.json") == {
+        sid: f"sections/{sid}/draft.json" for sid in ("methods", "response", "transport")
+    }
+    continuation = (output / "CONTINUE.md").read_text(encoding="utf-8")
+    for name in ("manuscript.md", "manuscript-input.json", "drafts.json"):
+        assert name in continuation
+    for sid in ("methods", "response", "transport"):
+        local = output / "sections" / sid
+        assert read(local / "input.json")["section_id"] == sid
+        assert "manuscript-context.json" in (local / "TASK.md").read_text(encoding="utf-8")
+        context = read(local / "manuscript-context.json")
+        assert context["section"]["section_id"] == sid
+        assert len(context["spine"]["sections"]) == 3
+        skill = "skills/cfd-evidence-writing/SKILL.md"
+        assert (local / skill).read_bytes() == (prepared / "sections" / sid / skill).read_bytes()
+    methods_reference = "skills/cfd-evidence-writing/references/methods-sections.md"
+    assert (output / "sections/methods" / methods_reference).is_file()

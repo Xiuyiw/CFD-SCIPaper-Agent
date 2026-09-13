@@ -12,6 +12,12 @@ validation evidence. Include only items that are actually documented. A missing
 model choice, mesh assessment or validation dataset is a specific evidence note,
 not an invitation to invent a standard setting or imply validation occurred.
 
+Distinguish a missing task attachment from a missing project result. If the supplied project
+index points to relevant settings, convergence or mesh reports, read those small records before
+asking the author to provide them again. Match each record to its geometry, operating point,
+model and actual quantity; a test on one mesh direction or one case is not validation of all
+local diagnostics. Do not load or rerun a native solver solely to fill a prose template.
+
 Give definitions, units, control volumes, weighting and sampling for the quantities
 used later. Distinguish integrated rates from volumetric densities, and numerical
 convergence from mesh sensitivity and experimental validation. Identify conditions

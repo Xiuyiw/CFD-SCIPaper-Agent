@@ -30,3 +30,18 @@ This demonstrates organization, source-bound numbers and editable document struc
 reference plots are not examples of complex mechanism graphics, and the short tutorial is not
 a publication-ready full manuscript. Its DOCX style uses the project's default two-character body
 indent and zero paragraph spacing; figure captions, tables, equations and headings are separate.
+
+## Continue after moving the workspace
+
+Copy the entire assembled `my-manuscript` directory to a working location and read its
+`CONTINUE.md`. Edit the intended `sections/SECTION_ID/draft.json`, leaving unrelated drafts
+unchanged, then run:
+
+```text
+cfdpaper write . --artifact manuscript --package working-copy --draft working-copy/drafts.json --output next-manuscript
+```
+
+The original source directory and preparation package are no longer required. Sources, local
+identities, writing instructions and shared context travel with the candidate. Reordering the
+spine updates numbering and the next section tasks. The CLI does not import edits made only in
+Word, rewrite scientific interpretations, or infer author approval.

@@ -134,6 +134,20 @@ Keep ordinary local tokens unchanged; cross-section citation/value tokens are no
 Inspect `numbering.json` and the rendered pages after reordering. This path coordinates sections and
 exports an editable candidate, not a finished or author-approved full paper.
 
+### Continue an existing manuscript
+
+An assembled workspace includes `CONTINUE.md`, portable `drafts.json`, each section's
+`input.json`, local-ID `draft.json`, sources, Skill and current manuscript context. Copy the whole
+workspace to resume with another host. Preserve the current version, edit only the intended draft
+in a working copy, and assemble that copy to a fresh directory using its own `drafts.json`.
+`author-drafts.json` retains historical paths and is not the continuation entry point.
+
+Read the current manuscript and adjacent sections before editing. Methods must introduce the
+domains, operators and comparisons used in Results; Results should not repeatedly restate those
+definitions. Keep the shared spine/terms current. Source or definition changes require a fresh
+scientific reading of dependent claims, not only numeric replacement. Word-only edits are not
+automatically imported: reconcile them with the authoring draft before exporting again.
+
 ## Manuscript paragraph and page formatting
 
 Use the author's requested format first, or the target venue's supplied template; do not present

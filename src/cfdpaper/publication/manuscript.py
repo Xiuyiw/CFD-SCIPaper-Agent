@@ -18,6 +18,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from cfdpaper.publication.elements import SectionEquation, SectionTable, math_text
 from cfdpaper.publication.section import (
+    TASK as SECTION_TASK,
+)
+from cfdpaper.publication.section import (
     _Draft,
     _fresh,
     _load_input,
@@ -79,6 +82,37 @@ def _inputs(path: Path):
     return data, loaded
 
 
+def _section_context(package, data, contract):
+    _write(
+        package / "manuscript-context.json",
+        {
+            "title": data.title,
+            "context": data.context,
+            "terms": data.terms,
+            "spine": data.spine.model_dump(),
+            "section": contract.model_dump(),
+        },
+    )
+    route = (
+        "Read skills/cfd-evidence-writing/references/methods-sections.md before "
+        "drafting this Methods section. Its method-specific route takes precedence "
+        "over the generic mechanism-subsection narrative.\n"
+        if contract.role == "methods"
+        else ""
+    )
+    (package / "TASK.md").write_text(
+        f"# Manuscript section: {contract.title}\n\n"
+        f"Role: {contract.role}\n\nPurpose: {contract.purpose}\n\n"
+        "Read manuscript-context.json for the central question, shared terminology, "
+        "all section responsibilities and this section's prohibited content. "
+        "Develop this section's assigned argument without duplicating other sections.\n"
+        + route
+        + "\n"
+        + SECTION_TASK,
+        encoding="utf-8",
+    )
+
+
 def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
     """Prepare one portable host task per spine section; never overwrite output.
 
@@ -106,33 +140,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
                     }
                 )
             _write(package / "input.json", section)
-            route = (
-                "Read skills/cfd-evidence-writing/references/methods-sections.md before "
-                "drafting this Methods section. Its method-specific route takes precedence "
-                "over the generic mechanism-subsection narrative.\n"
-                if contract.role == "methods"
-                else ""
-            )
-            shared = {
-                "title": data.title,
-                "context": data.context,
-                "terms": data.terms,
-                "spine": data.spine.model_dump(),
-                "section": contract.model_dump(),
-            }
-            _write(package / "manuscript-context.json", shared)
-            task = package / "TASK.md"
-            task.write_text(
-                f"# Manuscript section: {contract.title}\n\n"
-                f"Role: {contract.role}\n\nPurpose: {contract.purpose}\n\n"
-                "Read manuscript-context.json for the central question, shared terminology, "
-                "all section responsibilities and this section's prohibited content. "
-                "Develop this section's assigned argument without duplicating other sections.\n"
-                + route
-                + "\n"
-                + task.read_text(encoding="utf-8"),
-                encoding="utf-8",
-            )
+            _section_context(package, data, contract)
             entries.append({"section_id": sid, "input": f"sections/{sid}/input.json"})
         manifest = {**data.model_dump(), "sections": entries}
         _write(staged / "manuscript-input.json", manifest)
@@ -423,6 +431,12 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                 path.write_text(unmark(path.read_text(encoding="utf-8")), encoding="utf-8")
             shutil.copyfile(draft_path, local / "draft.json")
             shutil.copyfile(draft_path, local / "review-packet" / "draft.json")
+            # Retain the prepared inputs, not the numbered output, for the next edit.
+            # All figure/source paths already resolve in this section directory.
+            shutil.copyfile(source, local / "input.json")
+            _section_context(local, data, contract)
+            if (source.parent / "skills").is_dir():
+                shutil.copytree(source.parent / "skills", local / "skills")
             shutil.copyfile(local / "evidence-notes.md", notes / f"{sid}.md")
             if "style" not in combined:
                 combined["style"] = global_section["style"]
@@ -484,5 +498,38 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         _write(staged / "numbering.json", numbering)
         _write(staged / "manuscript-input.json", data.model_dump())
         shutil.copyfile(drafts_path, staged / "author-drafts.json")
+        _write(
+            staged / "drafts.json",
+            {
+                item.section_id: f"sections/{item.section_id}/draft.json"
+                for item in data.spine.sections
+            },
+        )
         (staged / "manuscript.md").write_text(_markdown(combined), encoding="utf-8")
+        (staged / "CONTINUE.md").write_text(
+            "# Continue this manuscript\n\n"
+            "This directory includes section inputs, source files and original local-ID drafts. "
+            "Copy the whole directory when changing computers or AI hosts. Read manuscript.md, "
+            "manuscript-input.json (spine, context and terms), numbering.json and notes/ first.\n\n"
+            "Before changing one section, read its TASK.md, manuscript-context.json, Skill, "
+            "input.json and draft.json under sections/SECTION_ID/. Read the current adjacent "
+            "sections too: Methods owns definitions, Results supplies observations and "
+            "quantitative support, and Discussion interprets their combined meaning. "
+            "Do not duplicate their argument or insert an unsupported missing chapter.\n\n"
+            "Preserve the current candidate before edits. Edit only the intended draft/input in "
+            "a working copy. Use local or section-qualified tokens, not manually renumbered "
+            "labels. If a definition or source changes, reconsider the affected statements "
+            "across the manuscript; numeric substitution alone does not revise interpretation.\n\n"
+            "From outside that working directory, run:\n\n```text\n"
+            "cfdpaper write . --artifact manuscript --package WORKING_COPY "
+            "--draft WORKING_COPY/drafts.json --output NEW_CANDIDATE\n"
+            "cfdpaper write . --artifact manuscript --package NEW_CANDIDATE --docx "
+            "--layout near-reference --output NEW_MANUSCRIPT.docx\n```\n\n"
+            "author-drafts.json preserves the historical path mapping; drafts.json is the "
+            "relocatable mapping to use now. manuscript.md and section.json are generated "
+            "reading/export views, not the authoring source. Changes made only in Word must "
+            "be reconciled with the corresponding draft before re-export; no Word edits or "
+            "approval are inferred. Add --pdf-preview when LibreOffice is available.\n",
+            encoding="utf-8",
+        )
     return output_dir
