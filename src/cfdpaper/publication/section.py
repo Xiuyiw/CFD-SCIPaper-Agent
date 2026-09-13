@@ -554,7 +554,10 @@ def assemble_section(
             lines.extend(
                 [
                     "### References",
-                    *[f"[{r['number']}] {r['text']} — {r['source']}" for r in references],
+                    *[
+                        f"[{r['number']}] {r['text']}" + reference_source_suffix(r)
+                        for r in references
+                    ],
                 ]
             )
         (staged / "section.md").write_text("\n\n".join(lines) + "\n", encoding="utf-8")
@@ -585,6 +588,17 @@ def assemble_section(
         for name in ("section.md", "review-prompt.md", "evidence-notes.md"):
             shutil.copyfile(staged / name, packet / name)
     return output_dir
+
+
+def reference_source_suffix(record):
+    """Show a source once when a bibliography label already contains its DOI."""
+    source = record["source"].strip()
+    text = record["text"].strip().casefold()
+    if "formatted_runs" in record or source.casefold() == text:
+        return ""
+    if source.lower().startswith("doi:") and source.casefold() in text:
+        return ""
+    return f" — {source}"
 
 
 def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-text") -> Path:
@@ -753,9 +767,14 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
     if data["references"]:
         document.add_heading("References", level=2)
         for record in data["references"]:
-            p = document.add_paragraph(
-                f"[{record['number']}] {record['text']} — {record['source']}"
-            )
+            p = document.add_paragraph(f"[{record['number']}] ")
+            if "formatted_runs" in record:
+                for item in record["formatted_runs"]:
+                    run = p.add_run(item["text"])
+                    run.italic = item.get("italic", False)
+                    run.bold = item.get("bold", False)
+            else:
+                p.add_run(record["text"] + reference_source_suffix(record))
             for run in p.runs:
                 run.font.size = Pt(config.reference_pt)
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -134,12 +134,12 @@ jobs:
           $manuscriptPackage = Join-Path $env:RUNNER_TEMP "manuscript-package"
           $manuscriptOutput = Join-Path $env:RUNNER_TEMP "manuscript-output"
           $continued = Join-Path $env:RUNNER_TEMP "manuscript-continued"
-          & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\manuscript-workspace\prepare_example.py") $manuscriptSource
+          & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\literature-manuscript\prepare_example.py") $manuscriptSource
           & $cfdpaper write . --artifact manuscript --manuscript-input "$manuscriptSource/manuscript-input.json" --output $manuscriptPackage
           & $cfdpaper write . --artifact manuscript --package $manuscriptPackage --draft "$manuscriptSource/drafts.json" --output $manuscriptOutput
           & $cfdpaper write . --artifact manuscript --package $manuscriptOutput --draft "$manuscriptOutput/drafts.json" --output $continued
           & $cfdpaper write . --artifact manuscript --package $continued --docx --layout near-reference --output "$continued.docx"
-          & $smokePython -c "from pathlib import Path; from docx import Document; p=Path(r'$continued'); d=Document(str(p)+'.docx'); assert len(d.tables)==1; assert len(d.inline_shapes)==2; assert sum(x.style.name=='Heading 1' for x in d.paragraphs)==3; assert (p/'CONTINUE.md').is_file(); assert (p/'sections/methods/skills/cfd-evidence-writing/references/methods-sections.md').is_file(); from cfdpaper.publication.figure_tasks import prepare_figure_task, import_figure_task; from importlib.resources import files; assert files('cfdpaper').joinpath('skills/cfd-figure-production/references/external-backends.md').is_file()"
+          & $smokePython -c "from pathlib import Path; from docx import Document; import json; p=Path(r'$continued'); d=Document(str(p)+'.docx'); assert len(d.tables)==1; assert len(d.inline_shapes)==2; assert sum(x.style.name=='Heading 1' for x in d.paragraphs)==7; assert len(json.loads((p/'section.json').read_text(encoding='utf-8'))['references'])==1; assert (p/'CHANGES.md').is_file(); assert (p/'sections/introduction/review-packet/literature-support.json').is_file(); assert any(x.text.startswith('Keywords:') for x in d.paragraphs); assert (p/'CONTINUE.md').is_file(); assert (p/'sections/methods/skills/cfd-evidence-writing/references/methods-sections.md').is_file(); from cfdpaper.publication.figure_tasks import prepare_figure_task, import_figure_task; from importlib.resources import files; assert files('cfdpaper').joinpath('skills/cfd-figure-production/references/external-backends.md').is_file()"
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:

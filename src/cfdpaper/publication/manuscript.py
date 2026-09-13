@@ -16,6 +16,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from cfdpaper.publication.citation_style import format_numeric_bibliography
 from cfdpaper.publication.elements import SectionEquation, SectionTable, math_text
 from cfdpaper.publication.literature import (
     copy_literature,
@@ -36,6 +37,7 @@ from cfdpaper.publication.section import (
     _write,
     assemble_section,
     prepare_section,
+    reference_source_suffix,
 )
 from cfdpaper.publication.spine import PaperSpine
 from cfdpaper.publication.table_evidence import display_unit, resolve_table_result
@@ -57,6 +59,7 @@ class _ManuscriptInput(BaseModel):
     context: str = ""
     terms: dict[str, str] = Field(default_factory=dict)
     literature: str | None = None
+    citation_style: str | None = None
     keywords: list[str] = Field(default_factory=list)
 
 
@@ -81,6 +84,12 @@ def _inputs(path: Path):
     if any(not word.strip() for word in data.keywords):
         raise ValueError("Keywords must not be blank")
     library = load_literature(_relative(path.parent, data.literature)) if data.literature else None
+    if data.citation_style:
+        if library is None:
+            raise ValueError("A CSL citation_style requires a shared literature library")
+        style = _relative(path.parent, data.citation_style)
+        if style.suffix.lower() != ".csl" or not style.is_file():
+            raise ValueError("citation_style must point to a readable relative .csl file")
     if library and any(s["section_id"] not in entries for s in library["supports"]):
         raise ValueError("Literature support section IDs must belong to the spine")
     loaded, bindings, resolutions, reports = {}, {}, {}, {}
@@ -202,6 +211,32 @@ def _literature_overrides(library, sid, previous=None):
     return overrides
 
 
+def _copy_citation_style(data, source, destination):
+    if data.citation_style:
+        shutil.copyfile(_relative(source, data.citation_style), destination / "citation-style.csl")
+        data.citation_style = "citation-style.csl"
+
+
+def _format_references(combined, library, style):
+    metadata = {
+        (f"doi:{r['DOI']}" if r.get("DOI") else f"reference:{r['id']}").casefold(): r
+        for r in library["records"]
+    }
+    ordered = []
+    for reference in combined["references"]:
+        key = reference["source"].strip().casefold()
+        if key not in metadata:
+            raise ValueError(
+                "CSL formatting requires shared bibliographic metadata for every cited reference: "
+                + reference["source"]
+            )
+        ordered.append(metadata[key])
+    formatted = format_numeric_bibliography(ordered, style)
+    for reference, record in zip(combined["references"], formatted, strict=True):
+        reference["text"] = record["text"]
+        reference["formatted_runs"] = record["runs"]
+
+
 def _section_context(package, data, contract, library=None):
     entry = next(s for s in data.sections if s.section_id == contract.section_id)
     _write(
@@ -263,6 +298,42 @@ def _section_context(package, data, contract, library=None):
     )
 
 
+def _literature_review_materials(local, library, library_root, sid):
+    """Keep a detached section review readable without its parent manuscript."""
+    if library is None:
+        return
+    supports = copy.deepcopy([s for s in library["supports"] if s["section_id"] == sid])
+    if not supports:
+        return
+    packet = local / "review-packet"
+    sources = packet / "literature-sources"
+    sources.mkdir()
+    copied = {}
+    for support in supports:
+        source = _relative(library_root, support["source"])
+        if source not in copied:
+            target = sources / f"source-{len(copied) + 1}{source.suffix}"
+            shutil.copyfile(source, target)
+            copied[source] = target.relative_to(packet).as_posix()
+        support["source"] = copied[source]
+    ids = {s["reference_id"] for s in supports}
+    _write(
+        packet / "literature-support.json",
+        {
+            "supports": supports,
+            "records": [r for r in library["records"] if r["id"] in ids],
+        },
+    )
+    prompt = packet / "review-prompt.md"
+    prompt.write_text(
+        prompt.read_text(encoding="utf-8")
+        + "\nRead literature-support.json and its packet-relative source files. Check each "
+        "claim, original excerpt, locator and transfer boundary; a supported flag is not "
+        "a substitute for evaluating the source.\n",
+        encoding="utf-8",
+    )
+
+
 def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
     """Prepare one portable host task per spine section; never overwrite output.
 
@@ -273,6 +344,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
     _fresh(output_dir)
     data, loaded, library, bindings, _ = _inputs(input_path)
     with _stage(output_dir) as staged:
+        _copy_citation_style(data, input_path.parent, staged)
         if library is not None:
             copy_literature(_relative(input_path.parent, data.literature), staged / "literature")
             data.literature = "literature/literature.json"
@@ -428,7 +500,7 @@ def _markdown(data):
             [
                 "## References",
                 *[
-                    f"[{record['number']}] {record['text']} — {record['source']}"
+                    f"[{record['number']}] {record['text']}" + reference_source_suffix(record)
                     for record in data["references"]
                 ],
             ]
@@ -629,6 +701,7 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         "section_objects": {},
     }
     with _stage(output_dir) as staged:
+        _copy_citation_style(data, package_dir, staged)
         if library is not None:
             copy_literature(_relative(package_dir, data.literature), staged / "literature")
             data.literature = "literature/literature.json"
@@ -735,6 +808,8 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             _section_context(local, data, contract, library)
             entry = next(s for s in data.sections if s.section_id == sid)
             _bound_review_materials(local, entry, loaded, resolutions.get(sid, {}))
+            if library is not None:
+                _literature_review_materials(local, library, (staged / data.literature).parent, sid)
             if (source.parent / "skills").is_dir():
                 shutil.copytree(source.parent / "skills", local / "skills")
             shutil.copyfile(local / "evidence-notes.md", notes / f"{sid}.md")
@@ -796,6 +871,8 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                     {mapping["figure"][key]: value for key, value in global_section[field].items()}
                 )
             numbering["sections"][sid] = mapping
+        if data.citation_style:
+            _format_references(combined, library, staged / data.citation_style)
         _write(staged / "section.json", combined)
         _write(staged / "writing-state.json", current)
         _write(staged / "changes.json", changes)

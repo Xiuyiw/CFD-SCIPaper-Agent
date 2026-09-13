@@ -211,6 +211,10 @@ def test_shared_bibliography_aliases_and_portable_supported_citations(tmp_path):
     shared = [r for r in references if r["source"] == "doi:10.1234/test"]
     assert len(shared) == 1
     assert shared[0]["text"] != "Definition of the fixture mean"
+    reference_text = (
+        (output / "manuscript.md").read_text(encoding="utf-8").split("## References")[1]
+    )
+    assert reference_text.lower().count("doi:10.1234/test") == 1
     for sid in ("methods", "response", "transport"):
         support = read(output / "sections" / sid / "literature-support.json")
         assert support["supports"][0]["reference_id"] == "paper"
@@ -229,6 +233,84 @@ def test_shared_bibliography_aliases_and_portable_supported_citations(tmp_path):
         (tmp_path / name).unlink()
     resumed = assemble_manuscript(moved, moved / "drafts.json", tmp_path / "resumed")
     assert read(resumed / "section.json")["references"] == references
+
+
+def test_detached_review_includes_original_literature_excerpts(tmp_path):
+    source, drafts = shared_literature_fixture(tmp_path)
+    package = prepare_manuscript(source, tmp_path / "package")
+    output = assemble_manuscript(package, drafts, tmp_path / "candidate")
+    detached = tmp_path / "detached"
+    shutil.copytree(output / "sections/response/review-packet", detached)
+    support = read(detached / "literature-support.json")
+    assert len(support["records"]) == 1
+    for item in support["supports"]:
+        assert item["excerpt"] in (detached / item["source"]).read_text(encoding="utf-8")
+    assert "literature-support.json" in (detached / "review-prompt.md").read_text()
+
+
+def test_csl_reference_formatting_keeps_global_identity_and_word_runs(tmp_path, monkeypatch):
+    from docx import Document
+
+    from cfdpaper.publication.section import export_section_docx
+
+    source, drafts = shared_literature_fixture(tmp_path)
+    # This fixture also has manual references. Give all of them explicit metadata;
+    # the formatter must not invent bibliography details from their source labels.
+    records = read(tmp_path / "bibliography.json")
+    records.extend(
+        {"id": sid, "type": "article-journal", "title": sid, "DOI": f"synthetic-{sid}"}
+        for sid in ("methods", "response", "transport")
+    )
+    write(tmp_path / "bibliography.json", records)
+    style = tmp_path / "numeric.csl"
+    style.write_text("<style/>", encoding="utf-8")
+    data = read(source)
+    data["citation_style"] = style.name
+    write(source, data)
+    calls = []
+
+    def format_entries(metadata, path):
+        assert path.read_text() == "<style/>"
+        calls.append([r["id"] for r in metadata])
+        return [
+            {
+                "id": r["id"],
+                "text": f"Formatted {r['title']}",
+                "runs": [{"text": "Formatted "}, {"text": r["title"], "italic": True}],
+            }
+            for r in metadata
+        ]
+
+    monkeypatch.setattr(
+        "cfdpaper.publication.manuscript.format_numeric_bibliography", format_entries
+    )
+    package = prepare_manuscript(source, tmp_path / "package")
+    output = assemble_manuscript(package, drafts, tmp_path / "candidate")
+    assert calls == [["methods", "paper", "response", "transport"]]
+    assert (output / "citation-style.csl").read_text() == "<style/>"
+    references = read(output / "section.json")["references"]
+    assert len(references) == 4
+    assert references[1]["source"] == "doi:10.1234/test"
+    text = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert "[2] Formatted Synthetic reference" in text
+    assert " — doi:" not in text
+    doc = Document(export_section_docx(output, tmp_path / "paper.docx"))
+    para = next(p for p in doc.paragraphs if p.text == "[2] Formatted Synthetic reference")
+    assert any(r.italic and r.text == "Synthetic reference" for r in para.runs)
+    resumed = assemble_manuscript(output, output / "drafts.json", tmp_path / "resumed")
+    assert read(resumed / "section.json")["references"] == references
+
+
+def test_csl_requires_metadata_for_manual_references(tmp_path, monkeypatch):
+    source, drafts = shared_literature_fixture(tmp_path)
+    data = read(source)
+    data["citation_style"] = "numeric.csl"
+    write(source, data)
+    (tmp_path / "numeric.csl").write_text("<style/>")
+    package = prepare_manuscript(source, tmp_path / "package")
+    with pytest.raises(ValueError, match="shared bibliographic metadata"):
+        assemble_manuscript(package, drafts, tmp_path / "candidate")
+    assert not (tmp_path / "candidate").exists()
 
 
 @pytest.mark.parametrize("withdrawal", ["unsupported", "needs-review", "deleted"])

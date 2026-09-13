@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- Shared CSL JSON bibliographies and optional Pandoc BibTeX import, with DOI deduplication,
+  claim-specific source excerpts and section writing guidance for literature and summaries.
+- Cross-section evidence bindings, keywords and targeted change reports for source data,
+  definitions, references and author drafts. Bound values resolve from their current owner.
+- Optional Pandoc CSL formatting for first-citation-order numeric bibliographies, retaining
+  bold and italic runs in Word. Detached review packets carry relevant source excerpts.
+- A seven-section analytical manuscript tutorial, including shared citations and summary updates.
+
+Scientific interpretation remains host/author work; an excerpt match or formatted bibliography
+does not establish that a source supports the manuscript claim.
+
 ## [0.7.0] — 2026-09-13
 
 ### Added
