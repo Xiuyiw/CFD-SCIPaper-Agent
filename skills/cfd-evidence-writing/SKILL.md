@@ -164,6 +164,9 @@ Provide matching Word/PDF pages for formatting assessment; text inspection canno
 Return the full original report with `--package REVIEW_PACKAGE --report REPORT --output REVIEW_RETURN`.
 Read every finding in context before proposing targeted changes; preserve disagreement and unresolved
 definitions. Imported recommendations do not authorize changes or start the journal revision path.
+For selected edits, the same reference describes `--actions`: the host maps complete-report
+quotations to current paragraph/object locators, then works in a separate ordinary manuscript copy.
+Preserve unselected drafts and reassemble; task generation is not automatic scientific revision.
 
 ## Manuscript paragraph and page formatting
 

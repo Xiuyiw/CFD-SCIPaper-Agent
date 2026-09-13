@@ -537,15 +537,23 @@ def review_manuscript(
     package: Annotated[Path, typer.Option("--package")],
     output: Annotated[Path, typer.Option("--output")],
     report: Annotated[Path | None, typer.Option("--report")] = None,
+    actions: Annotated[Path | None, typer.Option("--actions")] = None,
 ) -> None:
-    """Prepare whole-paper review material or retain a complete returned report."""
+    """Prepare a review, retain a complete returned report, or focus selected editing tasks."""
     from cfdpaper.publication.manuscript_review import (
         import_manuscript_review,
         prepare_manuscript_review,
     )
 
     try:
-        if report is None:
+        if report is not None and actions is not None:
+            raise ValueError("Use either --report or --actions, not both")
+        if actions is not None:
+            from cfdpaper.publication.manuscript_revision import prepare_manuscript_revision
+
+            result = prepare_manuscript_revision(package, actions, output)
+            label = "Selected editing task ready; manuscript unchanged"
+        elif report is None:
             result = prepare_manuscript_review(package, output)
             label = "Whole-manuscript review package ready"
         else:

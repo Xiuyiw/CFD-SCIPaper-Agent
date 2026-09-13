@@ -1,6 +1,7 @@
 # v0.9 first batch: real manuscript input and whole-paper review
 
-2026-09-13. Scope: 9A/9B only. The author approved the version direction and preparation
+2026-09-13. Original scope: 9A/9B; the subsequently authorized 9C task foundation is in section 7.
+The author approved the version direction and preparation
 of this specification and the hotspot-led scientific focus. First-batch implementation is
 authorized and underway; no v0.9 release has been made.
 Baseline: v0.8.0. The parent plan is [POST_V060_WRITING_PLAN.md](POST_V060_WRITING_PLAN.md).
@@ -167,3 +168,67 @@ The complete review package now includes real Word/PDF, raw tables, definitions,
 and exact paragraph/object locators. Remaining scientific-writing questions include literature
 coverage, numerical density, model-form and local hotspot mesh support. Await complete external
 feedback before selecting 9C changes. No external-review result or v0.9 release is claimed.
+
+## 7. Next batch: selected-review editing tasks (9C foundation)
+
+The author requested the next step after the first candidate and review package. Implement the
+thin editing-task route now on public examples; the real candidate's external review has not
+returned, so do not manufacture findings or apply unreceived recommendations to that manuscript.
+
+Interface: `cfdpaper review PROJECT --package REVIEW_RETURN --actions ACTIONS --output EDIT_TASK`.
+`--report` and `--actions` are mutually exclusive. The host reads the COMPLETE returned report,
+then writes the small action mapping; the author is not required to transcribe a report into JSON.
+The mapping contains `package_id` and an `actions` list. Each action has a unique `id`,
+`decision` (accept/reject/defer), exact nonempty `report_quote`, and nonempty `rationale`.
+Accepted actions also have a nonempty `instruction` and at least one target. Paragraph targets
+have `section_id`, `paragraph` (1-based integer) and exact nonempty `quote` from that paragraph;
+object targets have `section_id`, `kind` (figure/table/equation/reference) and `global_number`.
+If several local citation roles share one global number in that section, optional `local_id`
+from the locator index disambiguates the role; do not make a legitimate target unselectable.
+Optional `related_sections` maps section IDs to reasons for reconsidering connected prose.
+Rejected/deferred actions may remain unmapped; they do not become editing instructions.
+
+Check quotations against the complete readable report and reviewed paragraph, resolve object
+identities through the existing locator index, and reject ambiguous/absent accepted targets.
+Do not interpret a found quote as proof that the recommendation is scientifically valid.
+The package identity must match; unavailable readable extraction needs host completion first.
+No fuzzy retargeting, approvals, numerical edits, new database or scientific scoring is added.
+
+Output preserves the return (including original report), the selected mapping, and a fresh
+`working/` copy of the reviewed manuscript's existing inputs/drafts. Include the current builtin
+writing Skill and linked references using the existing installed/source lookup so an external
+host receives the same focused guidance. `TASK.md` identifies selected
+targets, their exact quotations/local draft paths, and explicitly related sections. It directs
+the host to alter existing authoring files only where justified, retain value/citation tokens,
+leave unrelated drafts untouched, and use ordinary manuscript assembly to a NEW candidate.
+Copied preview files are historical reading aids, never the revised output. For a later author
+candidate, reconcile against the reviewed snapshot first; this route does not merge into it.
+
+Controller owns CLI, integration, tutorial and the existing Skill reference. The bounded module
+task owns `publication/manuscript_revision.py` and its focused tests. Reuse review copying/locators
+and the existing assembler, do not modify shared contracts. Tests cover exact and stale quotes,
+ambiguous targets, unknown sections, reject/defer preservation, full raw report retention, a moved
+task, and editing one public-example draft followed by ordinary assembly with unrelated drafts
+unchanged. Any self-authored test report is explicitly synthetic, not an external-review success.
+
+This completes task preparation, not automatic scientific revision. Real before/after writing
+evaluation and selected implementation improvements remain pending the actual complete report.
+
+### 9C foundation result
+
+Implemented `review --actions` with complete-return retention, paragraph/object resolution,
+accepted/rejected/deferred decisions, related-section reasons, a portable ordinary authoring copy
+and the current builtin writing Skill. Native equation expressions use the existing math-text
+renderer in tasks. Optional local citation identity resolves multiple roles sharing one reference.
+No original draft or evidence is edited by task preparation.
+
+68 relevant revision/review/CLI/Skill tests pass; Ruff and Skill validation pass. A non-editable
+wheel installed outside the repository ran export → complete synthetic report → selection →
+task relocation → one local host edit → ordinary reassembly. The retained original and unrelated
+drafts stayed unchanged, and the installed package supplied the complete writing Skill/reference.
+This is a software integration demonstration, not an external scientific review.
+
+The real seven-page cooling manuscript and its review ZIP remain unchanged. Receive the complete
+actual feedback, assess its supported actions, then use this path for the real before/after trial.
+No release, new simulation, private source edit or externally approved scientific improvement is
+reported for this batch. Continue from the current workstream, not a released tag.

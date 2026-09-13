@@ -128,3 +128,49 @@ Read the generated task and the entire original report, map findings to manuscri
 and decide which suggestions are supported. Import does not edit the manuscript, establish
 author approval or start a journal revision. Keep disputed or ambiguous recommendations visible.
 The existing single-section JSON suggestion route is unchanged.
+
+### Selected editing tasks
+
+After reading the full report, the host prepares `actions.json` using the returned `package_id`
+and exact quotations. The author does not need to convert the review to JSON manually. Example:
+
+```json
+{
+  "package_id": "COPY_THE_RETURNED_PACKAGE_ID",
+  "actions": [{
+    "id": "wording-1",
+    "decision": "accept",
+    "report_quote": "COPY_THE_EXACT_REVIEW_PASSAGE",
+    "rationale": "The source supports a more precise local description.",
+    "instruction": "Clarify the selected clause without changing its values or tokens.",
+    "targets": [{
+      "section_id": "hydraulics",
+      "paragraph": 1,
+      "quote": "the analytical pressure drop increases"
+    }]
+  }]
+}
+```
+
+Replace the example report quotation with actual report text; it is not a fabricated review.
+`reject` and `defer` items retain their rationale without becoming editing tasks. Figure, table,
+equation and reference targets instead use `section_id`, `kind` and string `global_number` from
+locators.json. Optional `related_sections` maps section IDs to reasons for reconsidering their
+connected claims. A quote match establishes location, not scientific support or author approval.
+If a reference has several roles in the same section, also specify the intended `local_id`
+from locators.json; the program will not guess between them.
+
+```text
+cfdpaper review my-source --package review-return --actions actions.json --output editing-task
+```
+
+Read `editing-task/TASK.md`, edit the intended drafts in `editing-task/working`, then reuse:
+
+```text
+cfdpaper write my-source --artifact manuscript --package editing-task/working --draft editing-task/working/drafts.json --output revised-manuscript
+```
+
+The original manuscript and full report remain unchanged. This creates a copy of the reviewed
+version, not an automatic merge into later author edits. Inspect CHANGES and the changed scientific
+argument, preserve unrelated drafts, and generate a fresh Word/PDF. The task itself neither edits
+prose nor certifies that a recommendation was correctly implemented.

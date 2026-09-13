@@ -74,7 +74,9 @@ Public analytical examples demonstrate software behavior; known-case trials do n
 general scientific validity across heterogeneous projects or native solver formats.
 
 The v0.9 development checkout adds root `review` for whole-manuscript package export and complete
-report retention. It does not apply recommendations, reconcile Word edits or grant approval;
+report retention, plus exact-location editing tasks from host-selected actions. Tasks preserve
+the original report and create a separate ordinary authoring workspace; the host still edits
+the intended drafts and reassembles. It does not apply recommendations, reconcile Word edits or grant approval;
 the published v0.8 release does not include this root route. Root `revise` and `export` remain unavailable; subsection DOCX
 and review-suggestion import are options of `write --artifact results-section`, and multi-section
 DOCX is available through `write --artifact manuscript`.

@@ -19,7 +19,7 @@ recorded here instead of being represented as already complete.
 | `v0.6.0` | Existing exported materials to host-assisted scientific analysis selection and the subsection workflow | Released; see the v0.6.0 release tag and notes |
 | `v0.7.0` | Multi-section manuscript workspace, portable continued editing and external drawing-task integration | Released; see release tag |
 | `v0.8.0` | Shared literature, cross-section evidence bindings, targeted change reports and optional numeric CSL formatting | Released; see the v0.8.0 notes and release tag |
-| `v0.9.0` | Real-material whole-manuscript trial, bounded review and selected-feedback editing | First-batch input preparation and review delivery in development; selected editing and release pending |
+| `v0.9.0` | Real-material whole-manuscript trial, bounded review and selected-feedback editing | First candidate and review delivery completed locally; selected editing-task route in development; real feedback evaluation and release pending |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
