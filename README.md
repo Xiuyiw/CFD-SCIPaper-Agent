@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and results prose. The v0.7.0 candidate extends source-linked
+defensible paper topics, figures, and results prose. Version 0.7.0 extends source-linked
 analysis and subsection writing with a host-assisted multi-section workspace, cross-chapter
 references, portable continued editing and external drawing-task exchange.
 The workflow preserves the connection between the original observations, scientific interpretation,

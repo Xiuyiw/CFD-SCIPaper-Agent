@@ -17,7 +17,7 @@ recorded here instead of being represented as already complete.
 | `v0.4.0` | Figure-grounded host writing, multi-evidence subsections, DOCX and review packets | Delivered; see release tag |
 | `v0.5.0` | Raw-table-linked quantitative writing and manuscript-scale figures, tables, equations and DOCX layout | Delivered; see the v0.5.0 release tag and notes |
 | `v0.6.0` | Existing exported materials to host-assisted scientific analysis selection and the subsection workflow | Released; see the v0.6.0 release tag and notes |
-| `v0.7.0` | Multi-section manuscript workspace, portable continued editing and external drawing-task integration | Release candidate; see the v0.7.0 notes and release tag when available |
+| `v0.7.0` | Multi-section manuscript workspace, portable continued editing and external drawing-task integration | Implemented; see the v0.7.0 notes and release tag for distribution status |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
