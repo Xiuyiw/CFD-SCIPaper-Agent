@@ -151,5 +151,19 @@ not a supported-platform release or proof of scientific writing quality.
 9A has a prepared eight-section input built from a selected subset of the existing real cases.
 The first generator has no prior cooling manuscript or evaluator text. A private builder supplies
 explicit cross-row differences before standard scalar bindings; the public assembler has not
-gained a general cross-row formula engine. Manuscript quality and actual Word/PDF inspection remain
-the next part of this same batch. Original scientific sources and first drafts are preserved.
+gained a general cross-row formula engine. Original scientific sources and first drafts are preserved.
+
+The first eight-section candidate assembled successfully and was exported to a seven-page DOCX/PDF.
+The first draft is retained separately from a format-only derivative using existing native math.
+Actual page inspection found an internal Celsius unit spelling in bound text and tables; the shared
+display formatter now renders it as °C without altering source values or units. Its regression and
+related section/manuscript tests passed (85 tests). All seven final PDF pages were inspected: body
+indentation, paragraph spacing, tables and equations were readable, without observed clipping.
+The inherited field image still needs publication typography, a degree symbol and panel labels;
+its original pixels were not silently redrawn. This is an external-review candidate, not submission
+approval or an independently validated new research domain.
+
+The complete review package now includes real Word/PDF, raw tables, definitions, literature support
+and exact paragraph/object locators. Remaining scientific-writing questions include literature
+coverage, numerical density, model-form and local hotspot mesh support. Await complete external
+feedback before selecting 9C changes. No external-review result or v0.9 release is claimed.

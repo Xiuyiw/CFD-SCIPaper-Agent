@@ -9,7 +9,9 @@ from pathlib import Path
 
 
 def display_unit(unit: str) -> str:
-    """Typeset a small supported SI quotient without converting its numerical scale."""
+    """Typeset supported unit labels without converting their numerical scale."""
+    if unit == "degC":
+        return "°C"
     area = re.fullmatch(r"(m|cm|mm)(?:\^?2|²)", unit)
     if area:
         return f"{area[1]}²"

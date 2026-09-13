@@ -153,6 +153,9 @@ def test_display_unit_changes_typography_not_scale():
     assert display_unit("kg/s") == "kg/s"
     assert display_unit("m2") == "m²"
     assert display_unit("cm^2") == "cm²"
+    assert display_unit("degC") == "°C"
+    assert display_unit("°C") == "°C"
+    assert display_unit("K") == "K"
 
 
 def test_docx_keeps_percentage_with_number(tmp_path):
