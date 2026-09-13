@@ -748,6 +748,45 @@ def test_bound_source_updates_summaries_without_editing_other_drafts(tmp_path):
     assert read(third / "changes.json")["changes"] == []
 
 
+def test_raw_pair_change_recomputes_ratio_and_propagates_across_chapters(tmp_path):
+    source, drafts = bound_fixture(tmp_path)
+    path = tmp_path / "response/input.json"
+    data = read(path)
+    data["table_calculations"][0].update(
+        operation="paired_change",
+        pair_by="configuration",
+        reference="base",
+        comparison="new",
+        quantity_kind="temperature-difference",
+    )
+    data["evidence"][0]["result_ref"].update(field="relative_reduction", percentage=True)
+    write(path, data)
+    original = "case,configuration,value\na,base,10\na,new,6\n"
+    (tmp_path / "response/sources/values.csv").write_text(original)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    first = assemble_manuscript(prepared, drafts, tmp_path / "first")
+    assert (first / "manuscript.md").read_text(encoding="utf-8").count("Mean: 40.00 %.") == 2
+    working = tmp_path / "working"
+    shutil.copytree(first, working)
+    (working / "sections/response/sources/values.csv").write_text(
+        "case,configuration,value\na,base,10\na,new,8\n"
+    )
+    output = assemble_manuscript(working, working / "drafts.json", tmp_path / "second")
+    text = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert text.count("Mean: 20.00 %.") == 2
+    assert "40.00 %" not in text
+    assert set(read(output / "changes.json")["affected_sections"]) == {
+        "response",
+        "summary",
+        "conclusions",
+    }
+    for sid in ("methods", "transport", "summary", "conclusions"):
+        assert (first / f"sections/{sid}/draft.json").read_bytes() == (
+            output / f"sections/{sid}/draft.json"
+        ).read_bytes()
+    assert (first / "sections/response/sources/values.csv").read_text() == original
+
+
 @pytest.mark.parametrize(
     "target,message",
     [

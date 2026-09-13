@@ -15,7 +15,15 @@ from pathlib import Path
 from typing import Literal
 
 from PIL import Image
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictStr,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 from cfdpaper.publication.elements import MathNode, SectionEquation, SectionTable, math_text
 from cfdpaper.publication.style import FigureSizing, PublicationStyle, figure_placement
@@ -45,7 +53,19 @@ class _ResultRef(_Record):
     calculation_id: StrictStr
     group: StrictStr
     field: Literal[
-        "count", "sum", "mean", "cv", "area", "rate", "mean_flux", "regional_flux", "shares"
+        "count",
+        "sum",
+        "mean",
+        "cv",
+        "area",
+        "rate",
+        "mean_flux",
+        "regional_flux",
+        "shares",
+        "value",
+        "difference",
+        "relative_change",
+        "relative_reduction",
     ]
     source_record: int | None = Field(default=None, strict=True, ge=2)
     places: int = Field(default=3, strict=True, ge=0, le=12)
@@ -85,19 +105,51 @@ class _Duty(_Record):
 class _TableCalculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
-    operation: Literal["population", "partition"]
+    operation: Literal["population", "partition", "scalar_select", "paired_change"]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
     group_by: str | None = None
+    pair_by: StrictStr | None = None
+    reference: StrictStr | None = None
+    comparison: StrictStr | None = None
+    quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
+        "ordinary"
+    )
+    temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
+
+    @model_serializer(mode="wrap")
+    def serialize_calculation(self, handler):
+        result = handler(self)
+        # New paired options must not make an unchanged historical input look stale.
+        if self.operation != "paired_change":
+            for key in (
+                "pair_by",
+                "reference",
+                "comparison",
+                "quantity_kind",
+                "temperature_reference",
+            ):
+                result.pop(key, None)
+        return result
 
     @model_validator(mode="after")
     def explicit_definition(self):
-        required = {"value"} if self.operation == "population" else {"area", "rate"}
+        required = {"area", "rate"} if self.operation == "partition" else {"value"}
         if set(self.columns) != required or set(self.units) != required:
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
+        paired = (self.pair_by, self.reference, self.comparison)
+        if self.operation == "paired_change":
+            if not all(paired) or self.reference == self.comparison:
+                raise ValueError("Paired change requires distinct reference/comparison and pair_by")
+        elif (
+            any(x is not None for x in paired)
+            or self.temperature_reference is not None
+            or self.quantity_kind != "ordinary"
+        ):
+            raise ValueError("Pair selectors and temperature_reference are only for paired_change")
         return self
 
 
@@ -261,6 +313,12 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
             operation=item.operation,
             columns=item.columns,
             group_by=item.group_by,
+            pair_by=item.pair_by,
+            reference=item.reference,
+            comparison=item.comparison,
+            units=item.units,
+            quantity_kind=item.quantity_kind,
+            temperature_reference=item.temperature_reference,
         )
         results.append({**item.model_dump(), **result})
     if results and write:

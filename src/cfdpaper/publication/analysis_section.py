@@ -22,6 +22,10 @@ _LABELS = {
     "shares": "Signed rate fraction",
     "sum": "Sum of observations",
     "count": "Observation count",
+    "value": "Selected value",
+    "difference": "Comparison minus reference",
+    "relative_change": "Relative change from reference",
+    "relative_reduction": "Relative reduction from reference",
 }
 
 
@@ -44,6 +48,12 @@ def _points(data: dict, root: Path) -> list[dict]:
                 operation=item["operation"],
                 columns=item["columns"],
                 group_by=item.get("group_by"),
+                pair_by=item.get("pair_by"),
+                reference=item.get("reference"),
+                comparison=item.get("comparison"),
+                units=item.get("units"),
+                quantity_kind=item.get("quantity_kind", "ordinary"),
+                temperature_reference=item.get("temperature_reference"),
             ),
         }
         for item in data["table_calculations"]

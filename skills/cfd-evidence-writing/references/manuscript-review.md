@@ -26,6 +26,13 @@ method sufficiency for the actual comparisons, physical definitions and units,
 cross-figure reasoning, literature support and claim strength. CHANGES.md
 provides editing context, not proof that an issue has been scientifically fixed.
 
+Follow the metric's domain and operator, not only its unit: surface maximum, volume maximum,
+interface mean and spatial SD cannot stand in for one another. Compare monitor definitions with
+the quantities actually reported before claiming convergence. For a strong overall ranking,
+look for supplied complementary metrics with a different ordering and separate absolute changes
+from changing normalization denominators. Report a source-value mistake only if the manuscript
+actually uses it; an unused suspect source field is a latent input risk, not an observed paper error.
+
 ## Actual presentation
 
 The existing manuscript export route supplies Word/PDF separately. To include
@@ -35,6 +42,11 @@ renderer. The package marks absent previews as not available and supplied ones
 as not yet visually reviewed. Check supplied preview text against the snapshot
 before evaluating its actual pages. Markdown alone cannot establish readable
 page layout, figure size, caption placement or correct page breaks.
+
+Check actual editable math, short-table orphan rows, figure-caption proximity and effective image
+resolution at final page size. Record which rendering engine was checked; different page counts
+alone are not a failure. A visible unit label correction is distinct from resampling field data.
+Journal-specific compliance remains unassessed until the target requirements are supplied.
 
 ## Preserve the full returned report
 

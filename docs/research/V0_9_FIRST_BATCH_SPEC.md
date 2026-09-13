@@ -232,3 +232,55 @@ The real seven-page cooling manuscript and its review ZIP remain unchanged. Rece
 actual feedback, assess its supported actions, then use this path for the real before/after trial.
 No release, new simulation, private source edit or externally approved scientific improvement is
 reported for this batch. Continue from the current workstream, not a released tag.
+
+## 8. Real external review: selected implementation batch
+
+The author accepted the controller's assessment and authorized the next batch after a complete
+real review returned. Keep first drafts and raw evidence. The report supports scalar fidelity
+but identifies complementary-metric interpretation, source-dependent paired calculations and
+editable-document presentation as concrete product work. It does not establish submission readiness.
+
+Scope: add `scalar_select` (one record, no CV) and `paired_change` to existing table calculations,
+with exact pair identities within groups, signed differences and explicitly normalized relative
+changes. Preserve source records and recompute at ordinary section/manuscript assembly. Absolute
+temperature ratios require a declared temperature-rise reference; retain missing values and
+zero-denominator cases as unavailable. Keep historical population/partition serialization stable
+so old reviewed snapshots do not become falsely stale. No formula language or new database.
+
+Update the existing writing/review references to consider response-specific rankings, complementary
+metrics, normalization denominators and monitored versus reported operators. Apply these through
+the existing selected-review route to an independent working copy; host-authored improvements are
+not automatic scientific discovery. Use synthetic calculation/source-change tests for public code,
+and keep real-case values, full review and draft comparison in the ignored private trial.
+
+In parallel fix confirmed native-math and short-table rendering defects in the shared elements
+module, preserving editable equations and long-table pagination. Render actual outputs with an
+available permitted engine; structural tests alone do not establish cross-engine visual success.
+
+Ownership: controller owns table_evidence.py, section.py, analysis_section.py, writing Skill,
+tests and integration; scientific-revision task owns private selected-revision/; export task owns
+elements.py and test_elements.py. No changes to contracts.py, public schemas, release/version,
+original solver results or accepted field data. No new simulations or v0.9 publication this batch.
+
+### Selected batch outcome
+
+Both operations are implemented through the existing section and analysis-figure paths. Public
+tests cover unique selection, exact pair identity, missing/duplicate members, zero denominator,
+temperature-rise invariance under Celsius/Kelvin origin change, historical-input serialization,
+and a raw-record change propagating its recomputed ratio to Results and bound summary chapters
+without changing their authored drafts. The old reviewed snapshot also remains usable.
+
+The real selected revision reuses the full returned report and unchanged raw records. Its principal
+spread ratios and temperature differences now use the paired operation; other supplied scalar
+records use explicit selection. Host-written prose explains response-specific sensitivity and
+complementary field statistics. This is improved host-guided writing, not automatic mechanism
+discovery or independent scientific validation.
+
+454 publication/review-CLI tests pass; two optional Pandoc tests are skipped. Ruff and Skill
+validation pass. The generic native-math and short-table corrections were used to export the
+revised eight-page manuscript with Word; all pages were inspected with no observed clipping,
+broken equations or orphan final table rows. Bundled LibreOffice is unavailable, so its specific
+cross-engine reproduction remains unresolved. Original field-artwork labels and final effective
+image resolution remain in the next batch, alongside native-field dependency completion.
+
+No public release, new solver run, geometry/property change or scientific-readiness approval.
