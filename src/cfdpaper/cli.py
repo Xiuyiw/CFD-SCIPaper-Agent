@@ -337,12 +337,41 @@ def analyze_project(
 @app.command("figure")
 def figure_project(
     root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
-    contract_id: Annotated[str, typer.Option("--approve-contract")],
-    author: Annotated[str, typer.Option("--author")],
+    contract_id: Annotated[str | None, typer.Option("--approve-contract")] = None,
+    author: Annotated[str | None, typer.Option("--author")] = None,
+    task_input: Annotated[Path | None, typer.Option("--task-input")] = None,
+    package: Annotated[Path | None, typer.Option("--package")] = None,
+    delivery: Annotated[Path | None, typer.Option("--delivery")] = None,
+    output: Annotated[Path | None, typer.Option("--output")] = None,
 ) -> None:
-    """Approve the current figure contract and render its evidence bundle."""
+    """Render a contract or exchange a figure task with an external drawing tool."""
 
     try:
+        if any(item is not None for item in (task_input, package, delivery, output)):
+            if contract_id is not None or author is not None:
+                raise WorkflowInputError("Do not mix drawing tasks with --approve-contract.")
+            if output is None:
+                raise WorkflowInputError("Drawing tasks require a fresh --output path.")
+            from cfdpaper.publication.figure_tasks import (
+                import_figure_task,
+                prepare_figure_task,
+            )
+
+            if task_input is not None and package is None and delivery is None:
+                result = prepare_figure_task(task_input, output)
+                label = "Figure task ready for host drawing tools"
+            elif task_input is None and package is not None and delivery is not None:
+                result = import_figure_task(package, delivery, output)
+                label = "Figure candidate imported; scientific review remains with the author"
+            else:
+                raise WorkflowInputError("Choose --task-input or --package with --delivery.")
+            console.print(f"{label}: {result}", markup=False)
+            return
+        if contract_id is None or author is None:
+            raise WorkflowInputError(
+                "Rendering requires --approve-contract and --author; "
+                "external drawing starts with --task-input and --output."
+            )
         execution = approve_and_render_figure(root, contract_id=contract_id, author=author)
     except Exception as error:
         _workflow_error(error)
@@ -359,6 +388,7 @@ def write_project(
     approve_final: Annotated[bool, typer.Option("--approve-final")] = False,
     author: Annotated[str | None, typer.Option("--author")] = None,
     section_input: Annotated[Path | None, typer.Option("--section-input")] = None,
+    manuscript_input: Annotated[Path | None, typer.Option("--manuscript-input")] = None,
     package: Annotated[Path | None, typer.Option("--package")] = None,
     draft: Annotated[Path | None, typer.Option("--draft")] = None,
     output: Annotated[Path | None, typer.Option("--output")] = None,
@@ -367,9 +397,22 @@ def write_project(
     layout: Annotated[str | None, typer.Option("--layout")] = None,
     pdf_preview: Annotated[bool, typer.Option("--pdf-preview")] = False,
 ) -> None:
-    """Write a results paragraph or prepare/assemble a host-assisted results section."""
+    """Prepare and assemble evidence-linked paragraphs, sections, or a manuscript workspace."""
 
     try:
+        if artifact == "manuscript":
+            if approve_final or author is not None:
+                raise WorkflowInputError("Manuscripts remain candidates for author review.")
+            if section_input is not None or review is not None:
+                raise WorkflowInputError(
+                    "Manuscript actions use --manuscript-input, --draft, or --docx."
+                )
+            _write_manuscript_action(
+                manuscript_input, package, draft, output, docx, layout, pdf_preview
+            )
+            return
+        if manuscript_input is not None:
+            raise WorkflowInputError("--manuscript-input requires --artifact manuscript.")
         if artifact == "results-section":
             if approve_final or author is not None:
                 raise WorkflowInputError("Results sections remain candidates for author review.")
@@ -400,6 +443,44 @@ def write_project(
         f"Results paragraph ready for {execution.paragraph_delivery.figure_id}",
         markup=False,
     )
+
+
+def _write_manuscript_action(
+    manuscript_input: Path | None,
+    package: Path | None,
+    draft: Path | None,
+    output: Path | None,
+    docx: bool,
+    layout: str | None,
+    pdf_preview: bool,
+) -> None:
+    if (layout is not None or pdf_preview) and not docx:
+        raise WorkflowInputError("--layout and --pdf-preview require --docx.")
+    if sum((manuscript_input is not None, draft is not None, docx)) != 1:
+        raise WorkflowInputError("Choose one: --manuscript-input, --draft, or --docx.")
+    if output is None:
+        raise WorkflowInputError("A fresh --output path is required; existing work is preserved.")
+    if manuscript_input is None and package is None:
+        raise WorkflowInputError("--package is required for assembly or DOCX export.")
+    if manuscript_input is not None and package is not None:
+        raise WorkflowInputError("--package is not used with --manuscript-input.")
+    from cfdpaper.publication.manuscript import assemble_manuscript, prepare_manuscript
+    from cfdpaper.publication.section import export_section_docx
+
+    if manuscript_input is not None:
+        result = prepare_manuscript(manuscript_input, output)
+        label = "Manuscript workspace ready for host writing"
+    elif draft is not None:
+        result = assemble_manuscript(package, draft, output)
+        label = "Manuscript candidate assembled"
+    else:
+        result = export_section_docx(package, output, layout=layout or "after-text")
+        label = "Editable manuscript DOCX preview ready"
+    console.print(f"{label}: {result}", markup=False)
+    if pdf_preview:
+        from cfdpaper.publication.preview import preview_docx
+
+        console.print(f"LibreOffice PDF preview: {preview_docx(result)}", markup=False)
 
 
 def _write_section_action(

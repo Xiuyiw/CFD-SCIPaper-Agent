@@ -1,6 +1,6 @@
 ---
 name: cfd-evidence-writing
-description: Use when writing a bounded CFD results paragraph from an approved figure delivery, or a host-AI results subsection from supplied figures and structured evidence.
+description: Write evidence-linked CFD sections or coordinate a host-authored manuscript with a paper spine, shared terminology and global references.
 ---
 
 # CFD evidence writing
@@ -13,8 +13,8 @@ evidence and writing duties; it does not require the legacy checkpoint pipeline.
 
 ## Do not trigger
 
-Do not use for a full manuscript, independent literature synthesis, invented numbers or unsupported
-mechanisms. The legacy paragraph path must not introduce new case comparisons or rewrite a failed
+Do not claim autonomous full-paper generation, independent literature synthesis, invented numbers
+or unsupported mechanisms. The legacy paragraph path must not introduce new case comparisons or rewrite a failed
 or stale figure into a plausible narrative. Section comparisons must stay within supplied evidence.
 
 ## Inputs
@@ -106,6 +106,30 @@ Section assembly checks references, tokens, assets and declared duty coverage, n
 It neither creates checkpoint 3 nor accepts `--approve-final`. Review import does not revise or
 approve the manuscript; apply author-selected revisions in a new draft and fresh output.
 
+## Multi-section manuscript workspace
+
+Use `--artifact manuscript` to organize supplied sections under an existing `PaperSpine`:
+
+```text
+cfdpaper write PROJECT_ROOT --artifact manuscript --manuscript-input manuscript-input.json --output manuscript-package
+cfdpaper write PROJECT_ROOT --artifact manuscript --package manuscript-package --draft drafts.json --output manuscript-candidate
+cfdpaper write PROJECT_ROOT --artifact manuscript --package manuscript-candidate --docx --layout near-reference --output manuscript.docx
+```
+
+The manifest supplies `title`, `spine`, and `sections` mapping each `section_id` to its section
+input path; optional `context` and `terms` carry the whole-paper question and shared terminology.
+Read the workspace TASK and each section's TASK. Write to the section's purpose and role, not a
+repeated results-paragraph template. For Methods read
+[methods-sections.md](references/methods-sections.md); for Results read the mechanism subsection
+reference. Keep missing physical definitions in notes, not invented prose. The drafts JSON maps
+every section ID to its host-authored draft path. Preserve drafts and inputs; assembling existing
+text does not demonstrate independent scientific writing.
+
+Use supported figure/table/equation/citation tokens for cross-references. Workspace assembly
+rebinds them to global numbering in spine order; local free-text numbers are not silently rewritten.
+Inspect `numbering.json` and the rendered pages after reordering. This path coordinates sections and
+exports an editable candidate, not a finished or author-approved full paper.
+
 ## Manuscript paragraph and page formatting
 
 Use the author's requested format first, or the target venue's supplied template; do not present
@@ -116,7 +140,7 @@ spacing separate from paragraph spacing. Explicit venue/author overrides must re
 The input style fields are body_first_line_indent_chars, body_space_before_pt and
 body_space_after_pt; the exporter applies them only to body paragraphs. A zero-figure section is
 valid when prose or a native table carries the argument; do not create a placeholder image.
-Current table/equation IDs are displayed literally; assign publication labels (1, 2, S1 as
+In the single-section path, table/equation IDs are displayed literally; assign labels (1, 2, S1 as
 appropriate) rather than internal slugs, and use the same IDs in tokens. Do not manually renumber
 only the caption or only a cross-reference.
 
