@@ -280,7 +280,9 @@ def build_analysis_section(input_path: Path, output_dir: Path) -> Path:
                 "no table has yet been written."
             ),
             "custom": (
-                "Custom figure production remains pending. Use the evidence to design it; "
+                "Use the supplied custom figures and assess any remaining figure needs."
+                if existing
+                else "Custom figure production remains pending. Use the evidence to design it; "
                 "no replacement default plot was drawn. Do not claim figure completion."
             ),
         }[presentation]

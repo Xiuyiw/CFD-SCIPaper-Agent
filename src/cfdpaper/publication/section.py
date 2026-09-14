@@ -616,7 +616,7 @@ def assemble_section(
         for table in tables:
             from cfdpaper.publication.export import _markdown_table
 
-            lines.append(_markdown_table(SectionTable.model_validate(table)))
+            lines.append(_markdown_table(SectionTable.model_validate(table), numbered=True))
             if table["note"]:
                 lines.append(table["note"])
         for figure in result["figures"]:

@@ -28,10 +28,17 @@ Compile the selected proposal:
 cfdpaper plan PROJECT_ROOT --artifact analysis --package PACKAGE_DIR --proposal PROPOSAL_JSON --select CANDIDATE_ID --output OUTPUT_DIR
 ```
 
-The numeric operations reuse the existing table engine: `population` uses equal records and
-population standard deviation (`ddof=0`); `partition` sums declared area and already-integrated
-rate and derives flux/shares. Neither infers an area integral, converts units, reconstructs a
-field, establishes physical partition coverage, or excludes inconvenient records. Missing units,
+The numeric operations reuse the existing table engine: `population` uses equal records to
+return count/sum/mean and population CV (`ddof=0`); `partition` sums declared area and
+already-integrated rate and derives flux/shares. `weighted_population` returns weighted_mean,
+weighted_std and weight_sum from explicit value/weight columns. Declare weight_kind area or volume,
+map positive measure weights with matching squared/cubed units, and establish their physical
+coverage from the method. Point counts and unequal cells are not interchangeable spatial weights.
+For absolute temperature declare quantity_kind absolute-temperature: means retain °C/K and SD
+uses K. For a temperature difference use temperature-difference with K. No CV is inferred for
+the weighted operator; SD describes supplied element variation, not numerical uncertainty.
+These operations do not infer a flux integral, convert units, reconstruct within-element variation,
+establish physical partition coverage, or exclude inconvenient records. Missing units,
 domains, definition locations, duplicate declared identities, missing declared members or
 unsupported comparison status must be resolved for the selected calculation. Independent
 supported candidates remain available.

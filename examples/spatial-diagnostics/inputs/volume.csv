@@ -1,0 +1,7 @@
+case,cell,concentration [1],volume [mm3]
+Reference,1,0.1,1
+Reference,2,0.4,2
+Reference,3,0.7,1
+Modified,1,0.3,1
+Modified,2,0.4,2
+Modified,3,0.5,1

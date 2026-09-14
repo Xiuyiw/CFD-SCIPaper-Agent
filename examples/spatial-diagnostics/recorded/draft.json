@@ -1,0 +1,47 @@
+{
+  "title": "Lower mean wall temperature with a localized hot region",
+  "paragraphs": [
+    {
+      "text": "The Modified field is cooler over most of the wall but develops a hotter terminal strip ({{figure:1}}). Whereas Reference shows a gradual sequence of increasing temperature toward the right-hand edge, Modified combines a cooler extended region with an abrupt increase on the final facet. The common color scale and physical facet widths make this contrast spatially explicit: the hotter strip occupies only a small part of the wall, rather than indicating a general increase in temperature. Accordingly, the whole-wall mean decreases from {{value:reference-mean}} to {{value:modified-mean}} ({{table:1}}). The lower temperatures over the larger region outweigh the terminal increase in the area average, so the lower mean is consistent with, rather than contradicted by, the local high-temperature feature.",
+      "evidence_ids": ["reference-mean", "modified-mean", "wall-definition", "spatial-order"],
+      "figure_ids": ["1"]
+    },
+    {
+      "text": "The spatial standard deviation nevertheless increases from {{value:reference-sd}} for Reference to {{value:modified-sd}} for Modified. This is not a nearly uniform shift to lower temperature: such a shift would leave the spatial spread unchanged. Instead, the terminal facet becomes more separated in temperature from the cooler remainder of the wall, as the sharper color contrast in {{figure:1}} shows. Its small area limits its influence on the mean, but its large departure from that mean still contributes to the increased spread. Read together, the map and the moments identify a lower average exposure accompanied by less uniform exposure and a more pronounced local hot region. Thus, the mean alone would favor Modified while overlooking the local temperature increase. This comparison characterizes the prescribed temperature distributions; it does not identify the heat-transfer process responsible for them.",
+      "evidence_ids": ["reference-sd", "modified-sd", "wall-definition", "spatial-order", "physical-ceiling"],
+      "figure_ids": ["1"]
+    }
+  ],
+  "captions": {
+    "1": "Prescribed wall-temperature fields for (a) Reference and (b) Modified, shown on the same physical domain and temperature scale. Each facet has constant temperature, and its displayed width follows the supplied boundaries. The fields are synthetic; colors are not interpolated between facets."
+  },
+  "image_observations": {"1": "viewed"},
+  "observation_notes": {
+    "1": "Actually opened section-input/writing/figures/1.png. The image has two horizontally aligned rectangular wall maps with a shared temperature colorbar. Both fields progress toward warmer colors from left to right; Modified remains darker over the broad left and central region but has a bright, narrow terminal strip across the full wall height. The terminal contrast is markedly sharper than in Reference. Unequal facet widths and the same physical domain are visible. These are qualitative visual observations, checked against all rows of sources/wall.csv; no quantitative image measurements were made."
+  },
+  "evidence_notes": [
+    "This is a guided continuation after the preserved baseline draft, not a fresh blind test. Figure 1 was supplied independently and actually viewed. No figure, diagnostic, literature search or DOCX was generated during this revision.",
+    "The four exact numerical metrics retain their original result_ref bindings and precision. The assembly recomputes them from sources/wall.csv. No extremum, threshold fraction or difference between calculated outputs has been added as a numeric binding.",
+    "The figure is now available as figures/1.png within the writing package and assembled section. Portable editable assets and provenance are supplied under sources/field-figure/, including artwork/wall.svg, artwork/wall.pdf, artwork/plot_wall.py, artwork/source-data.csv, delivery.json and task.json. These replace the stale pending-production request; there is no dependency on the old baseline figure-request path.",
+    "The historical host attempt contained pending-figure statements. In this public replay the controller updated proposal presentation metadata to reflect the supplied wall map, without changing calculations, numerical bindings or manuscript prose. No step-profile or exceedance plot was produced.",
+    "Spatial-order statements are supported jointly by the viewed common-scale wall map and sources/wall.csv:L2-L13 under the constant-facet definition in sources/method.md:L3-L7. They do not infer an unresolved gradient, convective mechanism or geometry effect.",
+    "Table columns total 160 mm and use short headings, with definitions centralized in the note. This pass has no DOCX export or page rendering, so final document wrapping is not certified."
+  ],
+  "tables": [
+    {
+      "table_id": "1",
+      "caption": "Whole-wall temperature descriptors.",
+      "after_section_id": "wall-exposure-distribution",
+      "columns": ["Field", "Mean temperature", "Spatial SD"],
+      "rows": [
+        ["Reference", "{{value:reference-mean}}", "{{value:reference-sd}}"],
+        ["Modified", "{{value:modified-mean}}", "{{value:modified-sd}}"]
+      ],
+      "evidence_ids": ["reference-mean", "modified-mean", "reference-sd", "modified-sd"],
+      "column_widths_mm": [45, 60, 55],
+      "numeric_columns": [1, 2],
+      "note": "Both descriptors use exact facet-area weights over the complete common wall. SD denotes the spatial standard deviation of the prescribed piecewise-constant temperature field, not uncertainty in the mean."
+    }
+  ],
+  "equations": []
+}

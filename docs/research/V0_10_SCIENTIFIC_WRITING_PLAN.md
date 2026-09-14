@@ -155,8 +155,76 @@ documentation. Version metadata remains 0.9.0; this is unreleased v0.10 developm
 
 No private source cases, manuscripts or figures changed. Existing P04 asset mapping and cooling
 review dispositions informed the scope; this batch did not conduct a new private writing replay.
-Batch B/C remain next: preserve a fresh host attempt using the new calculation output before
-refining guidance, then assess diagnostic selection, interpretation and actual figure/Word pages.
-Batch D installed-package transfer and release checks remain pending. Do not treat calculation
+Batch B/C and local transfer work are recorded below. Do not treat calculation
 or temporary DOCX test success as writing quality, scientific validation or visual acceptance.
 This direction is author-authorized; do not reopen v0.9 or demand repeated plan approvals.
+
+### B/C: diagnostic selection, reusable guidance and actual pages
+
+Completed locally on 2026-09-14, following Batch A commit `321da21`. The controller retained
+the fresh host proposal/draft before providing the field image and revised guidance; a separate
+collaborator rendered the figure. Original P04/cooling materials were not edited or recomputed.
+
+Targeted reuse included the existing P04 multi-evidence subsection and asset map, and the cooling
+external-review dispositions. They informed field-versus-summary reasoning, source-versus-
+transport distinctions and avoiding unsupported overall performance rankings. This did not
+repeat the Fig.5 experiment or claim to reread the complete private archive.
+
+The first host independently selected area-weighted mean and SD with spatial evidence and kept
+the independent volume example separate. It correctly explained the lower mean/hot terminal
+region relationship, but repeated method definitions and irrelevant limitations. The guided
+continuation actually viewed the field image and explained why broad cooling lowers the mean
+while a narrow hot region increases spread. This is a local descriptive explanation of prescribed
+fields, not a discovered heat-transfer mechanism. The original and guided attempts are retained
+separately under the ignored `private-fixtures/v010-host-trial/`.
+
+Reusable changes prompted by that attempt:
+
+- The shipped QoI skill now documents the weighted operation and area/volume/temperature roles.
+- The writing reference connects spatial extent with summary moments, concentrates definitions
+  in one appropriate location and avoids repeating irrelevant cautions in manuscript paragraphs.
+- Section/manuscript Markdown tables now display their numbers once, matching prose/Word.
+  Legacy standalone exports retain their existing unnumbered caption behavior.
+- Section preparation no longer automatically says custom artwork is pending when an actual
+  supplied figure exists. Free-text historical proposal notes are not silently rewritten; the
+  public example updates its obsolete presentation notes explicitly and retains the original
+  host attempt separately.
+
+`examples/spatial-diagnostics/` now provides analytical source tables, a runnable figure script,
+a recorded host proposal/guided draft and a public-API replay. The example distinguishes a new
+host attempt from recorded replay and includes a `--prepare-only` path without model answers.
+The wall map preserves physical facet widths with one color scale; the small native table carries
+the four numerical bindings. SVG/PDF/PNG/TIFF, source CSV and the editable local script travel
+with the package. No automatic extrema, thresholds or new field-integration framework was added.
+
+Verification and observed output:
+
+- 591 publication/analysis/skill tests passed; 2 optional Pandoc tests skipped. An additional
+  assertion for single manuscript caption numbering passed its affected test after that run.
+- Fresh preparation does not include recorded answers. Relocation/reassembly, both sets of
+  weighted answers, byte-identical relocated plot pixels, live SVG text, 160 mm Word image width,
+  native table and two-character/zero-spacing body paragraphs are covered by focused tests.
+- Ruff, changed-file formatting and the two modified skills' validation passed.
+- The actual example DOCX was generated with the bundled Python and the existing public export
+  function. The canonical document renderer used installed LibreOffice on Windows and produced
+  one PDF/PNG page. The controller inspected the complete page: text, units, shared colorbar,
+  figure caption and table were readable, with no observed clipping or overlap. This is one
+  manuscript-width page inspection, not a journal-wide formatting guarantee.
+
+### D: local transfer and release work remaining
+
+A wheel was built in a temporary directory, installed non-editably to a separate target, and
+imported under Python isolated mode with its actual module path checked. The copied public
+example ran outside the repository, including calculations, figure task import, section assembly,
+Word export and the updated packaged QoI skill. The build used normal isolated build dependencies
+because the development environment did not contain Hatchling. Version metadata deliberately
+remains 0.9.0 until release preparation; this development wheel is not a public 0.9.0 replacement.
+A separate read-only scientific check found the four numerical bindings, area definitions,
+terminal-facet interpretation and independent volume treatment consistent with the example's
+source tables. Its conclusion applies to this example only, not broad host writing maturity.
+
+Remaining before v0.10 publication: final version/documentation/example packaging, full current
+regression and Windows/Linux Python 3.10–3.12 CI, then authorized integration/release. Local tests
+used Python 3.14 and do not replace that CI. Do not restart A–C or repeatedly polish the recorded
+subsection. Broader real-project scientific validation and deferred capabilities remain as in
+Section 7; this example does not close them.

@@ -98,14 +98,15 @@ def _markdown_escape_alt(value: str) -> str:
     return value.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
 
 
-def _markdown_table(table: ManuscriptTable) -> str:
+def _markdown_table(table: ManuscriptTable, *, numbered: bool = False) -> str:
     def cell(value: str) -> str:
         return value.replace("|", "\\|").replace("\n", " ")
 
     header = "| " + " | ".join(cell(item) for item in table.columns) + " |"
     divider = "| " + " | ".join("---" for _ in table.columns) + " |"
     rows = ["| " + " | ".join(cell(item) for item in row) + " |" for row in table.rows]
-    return "\n".join([f"**{table.caption}**", "", header, divider, *rows])
+    caption = f"Table {table.table_id}. {table.caption}" if numbered else table.caption
+    return "\n".join([f"**{caption}**", "", header, divider, *rows])
 
 
 def _latex_escape(value: str) -> str:

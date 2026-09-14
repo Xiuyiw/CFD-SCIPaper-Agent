@@ -1,0 +1,78 @@
+{
+  "candidates": [
+    {
+      "id": "wall-exposure-distribution",
+      "title": "Lower mean wall temperature with greater spatial heterogeneity",
+      "question": "Does the Modified field lower overall wall temperature without increasing spatial heterogeneity or local high-temperature exposure?",
+      "rationale": "The author asks about wall thermal exposure and spatial distribution. Area-weighted mean temperature answers the whole-wall level, whereas area-weighted spatial standard deviation tests uniformity. Read the full facet field alongside these summaries because a localized hotter end region can coexist with a lower mean. Neither summary is a heat-transfer performance measure.",
+      "presentation": "custom",
+      "presentation_reason": "Use a small native table for the exact mean and spatial SD alongside the supplied full-wall maps. The maps preserve unequal facet widths and use a common temperature scale; separate plots of only two aggregate points would hide the end-region reversal.",
+      "calculations": [
+        {
+          "id": "wall-temperature",
+          "source": "sources/wall.csv",
+          "operation": "weighted_population",
+          "columns": {"value": "T [degC]", "weight": "area [mm2]"},
+          "units": {"value": "degC", "weight": "mm2"},
+          "weight_kind": "area",
+          "quantity_kind": "absolute-temperature",
+          "domain": "The entire common rectangular wall, x=0 to 10 mm and y=0 to 1 mm; six disjoint full-width, piecewise-constant facets per field. Exact physical facet areas are the weights, not equal facet counts.",
+          "group_by": "case",
+          "member_id": ["facet"],
+          "expected_members": [["1"], ["2"], ["3"], ["4"], ["5"], ["6"]],
+          "expected_groups": ["Reference", "Modified"],
+          "definition_source": {"path": "sources/method.md", "locator": "L3-L10"},
+          "comparison": {"status": "supported", "scope": "Descriptive comparison of two prescribed synthetic absolute-temperature fields on the same complete wall with the same facet boundaries and exact areas. Heat input and flow boundary conditions are absent, so no controlled cooling-performance or transport-mechanism comparison is supported."},
+          "interpretation_limits": ["The weighted SD describes spatial variation of a prescribed piecewise-constant field, not solver error, repeated-trial uncertainty or within-facet variation.", "A lower mean does not establish lower maximum temperature, greater uniformity, lower thermal stress or better cooling.", "No Celsius CV or percentage reduction of absolute Celsius temperature is meaningful here; no reference temperature is supplied."],
+          "missing_questions": []
+        }
+      ],
+      "metrics": [
+        {"id": "reference-mean", "text": "Whole-wall area-weighted mean absolute temperature, Reference", "result_ref": {"calculation_id": "wall-temperature", "group": "Reference", "field": "weighted_mean", "places": 2}},
+        {"id": "modified-mean", "text": "Whole-wall area-weighted mean absolute temperature, Modified", "result_ref": {"calculation_id": "wall-temperature", "group": "Modified", "field": "weighted_mean", "places": 2}},
+        {"id": "reference-sd", "text": "Whole-wall area-weighted spatial temperature standard deviation, Reference", "result_ref": {"calculation_id": "wall-temperature", "group": "Reference", "field": "weighted_std", "places": 3}},
+        {"id": "modified-sd", "text": "Whole-wall area-weighted spatial temperature standard deviation, Modified", "result_ref": {"calculation_id": "wall-temperature", "group": "Modified", "field": "weighted_std", "places": 3}}
+      ],
+      "supporting_evidence": [
+        {"id": "wall-definition", "text": "Synthetic, piecewise-constant absolute-temperature fields cover the same complete wall with exact facet areas and known boundaries.", "source": "sources/method.md:L3-L7", "kind": "observation"},
+        {"id": "spatial-order", "text": "Inspection of all paired CSV facets shows lower Modified temperatures on every facet except the final facet at the high-x end, where Modified is hotter; the latter is the hottest facet in either field. This is a direct CSV observation, not an image observation or a supported extremum binding.", "source": "sources/wall.csv:L2-L13", "kind": "observation"},
+        {"id": "physical-ceiling", "text": "Field labels do not identify geometries; no heat input, flow, transport coefficients, pumping work, repeated trials or uncertainty estimate are supplied.", "source": "sources/method.md:L8-L16", "kind": "observation"}
+      ],
+      "interpretation_limits": ["Only descriptive thermal exposure and spatial distribution are supported; no cooling mechanism, energy budget or optimum can be inferred.", "The separate concentration dataset is independent and cannot explain the wall."],
+      "missing_questions": []
+    },
+    {
+      "id": "volume-operator-check",
+      "title": "Independent volume-weighted concentration comparison",
+      "question": "How do concentration mean and spatial spread compare on the independent complete volume?",
+      "rationale": "This is a useful independent check of the same operator with volume measure, but it does not answer the wall question and is not recommended as wall subsection evidence.",
+      "presentation": "prose",
+      "presentation_reason": "A short mean-and-spread contrast suffices; no coordinates are available for a spatial map.",
+      "calculations": [
+        {
+          "id": "volume-concentration",
+          "source": "sources/volume.csv",
+          "operation": "weighted_population",
+          "columns": {"value": "concentration [1]", "weight": "volume [mm3]"},
+          "units": {"value": "1", "weight": "mm3"},
+          "weight_kind": "volume",
+          "quantity_kind": "ordinary",
+          "domain": "The separate complete common volume represented by three nonoverlapping constant-concentration cells with exact positive volumes.",
+          "group_by": "case",
+          "member_id": ["cell"],
+          "expected_members": [["1"], ["2"], ["3"]],
+          "expected_groups": ["Reference", "Modified"],
+          "definition_source": {"path": "sources/method.md", "locator": "L12-L16"},
+          "comparison": {"status": "supported", "scope": "Descriptive statistics of the two synthetic scalar fields on the same complete volume only. No transport boundary conditions or spatial coordinates are supplied."},
+          "interpretation_limits": ["Spatial SD is not uncertainty or proof of enhanced mixing.", "The independent volume dataset provides no wall-temperature evidence."],
+          "missing_questions": []
+        }
+      ],
+      "metrics": [],
+      "interpretation_limits": ["Operator exercise only; keep independent from the wall interpretation."],
+      "missing_questions": []
+    }
+  ],
+  "recommended_id": "wall-exposure-distribution",
+  "gaps": ["The current proposal operator exposes weighted mean, SD and measure sum, but not a maximum/location or threshold-area statistic. Those additional descriptors can be independently diagnosed from this complete piecewise-constant field, not presented as supported result_ref outputs."]
+}

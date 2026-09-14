@@ -3,6 +3,21 @@ import pytest
 from cfdpaper.publication.elements import MathNode, SectionTable, math_text, math_xml
 
 
+def test_numbered_markdown_table_matches_prose_and_docx_caption():
+    from cfdpaper.publication.export import _markdown_table
+
+    table = SectionTable(
+        table_id="2",
+        caption="Spatial diagnostics",
+        after_section_id="results",
+        columns=["Field", "Mean"],
+        rows=[["A", "43.4 °C"]],
+        evidence_ids=[],
+    )
+    assert _markdown_table(table, numbered=True).startswith("**Table 2. Spatial diagnostics**")
+    assert _markdown_table(table).startswith("**Spatial diagnostics**")
+
+
 def symbol(text):
     return {"kind": "symbol", "text": text}
 

@@ -552,6 +552,8 @@ def test_markdown_keeps_objects_with_their_section(tmp_path):
     markdown = (output / "manuscript.md").read_text(encoding="utf-8")
     assert markdown.index("   (1)") < markdown.index("## Response")
     assert markdown.index("![Figure 1]") < markdown.index("## Response")
+    assert markdown.count("**Table 1.") == 1
+    assert "\nTable 1.\n" not in markdown
 
 
 def test_assembled_manuscript_can_move_edit_and_reassemble_without_originals(tmp_path):

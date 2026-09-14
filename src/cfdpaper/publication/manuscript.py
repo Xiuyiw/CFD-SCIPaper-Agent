@@ -458,8 +458,7 @@ def _markdown(data):
         for table in data["tables"]:
             key = table["table_id"]
             if key in ownership.get("tables", []) and key not in placed["tables"]:
-                lines.append(f"Table {key}.")
-                lines.append(_markdown_table(SectionTable.model_validate(table)))
+                lines.append(_markdown_table(SectionTable.model_validate(table), numbered=True))
                 if table["note"]:
                     lines.append(table["note"])
                 placed["tables"].add(key)

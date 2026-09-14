@@ -1,0 +1,13 @@
+case,facet,x0 [mm],x1 [mm],T [degC],area [mm2]
+Reference,1,0,1,40,1
+Reference,2,1,2,42,1
+Reference,3,2,4,44,2
+Reference,4,4,6,46,2
+Reference,5,6,9,48,3
+Reference,6,9,10,50,1
+Modified,1,0,1,37,1
+Modified,2,1,2,39,1
+Modified,3,2,4,41,2
+Modified,4,4,6,43,2
+Modified,5,6,9,44,3
+Modified,6,9,10,58,1
