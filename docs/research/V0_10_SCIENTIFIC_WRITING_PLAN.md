@@ -228,3 +228,10 @@ regression and Windows/Linux Python 3.10–3.12 CI, then authorized integration/
 used Python 3.14 and do not replace that CI. Do not restart A–C or repeatedly polish the recorded
 subsection. Broader real-project scientific validation and deferred capabilities remain as in
 Section 7; this example does not close them.
+
+Author feedback after B/C found a missed visual defect: numeric headers were left-aligned while
+their values were right-aligned. The shared Word table renderer now applies column alignment to
+headers and values alike. A regression reproduced the defect before the fix; 27 affected tests
+then passed. The corrected one-page Word/PDF was rendered through Word and inspected. It is under
+`private-fixtures/v010-host-trial/public-replay/table-alignment-fix/`; the previous PDF is retained
+but superseded. No source values, column widths, manuscript text or figure assets changed.

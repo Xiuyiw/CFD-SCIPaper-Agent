@@ -221,7 +221,7 @@ def add_table(document, table: SectionTable, style):
             paragraph.paragraph_format.keep_with_next = (
                 compact and row_index < len(table.rows)
             ) or row_index == 0
-            paragraph.alignment = 2 if row_index and index in table.numeric_columns else 0
+            paragraph.alignment = 2 if index in table.numeric_columns else 0
             paragraph.paragraph_format.space_after = Pt(3)
             paragraph.paragraph_format.space_before = Pt(3)
             for run in paragraph.runs:

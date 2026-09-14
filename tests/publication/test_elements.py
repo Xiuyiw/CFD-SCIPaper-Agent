@@ -73,6 +73,35 @@ def test_table_retains_rectangular_semantics_and_widths():
         )
 
 
+def test_numeric_headers_align_with_their_column_values():
+    docx = pytest.importorskip("docx")
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    from cfdpaper.publication.elements import add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    document = docx.Document()
+    add_table(
+        document,
+        SectionTable(
+            table_id="1",
+            caption="Temperature descriptors",
+            after_section_id="results",
+            columns=["Field", "Mean temperature", "Spatial SD"],
+            rows=[["Reference", "45.60 °C", "2.939 K"], ["Modified", "43.40 °C", "5.352 K"]],
+            numeric_columns=[1, 2],
+            column_widths_mm=[45, 60, 55],
+        ),
+        PublicationStyle(),
+    )
+    for row in document.tables[0].rows:
+        assert [cell.paragraphs[0].alignment for cell in row.cells] == [
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.RIGHT,
+            WD_ALIGN_PARAGRAPH.RIGHT,
+        ]
+
+
 def test_nested_flow_accents_and_table_note_pagination():
     docx = pytest.importorskip("docx")
     from docx.oxml.ns import qn
