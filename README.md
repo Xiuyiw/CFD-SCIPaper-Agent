@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and manuscript prose. Version 0.10.0, now in release preparation,
+defensible paper topics, figures, and manuscript prose. Version 0.10.0
 adds explicit area/volume-weighted statistics and host guidance for reading spatial fields together
 with their summary values. A portable field-and-Word example demonstrates the connected workflow.
 Whole-paper review, targeted host editing, paired source-table calculations, cross-section evidence
@@ -49,7 +49,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For spatial weighting, use the v0.10 release-preparation
+CFD-Paper-Agent supports CPython 3.10–3.12. For spatial weighting, use the v0.10
 checkout or its matching wheel; the published v0.9.0 wheel does not contain the weighted operator.
 From the checkout root, install with Word support:
 

@@ -20,7 +20,7 @@ recorded here instead of being represented as already complete.
 | `v0.7.0` | Multi-section manuscript workspace, portable continued editing and external drawing-task integration | Released; see release tag |
 | `v0.8.0` | Shared literature, cross-section evidence bindings, targeted change reports and optional numeric CSL formatting | Released; see the v0.8.0 notes and release tag |
 | `v0.9.0` | Real-material whole-manuscript trial, bounded review and selected-feedback editing | Delivered scope; see v0.9.0 release notes and the verified release tag |
-| `v0.10.0` | Explicit area/volume-weighted evidence, spatial-reasoning guidance, portable field/Word example and aligned numeric table headers | Release preparation; see v0.10.0 notes |
+| `v0.10.0` | Explicit area/volume-weighted evidence, spatial-reasoning guidance, portable field/Word example and aligned numeric table headers | Implemented scope; see v0.10.0 notes and release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -57,7 +57,7 @@ Native solver platforms and submission automation are not prerequisites for this
 
 ## Product direction
 
-The current release-preparation increment is defined in the
+The v0.10 increment is defined in the
 [v0.10 scientific-writing plan](research/V0_10_SCIENTIFIC_WRITING_PLAN.md): explicit spatial
 weighting connected to diagnostic selection, substantive host writing, complementary figures
 and actual Word presentation. Weighted mean, population SD and measure sum now bind to prose and
@@ -67,8 +67,8 @@ headers now follow their columns' alignment.
 
 The [public spatial example](../examples/spatial-diagnostics/README.md) carries analytical source
 facets, editable four-format artwork and a recorded guided host draft through relocation and Word
-export. Local transfer and rendered-page checks are complete; final regression, supported-platform
-CI and release integration remain release-preparation work. Recorded replay is not a new model
+export. Local transfer and rendered-page checks are documented in the plan; supported-platform
+CI results accompany the release commit. Recorded replay is not a new model
 invocation, an unfamiliar-project writing benchmark or physical validation. See the
 [v0.10.0 notes](releases/v0.10.0.md) for the bounded release scope.
 

@@ -12,7 +12,7 @@ The separate volume dataset checks volume weighting and is not wall-mechanism ev
 
 ## Run
 
-Use the v0.10 release-preparation checkout or its matching wheel with the `docs` extra installed.
+Use the v0.10 checkout or its matching wheel with the `docs` extra installed.
 The published v0.9.0 wheel does not include the weighted operator used here. From the checkout root:
 
 ```powershell
