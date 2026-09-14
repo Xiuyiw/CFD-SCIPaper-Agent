@@ -83,7 +83,10 @@ in full; it guides single-figure reasoning and multi-evidence synthesis without 
    Assembly recomputes these values from the package CSVs. Use `scalar_select` for one exported
    value and `paired_change` for a named two-record contrast; their definitions and temperature
    handling are in the mechanism subsection reference. Population CV uses
-   equal record weights; partition sums refer to supplied regions, not automatically the full
+   equal record weights; weighted_population uses declared positive area/volume measures to
+   return weighted_mean/weighted_std/weight_sum. Read the spatial-statistics subsection of the
+   mechanism reference for field-average interpretation and temperature units. Partition sums
+   refer to supplied regions, not automatically the full
    physical surface. Use the offline [table example](references/mechanism-subsections.md#exported-table-example)
    for declarations, source records and numeric selection.
 

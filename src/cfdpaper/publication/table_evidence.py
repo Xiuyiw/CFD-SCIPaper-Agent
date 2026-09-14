@@ -15,6 +15,9 @@ def display_unit(unit: str) -> str:
     area = re.fullmatch(r"(m|cm|mm)(?:\^?2|²)", unit)
     if area:
         return f"{area[1]}²"
+    volume = re.fullmatch(r"(m|cm|mm)(?:\^?3|³)", unit)
+    if volume:
+        return f"{volume[1]}³"
     match = re.fullmatch(r"\(([^()]+)\)/\((m|cm|mm)(?:\^?2|²)\)", unit)
     if match:
         return f"{match[1]} {match[2]}⁻²"
@@ -33,6 +36,7 @@ def calculate_table(
     units=None,
     quantity_kind="ordinary",
     temperature_reference=None,
+    weight_kind=None,
 ):
     """Apply an explicit calculation to every CSV row, retaining source row locations.
 
@@ -40,17 +44,38 @@ def calculate_table(
     No rows are silently excluded and no unit conversion is performed.
     """
     scalar_ops = {"population", "scalar_select", "paired_change"}
-    required = {"value"} if operation in scalar_ops else {"area", "rate"}
-    if operation not in scalar_ops | {"partition"} or set(columns) != required:
-        raise ValueError("Use a scalar/value operation or partition/area,rate columns")
+    required = (
+        {"value", "weight"}
+        if operation == "weighted_population"
+        else {"value"}
+        if operation in scalar_ops
+        else {"area", "rate"}
+    )
+    if (
+        operation not in scalar_ops | {"partition", "weighted_population"}
+        or set(columns) != required
+    ):
+        raise ValueError(
+            "Use scalar/value, weighted_population/value,weight or partition/area,rate"
+        )
+    if operation == "weighted_population":
+        if weight_kind not in {"area", "volume"}:
+            raise ValueError("Weighted population requires weight_kind area or volume")
+        if not isinstance(units, dict) or set(units) != {"value", "weight"}:
+            raise ValueError("Weighted population requires declared value and weight units")
+        measure = units["weight"]
+        power = r"(?:\^?2|²)" if weight_kind == "area" else r"(?:\^?3|³)"
+        if not isinstance(measure, str) or not re.fullmatch(r"(?:m|cm|mm)" + power, measure):
+            raise ValueError("Weight unit must match the declared area or volume measure")
     if operation == "paired_change":
         if not all(isinstance(x, str) and x.strip() for x in (pair_by, reference, comparison)):
             raise ValueError("Paired change requires pair_by, reference and comparison")
         if reference == comparison:
             raise ValueError("Reference and comparison must differ")
+    if operation in {"paired_change", "weighted_population"}:
         unit = (units or {}).get("value")
         if not isinstance(unit, str):
-            raise ValueError("Paired change requires a declared value unit")
+            raise ValueError("Calculation requires a declared value unit")
         if quantity_kind not in {"ordinary", "absolute-temperature", "temperature-difference"}:
             raise ValueError("Unknown quantity_kind")
         if unit in {"degC", "°C", "C"} and quantity_kind != "absolute-temperature":
@@ -59,6 +84,12 @@ def calculate_table(
             raise ValueError("Declare whether K is absolute-temperature or temperature-difference")
         if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
             raise ValueError("Absolute temperature requires Celsius or Kelvin units")
+        if (
+            operation == "weighted_population"
+            and quantity_kind == "temperature-difference"
+            and unit != "K"
+        ):
+            raise ValueError("Temperature difference requires Kelvin units")
         if temperature_reference is not None and (
             quantity_kind != "absolute-temperature"
             or type(temperature_reference) not in (float, int)
@@ -89,10 +120,17 @@ def calculate_table(
                 chosen.extend(matches)
             items = chosen
         values = {key: [r[column] for _, r in items] for key, column in columns.items()}
+        if operation == "weighted_population" and any(
+            w is None or not math.isfinite(w) or w <= 0 for w in values["weight"]
+        ):
+            raise ValueError(f"Group {name!r}: weights must be finite and strictly positive")
         if any(v is None for sequence in values.values() for v in sequence):
             result, status = None, "missing-values"
         elif operation == "population":
             result, status = population_summary(values["value"]), "computed"
+        elif operation == "weighted_population":
+            result = _weighted_population_summary(values["value"], values["weight"])
+            status = "computed"
         elif operation == "scalar_select":
             result, status = {"value": values["value"][0]}, "computed"
         elif operation == "paired_change":
@@ -160,6 +198,39 @@ def population_summary(values):
         "mean": mean,
         "cv": statistics.pstdev(values) / abs(mean) if mean else None,
     }
+
+
+def _weighted_population_summary(values, weights):
+    """Population moments of supplied element values, not within-element fluctuations."""
+    try:
+        total = math.fsum(weights)
+        fractions = [weight / total for weight in weights]
+        # Center first: small variation on a large baseline must not acquire a
+        # spurious SD from rounding the reported mean. The midpoint avoids an
+        # overflowing max-min range for finite values of opposite signs.
+        center = min(values) / 2 + max(values) / 2
+        offsets = [value - center for value in values]
+        mean_offset = math.fsum(p * delta for p, delta in zip(fractions, offsets, strict=True))
+        mean = center + mean_offset
+        deviations = [delta - mean_offset for delta in offsets]
+        if all(math.isfinite(delta) for delta in deviations):
+            # Hypot avoids overflowing squared deviations when the SD is still finite.
+            std = math.hypot(
+                *(math.sqrt(p) * delta for p, delta in zip(fractions, deviations, strict=True))
+            )
+        else:
+            scale = max(abs(value) for value in values)
+            std = scale * math.hypot(
+                *(
+                    math.sqrt(p) * (value / scale - mean / scale)
+                    for p, value in zip(fractions, values, strict=True)
+                )
+            )
+    except OverflowError as exc:
+        raise ValueError("Weighted calculation produced a nonfinite result") from exc
+    if not all(math.isfinite(value) for value in (mean, std, total)):
+        raise ValueError("Weighted calculation produced a nonfinite result")
+    return {"weighted_mean": mean, "weighted_std": std, "weight_sum": total}
 
 
 def partition_summary(
@@ -252,6 +323,7 @@ def resolve_table_result(
     report = matches[0]
     fields = {
         "population": {"count", "sum", "mean", "cv"},
+        "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
         "scalar_select": {"value"},
         "paired_change": {"difference", "relative_change", "relative_reduction"},
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
@@ -297,15 +369,26 @@ def resolve_table_result(
     if type(raw_value) not in (int, float) or not math.isfinite(raw_value):
         raise ValueError(f"{location}: missing or nonfinite numeric value")
     units = report.get("units", {})
-    required_units = {"area", "rate"} if operation == "partition" else {"value"}
+    required_units = (
+        {"value", "weight"}
+        if operation == "weighted_population"
+        else {"area", "rate"}
+        if operation == "partition"
+        else {"value"}
+    )
     if any(not isinstance(units.get(role), str) for role in required_units):
         raise ValueError(f"{location}: missing declared role units")
     if field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:
         unit = ""
-    elif field in {"sum", "mean", "value", "difference"}:
+    elif field in {"sum", "mean", "value", "difference", "weighted_mean", "weighted_std"}:
         unit = units["value"]
-        if field == "difference" and report.get("quantity_kind") == "absolute-temperature":
+        if (
+            field in {"difference", "weighted_std"}
+            and report.get("quantity_kind") == "absolute-temperature"
+        ) or (field == "weighted_std" and report.get("quantity_kind") == "temperature-difference"):
             unit = "K"
+    elif field == "weight_sum":
+        unit = units["weight"]
     elif field in {"area", "rate"}:
         unit = units[field]
     else:

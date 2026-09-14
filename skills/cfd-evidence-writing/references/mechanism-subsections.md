@@ -79,6 +79,33 @@ notes are not a license for overstatement. Captions define variables, conditions
 without duplicating the discussion. Before assembly, check every duty, comparison, quantitative
 statement and image-observation status. Human review remains responsible for the argument.
 
+Definitions need one clear home: introduce weighting and physical support in Methods or a concise
+table note, then use the defined quantity in Results. Do not repeatedly explain in the paragraph,
+caption and conclusion that a spatial SD is not uncertainty. Keep the qualification where it
+changes the claim. Unprovided flow information may limit a convection explanation; unrelated
+thermal-stress, damage or optimization disclaimers should not crowd out the actual spatial finding.
+Keep candidate rejection reasons and pending-tool instructions in notes, not manuscript prose.
+
+## Spatially weighted statistics
+
+For exported face/cell values, `weighted_population` takes `columns: {"value": "T", "weight":
+"area"}`, explicit `units: {"value": "degC", "weight": "mm2"}`, `weight_kind: "area"` and
+`quantity_kind: "absolute-temperature"`. Use `volume` and cubic units for cell volumes. Keep the
+same source/domain/grouping declarations as the exported-table examples below. Select
+`weighted_mean`, `weighted_std` or `weight_sum` in result_ref. The mean is sum(w*x)/sum(w);
+spatial SD is sqrt(sum(w*(x-mean)^2)/sum(w)). Absolute-temperature mean keeps its scale and SD
+uses K. These are moments of supplied element values, not unresolved variation within elements.
+
+Read the spatial support with the moments: a small hot region may raise the peak and spread while
+a cooler larger region lowers the mean. Describe that relationship when present in the evidence;
+do not invent a hotspot or force conflicting rankings in every study. A field map may explain
+location and extent while a compact table provides the exact moments. It need not become an
+extra graph of every scalar. Threshold exceedance requires a meaningful threshold and declared
+area/volume definition, not a convenient new plot added merely to make the figure more complex.
+The current weighted operator does not expose extrema, threshold fractions or differences between
+calculated outputs. Preserve such unbound diagnostic calculations separately; do not label them as
+engine-bound values or turn them into claimed automatic capabilities.
+
 ## Exported table example
 
 This example is included with the installed skill; it needs no repository examples directory.

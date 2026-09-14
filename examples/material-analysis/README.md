@@ -19,6 +19,8 @@ Give your local host AI `analysis-materials/host-task.md`. It reads the sources 
 proposes one to three useful analyses in `proposal.json`; you choose an ID and answer
 only essential definition questions. You do not need to write the JSON yourself.
 The example/schema describes the supported population and partition calculations.
+The development branch also supports explicit spatial weighting, described below;
+this additional operation is not available in the published v0.9.0 package.
 Unknown units, statistical domains or incomparable cases must be resolved for the selected analysis.
 
 ```text
@@ -47,6 +49,49 @@ The material package includes the current analysis and figure-selection Skills, 
 host does not depend on this repository's chat history. A sparse contrast may be better in text
 or a compact table; a mechanism comparison may need complementary quantities or custom panels.
 Selecting a presentation is not evidence that its scientific or visual quality has been approved.
+
+## Spatially weighted records (v0.10 development)
+
+Use `weighted_population` when exported element values have corresponding positive
+areas or volumes. For example, a calculation on absolute wall temperatures can declare:
+
+```json
+{
+  "id": "wall-temperature",
+  "source": "sources/facets.csv",
+  "operation": "weighted_population",
+  "columns": {"value": "T [degC]", "weight": "area [m2]"},
+  "units": {"value": "degC", "weight": "m2"},
+  "weight_kind": "area",
+  "quantity_kind": "absolute-temperature",
+  "domain": "Supplied non-overlapping wall facets",
+  "group_by": "case"
+}
+```
+
+This is the calculation portion of a proposal; the host must also provide its
+actual `definition_source`, comparison scope and element identity, as in the existing
+proposal schema. Use `weight_kind: "volume"` and a cubic measure unit for cell volumes.
+Supported measure units are m, cm or mm squared/cubed, including `m2`, `m^2`, `m²`
+and their cubic equivalents. Units are not converted. Point counts are not spatial weights.
+
+The available result fields are `weighted_mean`, `weighted_std` and `weight_sum`.
+Mean = sum(w*x)/sum(w); spatial population SD = sqrt(sum(w*(x-mean)^2)/sum(w)).
+For values 1 and 3 with weights 1 and 3, these are 2.5, sqrt(0.75) and 4.
+Mean temperature retains the supplied Celsius or Kelvin scale; its SD is reported in K.
+For K, specify `absolute-temperature` or `temperature-difference`; non-temperature
+quantities use `ordinary`. No temperature reference is needed for these statistics.
+
+Use the result fields in existing `result_ref` bindings for both prose and native
+tables. A blank value leaves its group unavailable; invalid or non-positive weights
+must be corrected rather than dropped. The SD describes variation of the supplied
+element values, not solver uncertainty or unresolved variation within each element.
+The physical coverage of those elements remains part of the method definition.
+
+Choose the statistics that answer the question: a lower mean can coexist with a larger
+spread or a higher maximum. Report their relationship rather than interpreting every
+lower statistic as better overall performance. This operation does not calculate maxima,
+flux integrals or CV; use separately sourced evidence where those quantities are needed.
 
 Use a candidate's optional `style` object to carry author/template choices into the writing
 package and DOCX. Body defaults are `body_first_line_indent_chars: 2`,

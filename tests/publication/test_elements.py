@@ -3,6 +3,21 @@ import pytest
 from cfdpaper.publication.elements import MathNode, SectionTable, math_text, math_xml
 
 
+def test_numbered_markdown_table_matches_prose_and_docx_caption():
+    from cfdpaper.publication.export import _markdown_table
+
+    table = SectionTable(
+        table_id="2",
+        caption="Spatial diagnostics",
+        after_section_id="results",
+        columns=["Field", "Mean"],
+        rows=[["A", "43.4 °C"]],
+        evidence_ids=[],
+    )
+    assert _markdown_table(table, numbered=True).startswith("**Table 2. Spatial diagnostics**")
+    assert _markdown_table(table).startswith("**Spatial diagnostics**")
+
+
 def symbol(text):
     return {"kind": "symbol", "text": text}
 
@@ -56,6 +71,35 @@ def test_table_retains_rectangular_semantics_and_widths():
             after_section_id="s1",
             column_widths_mm=[float("nan")],
         )
+
+
+def test_numeric_headers_align_with_their_column_values():
+    docx = pytest.importorskip("docx")
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    from cfdpaper.publication.elements import add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    document = docx.Document()
+    add_table(
+        document,
+        SectionTable(
+            table_id="1",
+            caption="Temperature descriptors",
+            after_section_id="results",
+            columns=["Field", "Mean temperature", "Spatial SD"],
+            rows=[["Reference", "45.60 °C", "2.939 K"], ["Modified", "43.40 °C", "5.352 K"]],
+            numeric_columns=[1, 2],
+            column_widths_mm=[45, 60, 55],
+        ),
+        PublicationStyle(),
+    )
+    for row in document.tables[0].rows:
+        assert [cell.paragraphs[0].alignment for cell in row.cells] == [
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.RIGHT,
+            WD_ALIGN_PARAGRAPH.RIGHT,
+        ]
 
 
 def test_nested_flow_accents_and_table_note_pagination():
