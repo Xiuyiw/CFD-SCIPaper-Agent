@@ -1,6 +1,6 @@
 # Spatial diagnostics and scientific explanation
 
-This development example uses prescribed analytical fields, **not CFD results**.
+This v0.10 example uses prescribed analytical fields, **not CFD results**.
 It exercises area/volume-weighted statistics, a portable field figure, bound prose
 and a native Word table. It does not demonstrate a cooling mechanism or validate a solver.
 
@@ -12,27 +12,19 @@ The separate volume dataset checks volume weighting and is not wall-mechanism ev
 
 ## Run
 
-Use the current development checkout with its `docs` extra installed. Version 0.9.0
-does not include the weighted operator used here. From the repository root:
+Use the v0.10 release-preparation checkout or its matching wheel with the `docs` extra installed.
+The published v0.9.0 wheel does not include the weighted operator used here. From the checkout root:
 
 ```powershell
+python -m pip install ".[docs]"
 python examples/spatial-diagnostics/run_example.py output/spatial-demo
-cfdpaper export --help
+cfdpaper write . --artifact results-section --package output/spatial-demo/section --docx --layout near-reference --output output/spatial-demo/spatial-diagnostics.docx
 ```
 
-The example requires a new output directory. Export its assembled subsection using
-the public Python interface (also available through the section export CLI):
-
-```python
-from pathlib import Path
-from cfdpaper.publication.section import export_section_docx
-
-export_section_docx(
-    Path("output/spatial-demo/section"),
-    Path("output/spatial-demo/spatial-diagnostics.docx"),
-    layout="near-reference",
-)
-```
+The example requires a new output directory and DOCX export requires a new file path.
+Add `--pdf-preview` to the `cfdpaper write` command if LibreOffice is installed for PDF preview.
+For an installed wheel and a separately copied example directory, run `run_example.py` from that
+directory and use the same `cfdpaper write` command. DOCX export uses `write`, not root `export`.
 
 Outputs include source tables, both calculation results, the portable writing
 package, Markdown/section JSON and a figure delivery with SVG/PDF/PNG/TIFF plus
@@ -46,6 +38,8 @@ to DejaVu Serif when unavailable. The DOCX uses the normal manuscript renderer:
 two-character first-line body indentation, zero before/after body spacing and
 independent caption/table styles. Inspect actual rendered pages before delivery;
 software assertions do not prove visual or scientific quality.
+Numeric column headers use the same alignment as their values. Source-bound absolute-temperature
+means display °C and spatial temperature SD displays K; measure sums retain mm² or mm³.
 
 ## Fresh host attempt versus recorded replay
 

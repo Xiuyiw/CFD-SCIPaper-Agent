@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-09-14
+
+### Added
+
+- Explicit area- and volume-weighted means, spatial population standard deviations and
+  measure sums in material-analysis proposals and evidence-bound manuscript text/tables.
+- Absolute-temperature means retain their scale; spatial temperature deviations use K.
+- Built-in guidance for interpreting spatial fields together with summary statistics,
+  keeping method definitions concise and scientific qualifications specific.
+- A portable analytical example with field maps, editable graphics, source tables,
+  a recorded host-authored subsection and native Word output.
+
+### Fixed
+
+- Numeric Word table headers now align with their values.
+- Section/manuscript Markdown table captions show their referenced numbers once.
+- Supplied custom figures no longer receive an automatic pending-production message.
+
+The example demonstrates software integration and guided host writing using prescribed fields;
+it is not a CFD validation study or evidence of autonomous mechanism discovery.
+
 ## [0.9.0] — 2026-09-14
 
 ### Added

@@ -5,18 +5,21 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and manuscript prose. Version 0.9.0 connects the multi-section
-workspace to whole-paper review, complete feedback return and targeted host editing. Paired
-source-table calculations, cross-section evidence links and portable figure dependencies support
-scientific revision alongside shared literature and editable Word output.
+defensible paper topics, figures, and manuscript prose. Version 0.10.0, now in release preparation,
+adds explicit area/volume-weighted statistics and host guidance for reading spatial fields together
+with their summary values. A portable field-and-Word example demonstrates the connected workflow.
+Whole-paper review, targeted host editing, paired source-table calculations, cross-section evidence
+links and shared literature remain available alongside editable Word output.
 The workflow preserves the connection between the original observations, scientific interpretation,
 and the numbers and graphics appearing in the manuscript.
 
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Start with the [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
-and [v0.9.0 release notes](docs/releases/v0.9.0.md) for the new workflow and a runnable example.
+Start with the [spatial-diagnostics example](examples/spatial-diagnostics/README.md) and
+[v0.10.0 release notes](docs/releases/v0.10.0.md) for weighted analysis, a source-rendered field map
+and Word output. The [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
+continues to cover whole-manuscript feedback and selected editing.
 
 ## Capability matrix
 
@@ -30,7 +33,8 @@ and [v0.9.0 release notes](docs/releases/v0.9.0.md) for the new workflow and a r
 | Evidence writing | Available | Numeric paragraph or host-authored multi-figure subsection; current CSV calculations bind to evidence tokens with units and source records. |
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
-| Existing materials to subsection analysis | Available | CSV and method profiling; portable host-AI proposals; author-selected population/partition calculations, expression choices and source-linked writing. |
+| Existing materials to subsection analysis | Available | CSV and method profiling; portable host-AI proposals; author-selected population, partition and explicit area/volume-weighted calculations, expression choices and source-linked writing. |
+| Spatially weighted evidence | Available | New in v0.10: weighted mean, population SD and measure sum from declared positive area/volume weights; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
 | Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
 | Shared literature workspace | Available | Local CSL JSON, DOI deduplication and aliases; claim-specific excerpts, locators, roles and author/host support decisions travel with the manuscript. Optional Pandoc imports BibLaTeX. |
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
@@ -45,8 +49,8 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For whole-paper review and selected editing, use a v0.9 checkout
-or a wheel built from the same version; the v0.8.0 wheel does not contain these additions.
+CFD-Paper-Agent supports CPython 3.10–3.12. For spatial weighting, use the v0.10 release-preparation
+checkout or its matching wheel; the published v0.9.0 wheel does not contain the weighted operator.
 From the checkout root, install with Word support:
 
 ```text
@@ -57,7 +61,7 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.9.0 notes](docs/releases/v0.9.0.md) for the version scope.
+remains available. See the [v0.10.0 notes](docs/releases/v0.10.0.md) for the new version scope.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -152,8 +156,22 @@ Follow the [material-analysis tutorial](examples/material-analysis/README.md) fo
 writing and DOCX export. A compact table or prose can replace an unnecessary plot; custom
 figure requests remain pending until their actual artwork is supplied. Body formatting defaults
 to two-character first-line indentation and zero paragraph spacing, with explicit template overrides.
-This route supports declared population and partition calculations, not arbitrary
-solver extraction or automatic causal inference. The existing evidence-first workflow remains available.
+This route supports declared population, partition and `weighted_population` calculations, not
+arbitrary solver extraction or automatic causal inference. The existing evidence-first workflow
+remains available.
+
+For unequal spatial elements, explicitly declare the value column, positive area/volume weight
+column and measure units. `weighted_population` produces `weighted_mean`, `weighted_std` and
+`weight_sum`; it does not infer weights from column names. Absolute-temperature means retain their
+scale (for example, °C), while their spatial SD is reported in K, not as uncertainty in the mean.
+The bundled host skills connect field location and extent with mean, spread and extrema without
+turning one scalar ranking into an unsupported performance or causal ranking.
+
+The [spatial example](examples/spatial-diagnostics/README.md) combines unequal-area analytical
+wall facets, a separate volume-weighted check, a reproducible map and a native Word table whose
+numeric headers align with the values. It replays a recorded guided host draft; it neither calls
+a model automatically nor supplies CFD validation. Use its `--prepare-only` option for a new host
+attempt without the recorded answers.
 
 ### Supplied evidence and figures
 
@@ -248,6 +266,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.10.0 notes](docs/releases/v0.10.0.md)
 - [v0.9.0 notes](docs/releases/v0.9.0.md)
 - [v0.8.0 notes](docs/releases/v0.8.0.md)
 - [v0.7.0 release notes](docs/releases/v0.7.0.md)
