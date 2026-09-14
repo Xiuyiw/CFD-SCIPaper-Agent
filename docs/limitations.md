@@ -1,11 +1,11 @@
 # Limitations
 
-CFD-Paper-Agent v0.8.0 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent v0.9.0 is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
 The public CLI supports `init`, `status`, `inspect`, `plan`, `qualify`, `analyze`, `figure`, and
-`write`. The implemented scientific path expects structured case records, located scalar
+`write` and `review`. The implemented scientific path expects structured case records, located scalar
 observations, a declared comparison, and a proposed QoI. It does not convert arbitrary Fluent,
 STAR-CCM+, or other native solver files into complete scientific records. Guided intake is
 experimental and still requires the author to supply the scientific meaning of the data.
@@ -73,11 +73,11 @@ or actual image viewing. It is not a complete-paper reasoning or LaTeX submissio
 Public analytical examples demonstrate software behavior; known-case trials do not establish
 general scientific validity across heterogeneous projects or native solver formats.
 
-The v0.9 development checkout adds root `review` for whole-manuscript package export and complete
+Root `review` supports whole-manuscript package export and complete
 report retention, plus exact-location editing tasks from host-selected actions. Tasks preserve
 the original report and create a separate ordinary authoring workspace; the host still edits
 the intended drafts and reassembles. It does not apply recommendations, reconcile Word edits or grant approval;
-the published v0.8 release does not include this root route. Root `revise` and `export` remain unavailable; subsection DOCX
+root `revise` and `export` remain unavailable. Subsection DOCX
 and review-suggestion import are options of `write --artifact results-section`, and multi-section
 DOCX is available through `write --artifact manuscript`.
 Reviewer-response work must be

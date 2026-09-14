@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-09-14
+
 ### Added
 
 - Whole-manuscript review packages with global paragraph/object locations and complete

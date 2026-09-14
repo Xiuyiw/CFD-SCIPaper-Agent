@@ -97,7 +97,9 @@ decisions and original text files. Reviewers can therefore check the cited passa
 parent manuscript directory. Unknown metadata stays unknown; the analytical note in this tutorial
 is not turned into a fictitious journal article by choosing a journal style.
 
-## Whole-manuscript external review (v0.9 development checkout)
+## Whole-manuscript external review (v0.9)
+
+This review route requires v0.9.0 or later; v0.8 supports the assembly examples above only.
 
 After assembling the unchanged candidate above, prepare the complete review folder:
 
