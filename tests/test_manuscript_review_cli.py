@@ -5,6 +5,7 @@ import runpy
 import shutil
 from pathlib import Path
 
+from rich.text import Text
 from typer.testing import CliRunner
 
 from cfdpaper.cli import app
@@ -75,10 +76,14 @@ def test_review_cli_rejects_changed_manuscript_before_export(tmp_path):
 
 
 def test_review_help_explains_report_option():
-    result = runner.invoke(app, ["review", "--help"], color=False, terminal_width=150)
+    result = runner.invoke(
+        app, ["review", "--help"], color=False, terminal_width=150, env={"FORCE_COLOR": "1"}
+    )
     assert result.exit_code == 0
-    assert "complete returned report" in result.stdout
-    assert "--actions" in result.stdout
+    # Rich may emit ANSI spans despite Click's color=False on CI terminals.
+    help_text = Text.from_ansi(result.stdout).plain
+    assert "complete returned report" in help_text
+    assert "--actions" in help_text
 
 
 def test_review_actions_cli_rejects_simultaneous_report_and_actions(tmp_path):
