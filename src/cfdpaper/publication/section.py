@@ -66,6 +66,9 @@ class _ResultRef(_Record):
         "difference",
         "relative_change",
         "relative_reduction",
+        "weighted_mean",
+        "weighted_std",
+        "weight_sum",
     ]
     source_record: int | None = Field(default=None, strict=True, ge=2)
     places: int = Field(default=3, strict=True, ge=0, le=12)
@@ -105,7 +108,9 @@ class _Duty(_Record):
 class _TableCalculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
-    operation: Literal["population", "partition", "scalar_select", "paired_change"]
+    operation: Literal[
+        "population", "partition", "scalar_select", "paired_change", "weighted_population"
+    ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
@@ -117,6 +122,7 @@ class _TableCalculation(_Record):
         "ordinary"
     )
     temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
+    weight_kind: Literal["area", "volume"] | None = None
 
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
@@ -127,27 +133,38 @@ class _TableCalculation(_Record):
                 "pair_by",
                 "reference",
                 "comparison",
-                "quantity_kind",
                 "temperature_reference",
             ):
                 result.pop(key, None)
+        if self.operation not in {"paired_change", "weighted_population"}:
+            result.pop("quantity_kind", None)
+        if self.operation != "weighted_population":
+            result.pop("weight_kind", None)
         return result
 
     @model_validator(mode="after")
     def explicit_definition(self):
-        required = {"area", "rate"} if self.operation == "partition" else {"value"}
+        required = {
+            "partition": {"area", "rate"},
+            "weighted_population": {"value", "weight"},
+        }.get(self.operation, {"value"})
         if set(self.columns) != required or set(self.units) != required:
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
         paired = (self.pair_by, self.reference, self.comparison)
+        if self.operation == "weighted_population":
+            if self.weight_kind is None:
+                raise ValueError("Weighted population requires area or volume weight_kind")
+        elif self.weight_kind is not None:
+            raise ValueError("weight_kind is only for weighted_population")
         if self.operation == "paired_change":
             if not all(paired) or self.reference == self.comparison:
                 raise ValueError("Paired change requires distinct reference/comparison and pair_by")
         elif (
             any(x is not None for x in paired)
             or self.temperature_reference is not None
-            or self.quantity_kind != "ordinary"
+            or (self.quantity_kind != "ordinary" and self.operation != "weighted_population")
         ):
             raise ValueError("Pair selectors and temperature_reference are only for paired_change")
         return self
@@ -319,6 +336,7 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
             units=item.units,
             quantity_kind=item.quantity_kind,
             temperature_reference=item.temperature_reference,
+            weight_kind=item.weight_kind,
         )
         results.append({**item.model_dump(), **result})
     if results and write:

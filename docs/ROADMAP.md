@@ -56,6 +56,12 @@ Native solver platforms and submission automation are not prerequisites for this
 
 ## Product direction
 
+The next bounded increment is defined in the
+[v0.10 scientific-writing plan](research/V0_10_SCIENTIFIC_WRITING_PLAN.md): explicit spatial
+weighting connected to diagnostic selection, substantive host writing, complementary figures
+and actual Word presentation. Spatial weighting and its writing bindings are implemented on the
+development branch; host-writing/visual evaluation and release checks remain in progress.
+
 Development follows the path from mature CFD results to an author-approved scientific paper:
 
 1. solver-neutral and solver-assisted result intake;

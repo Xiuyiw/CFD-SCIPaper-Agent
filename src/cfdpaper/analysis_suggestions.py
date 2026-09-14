@@ -13,7 +13,7 @@ import shutil
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, StrictStr, model_validator
+from pydantic import Field, StrictStr, model_serializer, model_validator
 
 from cfdpaper.adapters.csv import CSVAdapter, _split_header
 from cfdpaper.publication.section import (
@@ -43,11 +43,15 @@ class _Calculation(_Record):
     # Proposal comparison is a scientific qualification, not a paired-row selector.
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
-    operation: Literal["population", "partition"]
+    operation: Literal["population", "partition", "weighted_population"]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
     group_by: str | None = None
+    weight_kind: Literal["area", "volume"] | None = None
+    quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
+        "ordinary"
+    )
     definition_source: _Definition
     comparison: _Comparison
     member_id: list[StrictStr] = Field(min_length=1)
@@ -56,10 +60,20 @@ class _Calculation(_Record):
     interpretation_limits: list[StrictStr] = Field(min_length=1)
     missing_questions: list[StrictStr] = Field(default_factory=list)
 
+    @model_serializer(mode="wrap")
+    def serialize_calculation(self, handler):
+        result = handler(self)
+        if self.operation != "weighted_population":
+            result.pop("weight_kind", None)
+            result.pop("quantity_kind", None)
+        return result
+
     def table_calculation(self) -> _TableCalculation:
-        return _TableCalculation.model_validate(
-            self.model_dump(include=set(_TableCalculation.model_fields) - {"comparison"})
-        )
+        # Validate supplied semantics before legacy serialization omits default fields.
+        fields = (set(_TableCalculation.model_fields) & set(type(self).model_fields)) - {
+            "comparison"
+        }
+        return _TableCalculation.model_validate({name: getattr(self, name) for name in fields})
 
     @model_validator(mode="after")
     def explicit_definition(self):
@@ -123,10 +137,15 @@ causality. Inspect boundary conditions and definition consistency in the supplie
 methods before calling a comparison supported. Unknown or not-comparable selected
 calculations cannot run. Keep independent supported candidates available.
 
-Only population (equal-record count/sum/mean/population CV, ddof=0) and partition
-(sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
-shares) are executable. No inferred integrals, unit conversion, excluded rows,
-solver execution or arbitrary code. A partition requires method-backed disjoint
+The executable operators are population (equal-record count/sum/mean/population CV, ddof=0),
+partition (sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
+shares), and weighted_population (value plus positive area/volume weights, giving weighted_mean,
+weighted_std and weight_sum). For spatial statistics declare weight_kind area or volume and map
+the exact measure column and unit; point counts are not area weights. Declare quantity_kind for
+temperature values: absolute-temperature for Celsius, and absolute-temperature or
+temperature-difference for K. Spatial SD is not solver uncertainty. Do not infer missing
+within-element variability from element averages. No inferred integrals, unit conversion,
+excluded rows, solver execution or arbitrary code. A partition requires method-backed disjoint
 regions and a stated coverage; a supplied subset is not silently the full domain.
 List expected_members/expected_groups when the method declares the full set so
 missing records can be detected. Units must be explicit; use "1" for dimensionless.
@@ -335,7 +354,13 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
             raise ValueError(f"{calc.id}: missing or unexpected members in declared groups")
     base = calc.table_calculation().model_dump()
     result = calculate_table(
-        source, operation=calc.operation, columns=calc.columns, group_by=calc.group_by
+        source,
+        operation=calc.operation,
+        columns=calc.columns,
+        group_by=calc.group_by,
+        units=calc.units,
+        weight_kind=calc.weight_kind,
+        quantity_kind=calc.quantity_kind,
     )
     if any(group["status"] != "computed" for group in result["groups"]):
         raise ValueError(f"{calc.id}: selected calculation has missing numeric values")
@@ -483,9 +508,11 @@ def _check_supporting_source(package: Path, source: str) -> str:
 def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
     metrics = []
     for report in reports:
-        fields = (
-            ("mean", "cv") if report["operation"] == "population" else ("area", "rate", "mean_flux")
-        )
+        fields = {
+            "population": ("mean", "cv"),
+            "partition": ("area", "rate", "mean_flux"),
+            "weighted_population": ("weighted_mean", "weighted_std", "weight_sum"),
+        }[report["operation"]]
         for number, group in enumerate(report["groups"], 1):
             for field in fields:
                 if group["result"].get(field) is None:

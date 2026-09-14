@@ -26,6 +26,9 @@ _LABELS = {
     "difference": "Comparison minus reference",
     "relative_change": "Relative change from reference",
     "relative_reduction": "Relative reduction from reference",
+    "weighted_mean": "Measure-weighted mean",
+    "weighted_std": "Measure-weighted spatial standard deviation",
+    "weight_sum": "Total supplied measure",
 }
 
 
@@ -54,6 +57,7 @@ def _points(data: dict, root: Path) -> list[dict]:
                 units=item.get("units"),
                 quantity_kind=item.get("quantity_kind", "ordinary"),
                 temperature_reference=item.get("temperature_reference"),
+                weight_kind=item.get("weight_kind"),
             ),
         }
         for item in data["table_calculations"]

@@ -748,6 +748,48 @@ def test_bound_source_updates_summaries_without_editing_other_drafts(tmp_path):
     assert read(third / "changes.json")["changes"] == []
 
 
+def test_weighted_source_recomputes_summary_bindings_without_rewriting_interpretation(tmp_path):
+    source, drafts = bound_fixture(tmp_path)
+    path = tmp_path / "response/input.json"
+    data = read(path)
+    data["table_calculations"][0].update(
+        operation="weighted_population",
+        columns={"value": "value", "weight": "volume"},
+        units={"value": "K", "weight": "m3"},
+        weight_kind="volume",
+        quantity_kind="temperature-difference",
+    )
+    data["evidence"][0]["result_ref"]["field"] = "weighted_mean"
+    write(path, data)
+    original = "case,value,volume\na,1,1\na,3,3\n"
+    (tmp_path / "response/sources/values.csv").write_text(original)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    first = assemble_manuscript(prepared, drafts, tmp_path / "first")
+    assert (first / "manuscript.md").read_text(encoding="utf-8").count("Mean: 2.50 K.") == 2
+    working = tmp_path / "working"
+    shutil.copytree(first, working)
+    (working / "sections/response/sources/values.csv").write_text(
+        "case,value,volume\na,1,1\na,5,3\n"
+    )
+    output = assemble_manuscript(working, working / "drafts.json", tmp_path / "second")
+    assert (output / "manuscript.md").read_text(encoding="utf-8").count("Mean: 4.00 K.") == 2
+    assert set(read(output / "changes.json")["affected_sections"]) == {
+        "response",
+        "summary",
+        "conclusions",
+    }
+    for sid in ("methods", "transport", "summary", "conclusions"):
+        assert (first / f"sections/{sid}/draft.json").read_bytes() == (
+            output / f"sections/{sid}/draft.json"
+        ).read_bytes()
+    resolved = read(output / "section.json")["resolved_values"][
+        json.dumps(["summary", "shared"], separators=(",", ":"))
+    ]
+    assert resolved["raw_value"] == 4.0
+    assert resolved["csv_records"] == [2, 3]
+    assert resolved["source"] == "sections/response/sources/values.csv"
+
+
 def test_raw_pair_change_recomputes_ratio_and_propagates_across_chapters(tmp_path):
     source, drafts = bound_fixture(tmp_path)
     path = tmp_path / "response/input.json"
