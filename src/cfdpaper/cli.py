@@ -531,6 +531,39 @@ def _write_section_action(
         console.print(f"LibreOffice PDF preview: {preview_docx(result)}", markup=False)
 
 
+@app.command("review")
+def review_manuscript(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    package: Annotated[Path, typer.Option("--package")],
+    output: Annotated[Path, typer.Option("--output")],
+    report: Annotated[Path | None, typer.Option("--report")] = None,
+    actions: Annotated[Path | None, typer.Option("--actions")] = None,
+) -> None:
+    """Prepare a review, retain a complete returned report, or focus selected editing tasks."""
+    from cfdpaper.publication.manuscript_review import (
+        import_manuscript_review,
+        prepare_manuscript_review,
+    )
+
+    try:
+        if report is not None and actions is not None:
+            raise ValueError("Use either --report or --actions, not both")
+        if actions is not None:
+            from cfdpaper.publication.manuscript_revision import prepare_manuscript_revision
+
+            result = prepare_manuscript_revision(package, actions, output)
+            label = "Selected editing task ready; manuscript unchanged"
+        elif report is None:
+            result = prepare_manuscript_review(package, output)
+            label = "Whole-manuscript review package ready"
+        else:
+            result = import_manuscript_review(package, report, output)
+            label = "Complete review retained; manuscript unchanged"
+    except Exception as error:
+        _workflow_error(error)
+    console.print(f"{label}: {output} ({result['package_id']})", markup=False)
+
+
 def _placeholder(name: str) -> None:
     console.print(f"{name}: not implemented in this milestone")
     raise typer.Exit(code=2)
@@ -545,11 +578,10 @@ def _placeholder_command(name: str) -> Callable[[], None]:
 
 
 for _command_name in (
-    "review",
     "revise",
     "export",
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.8.0.",
+        help="Roadmap command; not available in v0.9.0.",
     )(_placeholder_command(_command_name))

@@ -232,8 +232,8 @@ def test_resolve_rounds_original_result_not_previous_display(tmp_path):
         ({"field": "area"}, "unsupported field"),
         ({"field": "__import__('os')"}, "unsupported field"),
         ({"field": "mean", "source_record": 2}, "scalar fields"),
-        ({"percentage": True}, "only supported for cv and shares"),
-        ({"field": "count", "percentage": True}, "only supported for cv and shares"),
+        ({"percentage": True}, "only supported for relative quantities"),
+        ({"field": "count", "percentage": True}, "only supported for relative quantities"),
         ({"places": -1}, "places"),
         ({"places": 13}, "places"),
         ({"places": 1.5}, "places"),
@@ -260,7 +260,7 @@ def test_regional_reference_uses_record_in_exact_group(reports, source_record):
 
 
 def test_partition_percentage_and_undefined_share(reports):
-    with pytest.raises(ValueError, match="only supported for cv and shares"):
+    with pytest.raises(ValueError, match="only supported for relative quantities"):
         resolve_table_result(
             reports,
             calculation_id="heat",

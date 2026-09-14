@@ -12,6 +12,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -659,6 +660,49 @@ def _bound_review_materials(local, entry, loaded, resolutions):
             "calculation source paths are relative to bound-sources/OWNER/.\n",
             encoding="utf-8",
         )
+
+
+def assert_manuscript_current(candidate_dir: Path) -> dict:
+    """Verify the reading snapshot against its portable authoring inputs.
+
+    Reuse assembly rather than maintaining a second interpretation of source and
+    numbering rules. The original project, previews and candidate stay untouched.
+    This checks the supplied snapshot, not a solver or an unavailable upstream file.
+    """
+    candidate_dir = Path(candidate_dir)
+    try:
+        with TemporaryDirectory(prefix="cfdpaper-review-") as temporary:
+            rebuilt = assemble_manuscript(
+                candidate_dir, candidate_dir / "drafts.json", Path(temporary) / "candidate"
+            )
+            names = ["manuscript.md", "section.json", "numbering.json", "writing-state.json"]
+            for folder in ("figures", "literature"):
+                names.extend(
+                    p.relative_to(rebuilt).as_posix()
+                    for p in (rebuilt / folder).rglob("*")
+                    if p.is_file()
+                )
+            # Standalone section packets must agree with their owning current sources.
+            names.extend(
+                p.relative_to(rebuilt).as_posix()
+                for p in (rebuilt / "sections").glob("*/review-packet/**/*")
+                if p.is_file() and p.suffix.lower() not in {".docx", ".pdf"}
+            )
+            for name in names:
+                old, new = candidate_dir / name, rebuilt / name
+                if not old.is_file():
+                    raise ValueError(f"Changed manuscript material: {name}")
+                if old.suffix == ".json":
+                    equal = _read(old) == _read(new)
+                elif old.suffix == ".md":
+                    equal = old.read_text(encoding="utf-8") == new.read_text(encoding="utf-8")
+                else:
+                    equal = old.read_bytes() == new.read_bytes()
+                if not equal:
+                    raise ValueError(f"Changed manuscript material: {name}")
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        raise ValueError(f"Reassemble the manuscript before review: {exc}") from exc
+    return {"status": "current", "scope": "supplied candidate inputs and reading snapshot"}
 
 
 def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) -> Path:

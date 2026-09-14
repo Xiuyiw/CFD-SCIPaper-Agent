@@ -18,11 +18,38 @@ asking the author to provide them again. Match each record to its geometry, oper
 model and actual quantity; a test on one mesh direction or one case is not validation of all
 local diagnostics. Do not load or rerun a native solver solely to fill a prose template.
 
+For an unclear method, first identify whether its record was merely omitted, its definition
+conflicts with another record, or the evidence has not been established. A settings file can
+establish what was configured; a final history can establish what was monitored in that run;
+neither alone establishes the accuracy of every reported quantity. Follow the review reference's
+evidence-gap guidance rather than asking the author to supply the entire project again.
+
+Assess model applicability at the scope of the claim. A Reynolds number based on an inlet or
+another reference length does not determine every local flow regime in a branching, impinging
+or separated flow. Small wall-resolution measures such as y+ address near-wall discretization,
+not independent validation of the turbulence or transition model. Inherited settings are a
+documented modeling choice, not validation. First inspect the relevant available diagnostics;
+do not silently replace the closure, prescribe a universal regime threshold or launch a new
+simulation because one summary indicator appears unfavorable.
+
 Give definitions, units, control volumes, weighting and sampling for the quantities
 used later. Distinguish integrated rates from volumetric densities, and numerical
 convergence from mesh sensitivity and experimental validation. Identify conditions
 held fixed and deliberately varied so the comparison can be reproduced. Do not
 repeat all settings in prose when a compact table is clearer.
+
+Match convergence evidence to the actual reported operator and case. A monitored volume maximum
+cannot certify convergence of a surface maximum, spatial spread or regional mean merely because
+their final values are close. A residual target in code is not a completed history, conservation
+is not spatial-error control, and numerical verification is not physical validation. Preserve
+useful documented checks while stating their applicable quantity, sampling and operating scope.
+
+When a missing check limits transfer beyond the model, retain a properly bounded comparison if
+its inputs and outputs are otherwise supported. When a missing or conflicting physical
+definition determines the comparison itself, leave that claim unresolved rather than inventing
+a standard choice. Keep the request for the exact missing record in evidence_notes; do not turn
+Methods into an inventory of what the writing host received. Any resolved definition that changes
+a Results claim also requires rereading its dependent Abstract and Conclusions statements.
 
 Use the existing section draft JSON schema. Declare evidence IDs for paragraphs,
 tables and equations. Use `{{value:ID}}` for supplied or source-bound quantities;

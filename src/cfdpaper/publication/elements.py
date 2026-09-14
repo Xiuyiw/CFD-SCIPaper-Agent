@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -88,6 +90,26 @@ def math_xml(node: MathNode):
     from docx.oxml.ns import qn
 
     if node.kind in {"text", "symbol"}:
+        # Some OMML importers interpret a multi-letter symbol as a formula-language
+        # keyword (e.g. Re -> real part). Separate variable letters, retaining their
+        # math styling and the original character sequence.
+        if node.kind == "symbol" and len(node.text) > 1 and node.text.isalpha():
+            return [
+                element
+                for character in node.text
+                for element in math_xml(MathNode(kind="symbol", text=character))
+            ]
+        # Older importers escape parentheses before quoting normal-text runs. That
+        # exposes backslashes. Emit these punctuation segments as math, not prose.
+        if node.kind == "text" and any(char in node.text for char in "()"):
+            return [
+                element
+                for part in re.split(r"([()])", node.text)
+                if part
+                for element in math_xml(
+                    MathNode(kind="symbol" if part in {"(", ")"} else "text", text=part)
+                )
+            ]
         run = OxmlElement("m:r")
         if node.kind == "text":
             props, normal = OxmlElement("m:rPr"), OxmlElement("m:nor")
@@ -154,6 +176,24 @@ def add_table(document, table: SectionTable, style):
         raise ValueError(f"Table {table.table_id}: column widths exceed the text area")
     caption = document.add_paragraph(f"Table {table.table_id}. {table.caption}", style="Caption")
     caption.paragraph_format.keep_with_next = True
+
+    # Only bind tables whose conservative wrapped-text estimate occupies at most
+    # half a page. Long tables must remain free to paginate with repeated headers.
+    def lines(value, width):
+        chars = max(1, int(width * 72 / 25.4 / (style.caption_pt * 0.6)))
+        return sum(max(1, math.ceil(len(line) / chars)) for line in value.split("\n"))
+
+    height_pt = sum(
+        max(lines(value, width) for value, width in zip(values, widths, strict=True))
+        * style.caption_pt
+        * 1.2
+        + 6
+        for values in [table.columns, *table.rows]
+    )
+    height_pt += (lines(caption.text, available) + lines(table.note, available)) * (
+        style.caption_pt * 1.2
+    )
+    compact = height_pt <= (style.page_height_mm - 2 * style.margin_mm) * 72 / 25.4 / 2
     item = document.add_table(rows=1, cols=len(table.columns))
     item.autofit = False
     item.alignment = 1
@@ -171,12 +211,16 @@ def add_table(document, table: SectionTable, style):
         column.width = Mm(width)
     for row_index, values in enumerate([table.columns, *table.rows]):
         row = item.rows[0] if row_index == 0 else item.add_row()
+        row._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
         if row_index == 0:
             row._tr.get_or_add_trPr().append(OxmlElement("w:tblHeader"))
         for index, (cell, value, width) in enumerate(zip(row.cells, values, widths, strict=True)):
             cell.width = Mm(width)
             cell.text = value
             paragraph = cell.paragraphs[0]
+            paragraph.paragraph_format.keep_with_next = (
+                compact and row_index < len(table.rows)
+            ) or row_index == 0
             paragraph.alignment = 2 if row_index and index in table.numeric_columns else 0
             paragraph.paragraph_format.space_after = Pt(3)
             paragraph.paragraph_format.space_before = Pt(3)
@@ -191,7 +235,6 @@ def add_table(document, table: SectionTable, style):
                 cell._tc.get_or_add_tcPr().append(cell_borders)
     if table.note:
         # Keep the note with the final data row, not on an otherwise empty page.
-        item.rows[-1]._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
         for cell in item.rows[-1].cells:
             for paragraph in cell.paragraphs:
                 paragraph.paragraph_format.keep_with_next = True

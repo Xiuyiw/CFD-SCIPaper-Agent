@@ -9,7 +9,9 @@ from pathlib import Path
 
 
 def display_unit(unit: str) -> str:
-    """Typeset a small supported SI quotient without converting its numerical scale."""
+    """Typeset supported unit labels without converting their numerical scale."""
+    if unit == "degC":
+        return "°C"
     area = re.fullmatch(r"(m|cm|mm)(?:\^?2|²)", unit)
     if area:
         return f"{area[1]}²"
@@ -19,15 +21,50 @@ def display_unit(unit: str) -> str:
     return unit
 
 
-def calculate_table(path, *, operation, columns, group_by=None):
+def calculate_table(
+    path,
+    *,
+    operation,
+    columns,
+    group_by=None,
+    pair_by=None,
+    reference=None,
+    comparison=None,
+    units=None,
+    quantity_kind="ordinary",
+    temperature_reference=None,
+):
     """Apply an explicit calculation to every CSV row, retaining source row locations.
 
     Units and physical domains are declared by the caller, never inferred here.
     No rows are silently excluded and no unit conversion is performed.
     """
-    required = {"value"} if operation == "population" else {"area", "rate"}
-    if operation not in {"population", "partition"} or set(columns) != required:
-        raise ValueError("Use population/value or partition/area,rate columns")
+    scalar_ops = {"population", "scalar_select", "paired_change"}
+    required = {"value"} if operation in scalar_ops else {"area", "rate"}
+    if operation not in scalar_ops | {"partition"} or set(columns) != required:
+        raise ValueError("Use a scalar/value operation or partition/area,rate columns")
+    if operation == "paired_change":
+        if not all(isinstance(x, str) and x.strip() for x in (pair_by, reference, comparison)):
+            raise ValueError("Paired change requires pair_by, reference and comparison")
+        if reference == comparison:
+            raise ValueError("Reference and comparison must differ")
+        unit = (units or {}).get("value")
+        if not isinstance(unit, str):
+            raise ValueError("Paired change requires a declared value unit")
+        if quantity_kind not in {"ordinary", "absolute-temperature", "temperature-difference"}:
+            raise ValueError("Unknown quantity_kind")
+        if unit in {"degC", "°C", "C"} and quantity_kind != "absolute-temperature":
+            raise ValueError("Celsius values require absolute-temperature semantics")
+        if unit == "K" and quantity_kind == "ordinary":
+            raise ValueError("Declare whether K is absolute-temperature or temperature-difference")
+        if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
+            raise ValueError("Absolute temperature requires Celsius or Kelvin units")
+        if temperature_reference is not None and (
+            quantity_kind != "absolute-temperature"
+            or type(temperature_reference) not in (float, int)
+            or not math.isfinite(temperature_reference)
+        ):
+            raise ValueError("temperature_reference requires a finite absolute-temperature origin")
     if len(set(columns.values())) != len(columns):
         raise ValueError("Calculation roles require distinct columns")
     rows = read_numeric_table(path, list(columns.values()))
@@ -41,11 +78,40 @@ def calculate_table(path, *, operation, columns, group_by=None):
         groups.setdefault(group, []).append((index, row))
     results = []
     for name, items in groups.items():
+        if operation == "scalar_select" and len(items) != 1:
+            raise ValueError(f"Scalar selection requires exactly one record in group {name!r}")
+        if operation == "paired_change":
+            chosen = []
+            for member in (reference, comparison):
+                matches = [(n, r) for n, r in items if r.get(pair_by) == member]
+                if len(matches) != 1:
+                    raise ValueError(f"Group {name!r}: expected one record for {member!r}")
+                chosen.extend(matches)
+            items = chosen
         values = {key: [r[column] for _, r in items] for key, column in columns.items()}
         if any(v is None for sequence in values.values() for v in sequence):
             result, status = None, "missing-values"
         elif operation == "population":
             result, status = population_summary(values["value"]), "computed"
+        elif operation == "scalar_select":
+            result, status = {"value": values["value"][0]}, "computed"
+        elif operation == "paired_change":
+            baseline, compared = values["value"]
+            delta = compared - baseline
+            denominator = baseline
+            if quantity_kind == "absolute-temperature":
+                denominator = (
+                    None if temperature_reference is None else baseline - temperature_reference
+                )
+            ratio = delta / denominator if denominator else None
+            if not math.isfinite(delta) or (ratio is not None and not math.isfinite(ratio)):
+                raise ValueError("Paired calculation produced a nonfinite result")
+            result = {
+                "difference": delta,
+                "relative_change": ratio,
+                "relative_reduction": -ratio if ratio is not None else None,
+            }
+            status = "computed"
         else:
             result = partition_summary(values["area"], values["rate"])
             # Temperature consistency is a separate calculation requiring more inputs.
@@ -186,6 +252,8 @@ def resolve_table_result(
     report = matches[0]
     fields = {
         "population": {"count", "sum", "mean", "cv"},
+        "scalar_select": {"value"},
+        "paired_change": {"difference", "relative_change", "relative_reduction"},
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
     }
     operation = report.get("operation")
@@ -197,8 +265,8 @@ def resolve_table_result(
             raise ValueError(f"{location}: source_record must be a CSV record number >= 2")
     elif source_record is not None:
         raise ValueError(f"{location}: scalar fields do not accept source_record")
-    if percentage and field not in {"cv", "shares"}:
-        raise ValueError(f"{location}: percentage is only supported for cv and shares")
+    if percentage and field not in {"cv", "shares", "relative_change", "relative_reduction"}:
+        raise ValueError(f"{location}: percentage is only supported for relative quantities")
     groups = [item for item in report["groups"] if item.get("group") == group]
     if len(groups) != 1:
         raise ValueError(f"{location}: expected one exact group, found {len(groups)}")
@@ -229,13 +297,15 @@ def resolve_table_result(
     if type(raw_value) not in (int, float) or not math.isfinite(raw_value):
         raise ValueError(f"{location}: missing or nonfinite numeric value")
     units = report.get("units", {})
-    required_units = {"value"} if operation == "population" else {"area", "rate"}
+    required_units = {"area", "rate"} if operation == "partition" else {"value"}
     if any(not isinstance(units.get(role), str) for role in required_units):
         raise ValueError(f"{location}: missing declared role units")
-    if field in {"count", "cv", "shares"}:
+    if field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:
         unit = ""
-    elif field in {"sum", "mean"}:
+    elif field in {"sum", "mean", "value", "difference"}:
         unit = units["value"]
+        if field == "difference" and report.get("quantity_kind") == "absolute-temperature":
+            unit = "K"
     elif field in {"area", "rate"}:
         unit = units[field]
     else:

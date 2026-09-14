@@ -96,3 +96,103 @@ Detached section review packets include the relevant literature records, claim-s
 decisions and original text files. Reviewers can therefore check the cited passage without the
 parent manuscript directory. Unknown metadata stays unknown; the analytical note in this tutorial
 is not turned into a fictitious journal article by choosing a journal style.
+
+## Whole-manuscript external review (v0.9)
+
+This review route requires v0.9.0 or later; v0.8 supports the assembly examples above only.
+
+After assembling the unchanged candidate above, prepare the complete review folder:
+
+```text
+cfdpaper review my-source --package my-manuscript --output my-review
+```
+
+Upload the folder as an archive to your chosen reviewer and use its `review-prompt.md`.
+The package includes the whole reading text, global-to-local object mapping, paragraph
+locators and each section's source tables and relevant literature. No API key or initialized
+database is needed. If inputs changed since assembly, reassemble first; review export will
+not silently update the manuscript. Currentness refers to the supplied portable candidate,
+not an unavailable original solver file.
+
+Export Word/PDF using the existing writing command and include those previews for a visual
+review. Text-only material cannot establish page-format quality. A Word-only manual edit
+must first be reconciled with the authoring draft before generating a matching review snapshot.
+
+Save the full returned report, including all prose and appendices, then run:
+
+```text
+cfdpaper review my-source --package my-review --report external-report.md --output review-return
+```
+
+Text, Markdown and JSON reports are retained without requiring a shortened finding schema.
+PDF/DOCX originals can also be retained; readable extraction remains a host task where needed.
+Read the generated task and the entire original report, map findings to manuscript locations,
+and decide which suggestions are supported. Import does not edit the manuscript, establish
+author approval or start a journal revision. Keep disputed or ambiguous recommendations visible.
+The existing single-section JSON suggestion route is unchanged.
+
+### Selected editing tasks
+
+After reading the full report, the host prepares `actions.json` using the returned `package_id`
+and exact quotations. The author does not need to convert the review to JSON manually. Example:
+
+```json
+{
+  "package_id": "COPY_THE_RETURNED_PACKAGE_ID",
+  "actions": [{
+    "id": "wording-1",
+    "decision": "accept",
+    "report_quote": "COPY_THE_EXACT_REVIEW_PASSAGE",
+    "rationale": "The source supports a more precise local description.",
+    "instruction": "Clarify the selected clause without changing its values or tokens.",
+    "targets": [{
+      "section_id": "hydraulics",
+      "paragraph": 1,
+      "quote": "the analytical pressure drop increases"
+    }]
+  }]
+}
+```
+
+Replace the example report quotation with actual report text; it is not a fabricated review.
+`reject` and `defer` items retain their rationale without becoming editing tasks. Figure, table,
+equation and reference targets instead use `section_id`, `kind` and string `global_number` from
+locators.json. Optional `related_sections` maps section IDs to reasons for reconsidering their
+connected claims. A quote match establishes location, not scientific support or author approval.
+If a reference has several roles in the same section, also specify the intended `local_id`
+from locators.json; the program will not guess between them.
+
+```text
+cfdpaper review my-source --package review-return --actions actions.json --output editing-task
+```
+
+Read `editing-task/TASK.md`, edit the intended drafts in `editing-task/working`, then reuse:
+
+```text
+cfdpaper write my-source --artifact manuscript --package editing-task/working --draft editing-task/working/drafts.json --output revised-manuscript
+```
+
+The original manuscript and full report remain unchanged. This creates a copy of the reviewed
+version, not an automatic merge into later author edits. Inspect CHANGES and the changed scientific
+argument, preserve unrelated drafts, and generate a fresh Word/PDF. The task itself neither edits
+prose nor certifies that a recommendation was correctly implemented.
+
+For a scientific interpretation or definition change, an accepted action may also set
+`"trace_evidence": true`. The task lists paragraphs, tables and equations sharing explicitly
+bound owner evidence, including Abstract and Conclusions. These are rereading locations,
+not required edits or proof of semantic dependence; untagged prose still needs judgment.
+Leave this option off for wording and formatting changes. The bundled
+[review guidance](../../skills/cfd-evidence-writing/references/manuscript-review.md)
+distinguishes missing attachments, conflicting definitions and genuinely missing evidence.
+The [calculation guide](../../skills/cfd-evidence-writing/references/mechanism-subsections.md)
+describes `scalar_select`, exact `paired_change` comparisons and temperature-rise references.
+
+For a runnable software demonstration, after assembling `my-manuscript` above, run:
+
+```text
+python examples/literature-manuscript/review_example.py my-manuscript review-demo
+```
+
+It creates an explicitly synthetic report, shows cross-section evidence locations, relocates
+the editing task and applies one authored wording edit before reassembly. The original candidate
+and unrelated drafts remain unchanged. It does not invoke an AI or demonstrate scientific review.

@@ -44,6 +44,14 @@ If a normalized index rises while its absolute numerator falls, inspect the chan
 before describing stronger physical support. Use these comparisons when the supplied data support
 them, not as a required paragraph pattern.
 
+Before assigning an overall ranking such as more source-sensitive or more uniform, read the
+available complementary responses: a peak, regional mean and spatial spread may order designs
+differently. Name the response being ranked and explain the spatial support that makes the
+other response informative. When a relative advantage changes sharply, compare its absolute
+numerator and reference denominator; a ratio collapsing is not automatically a comparable loss
+of transport performance. Algebraically rearranged differences are not independent mechanism
+evidence. Do not invent mixing, covariance or transport budgets to bridge a gap in the fields.
+
 ## Keep quantitative statements well defined
 
 - A sum of cell-integrated rates differs from a sum of per-volume source densities; the latter
@@ -159,6 +167,38 @@ absolute mean, equal record weights). `partition` provides total `area`, total `
 total heat is 14 W and total mean flux is 2.8 W/m^2. Regional fluxes are 4 and 2 W/m^2:
 the higher local intensity and the larger area belong to different regions, so read both when
 explaining their integrated contributions.
+
+For one exported scalar per group, use `scalar_select` with `columns: {"value": "column"}`;
+it requires exactly one record and provides field `value`, with no statistical CV. Do not treat
+record-level population statistics as solver uncertainty or native field spatial statistics.
+
+For two records of the SAME defined quantity, use `paired_change`. For example, on CSV columns
+`load,configuration,spread_K`, declare:
+
+```json
+{
+  "id": "spread-comparison", "source": "sources/spread.csv",
+  "operation": "paired_change", "columns": {"value": "spread_K"},
+  "units": {"value": "K"}, "quantity_kind": "temperature-difference",
+  "domain": "Area-weighted spatial SD over the same interface",
+  "group_by": "load", "pair_by": "configuration",
+  "reference": "baseline", "comparison": "modified"
+}
+```
+
+Each group must contain exactly one record for each selected identity. Additional configurations
+are not averaged into this pair. `difference` is comparison minus reference; `relative_change`
+divides that difference by the reference, and `relative_reduction` is its negative. The latter two
+support `percentage: true` in a result_ref. Both source records are retained and assembly recomputes
+the pair from the supplied CSV, not a precomputed ratio column. Use actual condition keys and the
+same operator/domain/weighting in both records; selectors do not establish physical comparability.
+
+Declare `quantity_kind: "absolute-temperature"` for absolute °C or K values. Differences then
+report K. Relative changes remain unavailable unless `temperature_reference` supplies an explicit
+origin in the same temperature scale, such as inlet temperature; the denominator is the reference
+temperature minus that origin. Describe it as a temperature-rise comparison. Spatial temperature
+SD and temperature differences use `temperature-difference`; other quantities use `ordinary`.
+A missing selected value or zero denominator stays unavailable, not zero improvement.
 
 The host draft uses the same evidence IDs in prose and captions. This minimal synthetic draft
 demonstrates the binding; develop the physical argument from the actual figures for a real study:

@@ -85,5 +85,89 @@ def test_nested_flow_accents_and_table_note_pagination():
     table = document.tables[0]
     assert table.rows[-1]._tr.find(qn("w:trPr")).find(qn("w:cantSplit")) is not None
     assert table.rows[-1].cells[0].paragraphs[0].paragraph_format.keep_with_next is True
-    assert table.rows[-2].cells[0].paragraphs[0].paragraph_format.keep_with_next is None
+    assert table.rows[-2].cells[0].paragraphs[0].paragraph_format.keep_with_next is True
     assert document.paragraphs[-1].text == "Definition."
+
+
+@pytest.mark.parametrize("value", ["Re", "Im", "Nu"])
+def test_multi_letter_symbols_are_not_importer_keywords(value):
+    pytest.importorskip("docx")
+    from docx.oxml.ns import qn
+
+    node = MathNode(kind="sub", children=[symbol(value), symbol("D")])
+    xml = math_xml(node)[0]
+    base = xml.find(qn("m:e"))
+    assert [item.text for item in base.iter(qn("m:t"))] == list(value)
+    assert not list(base.iter(qn("m:nor")))
+    assert math_text(node) == f"{value}_(D)"
+
+
+@pytest.mark.parametrize("value", ["(", ")", "mean (local)"])
+def test_text_parentheses_do_not_receive_normal_text_escaping(value):
+    pytest.importorskip("docx")
+    from docx.oxml.ns import qn
+
+    node = MathNode(kind="text", text=value)
+    runs = math_xml(node)
+    assert "".join(run.find(qn("m:t")).text for run in runs) == value
+    for run in runs:
+        text = run.find(qn("m:t")).text
+        assert "\\" not in text
+        assert bool(list(run.iter(qn("m:nor")))) is (text not in {"(", ")"})
+    assert math_text(node) == value
+
+
+@pytest.mark.parametrize("rows,compact", [(6, True), (60, False)])
+@pytest.mark.parametrize("note", ["", "Definition."])
+def test_compact_tables_keep_all_rows_without_chaining_following_text(rows, compact, note):
+    docx = pytest.importorskip("docx")
+
+    from cfdpaper.publication.elements import add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    document = docx.Document()
+    add_table(
+        document,
+        SectionTable(
+            table_id="1",
+            caption="Data",
+            columns=["Case", "Value"],
+            rows=[[f"Case {i}", str(i)] for i in range(rows)],
+            after_section_id="s",
+            note=note,
+        ),
+        PublicationStyle(),
+    )
+    table = document.tables[0]
+    assert table.rows[0]._tr.xpath("./w:trPr/w:tblHeader")
+    for i, row in enumerate(table.rows):
+        assert row._tr.xpath("./w:trPr/w:cantSplit")
+        expected = bool(note) if i == rows else compact or i == 0
+        for cell in row.cells:
+            assert cell.paragraphs[0].paragraph_format.keep_with_next is expected
+    tail = document.add_paragraph("Following text.")
+    assert tail.paragraph_format.keep_with_next is None
+    assert [cell.text for cell in table.rows[-1].cells] == [f"Case {rows - 1}", str(rows - 1)]
+
+
+def test_few_rows_with_long_wrapped_text_are_not_forced_onto_one_page():
+    docx = pytest.importorskip("docx")
+    from cfdpaper.publication.elements import add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    document = docx.Document()
+    add_table(
+        document,
+        SectionTable(
+            table_id="1",
+            caption="Data",
+            columns=["Description"],
+            rows=[["Long text " * 200], ["Another row"], ["Last row"]],
+            after_section_id="s",
+            column_widths_mm=[30],
+        ),
+        PublicationStyle(),
+    )
+    assert (
+        document.tables[0].rows[1].cells[0].paragraphs[0].paragraph_format.keep_with_next is False
+    )

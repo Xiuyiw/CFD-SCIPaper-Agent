@@ -84,7 +84,7 @@ def test_qualify_maps_malformed_json_to_input_exit(tmp_path: Path) -> None:
     assert "Traceback" not in result.stdout
 
 
-def test_review_remains_a_roadmap_command() -> None:
-    result = runner.invoke(app, ["review"])
+def test_journal_revise_remains_a_roadmap_command() -> None:
+    result = runner.invoke(app, ["revise"])
     assert result.exit_code == 2
     assert "not implemented" in result.stdout

@@ -105,19 +105,29 @@ def _check_editable(path: Path):
         raise ValueError("draw.io source must contain uncompressed editable cells")
 
 
-def _check_preview(path: Path):
+def _check_preview(path: Path, final_width_mm: float) -> dict:
     if path.suffix.lower() not in {".png", ".tif", ".tiff"}:
         raise ValueError("Preview must be a PNG or TIFF image")
     with Image.open(path) as image:
         image.load()
         if min(image.size) < 2 or all(lo == hi for lo, hi in image.convert("RGB").getextrema()):
             raise ValueError("Preview is blank or too small")
+        width, height = image.size
+    return {
+        "width_px": width,
+        "height_px": height,
+        "final_width_mm": final_width_mm,
+        "final_height_mm": final_width_mm * height / width,
+        "effective_ppi": width * 25.4 / final_width_mm,
+    }
 
 
 def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
     """Copy declared sources and usable Skill guidance into a new host task package.
 
-    Input paths are relative to the JSON input. No rendering or external service is called.
+    Input paths are relative to the JSON input and retain their relative hierarchy under
+    sources/, so declared scripts, helpers and data keep working together after relocation.
+    No script is rewritten, executed, or scanned to guess undeclared dependencies.
     """
     input_path, output_dir = Path(input_path), Path(output_dir)
     task = _load(input_path, _Task)
@@ -128,7 +138,7 @@ def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
     with _stage(output_dir) as staged:
         for item, source in zip(task.sources, resolved, strict=True):
             item.original_path = item.path
-            item.path = f"sources/{item.id}/{source.name}"
+            item.path = (Path("sources") / item.original_path).as_posix()
             target = staged / item.path
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
@@ -148,6 +158,9 @@ def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
             "label edit change only that label, not data, layout or other styles.\n"
             "Image generation is optional composition exploration only, never a data source.\n"
             "Keep paths relative to this package and source dependencies in sources/. "
+            "Declared input paths retain their hierarchy under sources/; source IDs do not "
+            "determine paths. Resolve script inputs from __file__, not the shell directory. "
+            "Include required native fields and helper modules, not only the final PNG. "
             "Return delivery.json following delivery-template.json, with real editable files, "
             "a nonblank PNG/TIFF preview and caption. Include other exports/dependencies in "
             "exports. Do not list unchanged sources/ files as delivery artifacts; they are "
@@ -202,7 +215,7 @@ def import_figure_task(package_dir: Path, delivery_path: Path, output_dir: Path)
         raise ValueError("Data and hybrid deliveries require the data plotting script")
     if task.kind == "schematic" and not suffixes.intersection({".svg", ".drawio"}):
         raise ValueError("Schematic deliveries require editable SVG or draw.io")
-    _check_preview(paths[delivery.preview])
+    preview_geometry = _check_preview(paths[delivery.preview], task.final_width_mm)
     with _stage(output_dir) as staged:
         for name, path in [*originals, *paths.items()]:
             destination = staged / name
@@ -218,6 +231,7 @@ def import_figure_task(package_dir: Path, delivery_path: Path, output_dir: Path)
                 "status": "imported_candidate",
                 "scientific_approval": False,
                 "checks": {"editable_syntax": True, "preview_decoded_nonblank": True},
+                "preview_geometry": preview_geometry,
                 "sources": [source.model_dump() for source in task.sources],
             },
         )

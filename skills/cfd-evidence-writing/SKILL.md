@@ -80,7 +80,9 @@ in full; it guides single-figure reasoning and multi-evidence synthesis without 
    and truthful image-observation status. Preparation does not generate this scientific draft.
    If present, read `table-results.json` before writing. Bind calculated metric evidence with
    `result_ref`, omitting manual `value` and `unit`; use `{{value:ID}}` in paragraphs and captions.
-   Assembly recomputes these values from the package CSVs. Population CV uses
+   Assembly recomputes these values from the package CSVs. Use `scalar_select` for one exported
+   value and `paired_change` for a named two-record contrast; their definitions and temperature
+   handling are in the mechanism subsection reference. Population CV uses
    equal record weights; partition sums refer to supplied regions, not automatically the full
    physical surface. Use the offline [table example](references/mechanism-subsections.md#exported-table-example)
    for declarations, source records and numeric selection.
@@ -153,6 +155,24 @@ domains, operators and comparisons used in Results; Results should not repeatedl
 definitions. Keep the shared spine/terms current. Source or definition changes require a fresh
 scientific reading of dependent claims, not only numeric replacement. Word-only edits are not
 automatically imported: reconcile them with the authoring draft before exporting again.
+
+## Whole-manuscript review
+
+For a complete candidate use `cfdpaper review PROJECT --package CANDIDATE --output REVIEW_PACKAGE`.
+Read [manuscript-review.md](references/manuscript-review.md) and the generated review prompt.
+Give the external reader the whole package, not only selected results or a short finding list.
+Use the global manuscript numbering and paragraph locators when discussing section-local evidence.
+Provide matching Word/PDF pages for formatting assessment; text inspection cannot replace it.
+Return the full original report with `--package REVIEW_PACKAGE --report REPORT --output REVIEW_RETURN`.
+Read every finding in context before proposing targeted changes; preserve disagreement and unresolved
+definitions. Imported recommendations do not authorize changes or start the journal revision path.
+For selected edits, the same reference describes `--actions`: the host maps complete-report
+quotations to current paragraph/object locators, then works in a separate ordinary manuscript copy.
+Preserve unselected drafts and reassemble; task generation is not automatic scientific revision.
+For a scientific definition or interpretation change, use the reference's `trace_evidence`
+option to locate other declared uses. Read those passages before deciding what to revise;
+follow the same reference to separate a missing attachment, a definition conflict and genuinely
+missing scientific evidence. Do not activate this wider reading for a local formatting change.
 
 ## Manuscript paragraph and page formatting
 

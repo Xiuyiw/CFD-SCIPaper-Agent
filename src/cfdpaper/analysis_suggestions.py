@@ -13,7 +13,7 @@ import shutil
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, StrictStr
+from pydantic import Field, StrictStr, model_validator
 
 from cfdpaper.adapters.csv import CSVAdapter, _split_header
 from cfdpaper.publication.section import (
@@ -39,7 +39,15 @@ class _Comparison(_Record):
     scope: str
 
 
-class _Calculation(_TableCalculation):
+class _Calculation(_Record):
+    # Proposal comparison is a scientific qualification, not a paired-row selector.
+    id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
+    source: str
+    operation: Literal["population", "partition"]
+    columns: dict[str, StrictStr]
+    units: dict[str, StrictStr]
+    domain: str
+    group_by: str | None = None
     definition_source: _Definition
     comparison: _Comparison
     member_id: list[StrictStr] = Field(min_length=1)
@@ -47,6 +55,16 @@ class _Calculation(_TableCalculation):
     expected_groups: list[StrictStr] | None = None
     interpretation_limits: list[StrictStr] = Field(min_length=1)
     missing_questions: list[StrictStr] = Field(default_factory=list)
+
+    def table_calculation(self) -> _TableCalculation:
+        return _TableCalculation.model_validate(
+            self.model_dump(include=set(_TableCalculation.model_fields) - {"comparison"})
+        )
+
+    @model_validator(mode="after")
+    def explicit_definition(self):
+        self.table_calculation()
+        return self
 
 
 class _Metric(_Record):
@@ -315,9 +333,7 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
             raise ValueError(f"{calc.id}: invalid expected member identities")
         if any(actual != expected for actual in members.values()):
             raise ValueError(f"{calc.id}: missing or unexpected members in declared groups")
-    base = _TableCalculation.model_validate(
-        calc.model_dump(include=set(_TableCalculation.model_fields))
-    ).model_dump()
+    base = calc.table_calculation().model_dump()
     result = calculate_table(
         source, operation=calc.operation, columns=calc.columns, group_by=calc.group_by
     )
@@ -421,8 +437,7 @@ def compile_analysis(
         ),
         "source_files": sources,
         "table_calculations": [
-            calc.model_dump(include=set(_TableCalculation.model_fields))
-            for calc in chosen.calculations
+            calc.table_calculation().model_dump() for calc in chosen.calculations
         ],
         "evidence": evidence,
         "figures": [figure.model_dump() for figure in chosen.figures],

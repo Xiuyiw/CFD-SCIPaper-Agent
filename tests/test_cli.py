@@ -73,7 +73,7 @@ def test_inspect_discovers_and_indexes_files_then_status_reports_counts(tmp_path
 
 
 def test_remaining_roadmap_commands_are_explicitly_unimplemented() -> None:
-    for command in ("review", "revise", "export"):
+    for command in ("revise", "export"):
         result = runner.invoke(app, [command])
 
         assert result.exit_code != 0
@@ -85,10 +85,10 @@ def test_top_level_help_labels_unavailable_commands_as_roadmap() -> None:
 
     assert result.exit_code == 0, result.stdout
     normalized = " ".join(_plain_cli_text(result.stdout).split())
-    for command in ("review", "revise", "export"):
-        assert f"{command} Roadmap command; not available in v0.8.0." in normalized
-    for command in ("qualify", "analyze", "figure", "write"):
-        assert f"{command} Roadmap command; not available in v0.8.0." not in normalized
+    for command in ("revise", "export"):
+        assert f"{command} Roadmap command; not available in v0.9.0." in normalized
+    for command in ("qualify", "analyze", "figure", "write", "review"):
+        assert f"{command} Roadmap command; not available in v0.9.0." not in normalized
 
 
 def prepared_cli_project(tmp_path: Path) -> ProjectStore:

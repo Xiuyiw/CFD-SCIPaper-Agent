@@ -112,6 +112,8 @@ relationships; distinguish hypotheses from measured observations. A concept illu
 be passed off as a CFD field. Keep original field images unchanged in mixed layouts.
 
 Return `delivery-template.json` with the actual editable source files, raster preview and caption.
+For field-based plots, follow the native-field dependency and relocated-script procedure in the
+external-tool reference. Carry the actual selected arrays/geometry/helpers, not just the preview.
 Import copies these files; it does not run arbitrary returned code, generate the figure, judge
 scientific truth or record author approval. Inspect the real image at intended print size. If a
 tool is unavailable, retain the task and report the missing backend; do not substitute a fabricated
