@@ -12,7 +12,7 @@ from cfdpaper.publication.manuscript_review import (
     import_manuscript_review,
     prepare_manuscript_review,
 )
-from cfdpaper.publication.manuscript_revision import prepare_manuscript_revision
+from cfdpaper.publication.manuscript_revision import _evidence_links, prepare_manuscript_revision
 
 
 def read(path):
@@ -124,6 +124,109 @@ def test_full_return_raw_mapping_and_working_copy_preserved(review_return, mappi
     assert (task / "skills/cfd-evidence-writing/references/manuscript-review.md").is_file()
     assert "[CFD evidence writing](skills/cfd-evidence-writing/SKILL.md)" in text
     assert "(skills/cfd-evidence-writing/references/manuscript-review.md)" in text
+
+
+def test_scientific_action_finds_bound_summary_passages_without_editing(
+    review_return, mapping, tmp_path
+):
+    mapping["actions"][0]["trace_evidence"] = True
+    before = files(review_return)
+    result, task = prepare(review_return, mapping, tmp_path)
+    uses = result["actions"][0]["evidence_uses"]
+    paragraphs = [u for u in uses if u["kind"] == "paragraph"]
+    assert {"hydraulics", "abstract", "conclusion"} <= {u["section_id"] for u in paragraphs}
+    assert "introduction" not in {u["section_id"] for u in paragraphs}
+    assert all(u["owner_evidence"] for u in uses)
+    for use in paragraphs:
+        path = task / use["draft_path"]
+        assert path.is_file()
+        assert use["evidence_ids"] == sorted(set(use["evidence_ids"]))
+        assert all(owner.startswith("hydraulics/") for owner in use["owner_evidence"])
+    assert "Declared evidence links" in (task / "TASK.md").read_text(encoding="utf-8")
+    assert files(review_return) == before
+    assert all("evidence_uses" not in a for a in result["actions"][1:])
+
+
+def test_wording_only_action_does_not_expand_into_evidence_review(review_return, mapping, tmp_path):
+    result, task = prepare(review_return, mapping, tmp_path)
+    assert "evidence_uses" not in result["actions"][0]
+    assert "Declared evidence links" not in (task / "TASK.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("value", ["true", 1, None])
+def test_trace_request_is_a_boolean(review_return, mapping, tmp_path, value):
+    mapping["actions"][0]["trace_evidence"] = value
+    with pytest.raises(ValueError, match="trace_evidence"):
+        prepare(review_return, mapping, tmp_path)
+
+
+@pytest.mark.parametrize("kind", ["table", "equation", "figure", "reference"])
+def test_object_evidence_links_follow_local_id_and_bindings(review_return, mapping, tmp_path, kind):
+    obj = next(
+        o for o in read(review_return / "snapshot/locators.json")["objects"] if o["kind"] == kind
+    )
+    action = mapping["actions"][0]
+    action["trace_evidence"] = True
+    action["targets"] = [{k: obj[k] for k in ("section_id", "kind", "global_number", "local_id")}]
+    result, task = prepare(review_return, mapping, tmp_path)
+    uses = result["actions"][0]["evidence_uses"]
+    assert uses
+    assert any(u["section_id"] == obj["section_id"] for u in uses)
+    for use in uses:
+        draft = read(task / use["draft_path"])
+        field, index = use["draft_pointer"].strip("/").split("/")
+        assert set(use["evidence_ids"]) <= set(draft[field][int(index)]["evidence_ids"])
+
+
+def test_deferred_trace_does_not_create_active_evidence_task(review_return, mapping, tmp_path):
+    action = mapping["actions"][2]
+    action["trace_evidence"] = True
+    action["evidence_uses"] = [{"section_id": "invented", "owner_evidence": ["invented/value"]}]
+    result, task = prepare(review_return, mapping, tmp_path)
+    assert "evidence_uses" not in result["actions"][2]
+    assert "invented/value" not in (task / "TASK.md").read_text(encoding="utf-8")
+
+
+def test_summary_target_resolves_back_to_owning_result(review_return, mapping, tmp_path):
+    paragraph = next(
+        p
+        for p in read(review_return / "snapshot/locators.json")["paragraphs"]
+        if p["section_id"] == "abstract"
+    )
+    action = mapping["actions"][0]
+    action["trace_evidence"] = True
+    action["targets"] = [
+        {"section_id": "abstract", "paragraph": paragraph["paragraph"], "quote": paragraph["text"]}
+    ]
+    result, _ = prepare(review_return, mapping, tmp_path)
+    uses = result["actions"][0]["evidence_uses"]
+    assert any(u["section_id"] == "hydraulics" for u in uses)
+    assert any(u["section_id"] == "conclusion" for u in uses)
+    assert not any(owner.startswith("abstract/") for u in uses for owner in u["owner_evidence"])
+
+
+def test_same_local_id_and_prose_are_not_an_evidence_binding(tmp_path):
+    entries, drafts, locators = [], {}, {"paragraphs": []}
+    for sid in ("result", "summary", "unrelated"):
+        entries.append(
+            {
+                "section_id": sid,
+                "evidence_bindings": {"q": "result/q"} if sid == "summary" else {},
+            }
+        )
+        drafts[sid] = f"{sid}.json"
+        paragraph = {"text": "The numerical value is 10.", "evidence_ids": ["q"]}
+        write(tmp_path / drafts[sid], {"paragraphs": [paragraph]})
+        locators["paragraphs"].append(
+            {"section_id": sid, "paragraph": 1, "text": paragraph["text"]}
+        )
+    write(tmp_path / "manuscript-input.json", {"sections": entries})
+    write(tmp_path / "numbering.json", {"sections": {}})
+    uses = _evidence_links(
+        tmp_path, [{"section_id": "result", "kind": "paragraph", "paragraph": 1}], drafts, locators
+    )
+    assert {u["section_id"] for u in uses} == {"result", "summary"}
+    assert all(u["owner_evidence"] == ["result/q"] for u in uses)
 
 
 @pytest.mark.parametrize(

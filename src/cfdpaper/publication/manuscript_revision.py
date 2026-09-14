@@ -95,6 +95,71 @@ def _target(target: dict, locators: dict, drafts: dict, manuscript: dict) -> dic
     }
 
 
+def _evidence_links(root: Path, targets: list[dict], drafts: dict, locators: dict) -> list[dict]:
+    """Find declared uses of targeted evidence, not inferred scientific dependencies."""
+    entries = _read(root / "manuscript-input.json")["sections"]
+    numbering = _read(root / "numbering.json")["sections"]
+    locations = {(p["section_id"], p["paragraph"]): p for p in locators["paragraphs"]}
+    records, selected = [], set()
+    for entry in entries:
+        sid = entry["section_id"]
+        draft = _read(_inside(root, drafts[sid]))
+        bindings = entry.get("evidence_bindings", {})
+
+        def owner(eid, bindings=bindings, sid=sid):
+            return bindings.get(eid, f"{sid}/{eid}")
+
+        own_targets = [t for t in targets if t["section_id"] == sid]
+        for target in own_targets:
+            if target["kind"] == "reference":
+                selected.add(owner(target["local_id"]))
+        for kind, field in (
+            ("paragraph", "paragraphs"),
+            ("table", "tables"),
+            ("equation", "equations"),
+        ):
+            for index, item in enumerate(draft.get(field, [])):
+                ids = sorted(set(item.get("evidence_ids", [])))
+                record = {
+                    "section_id": sid,
+                    "kind": kind,
+                    "draft_path": f"working/{drafts[sid]}",
+                    "draft_pointer": f"/{field}/{index}",
+                    "evidence_ids": ids,
+                    "owner_evidence": [owner(eid) for eid in ids],
+                }
+                if kind == "paragraph":
+                    record.update(paragraph=index + 1, text=locations[sid, index + 1]["text"])
+                    matched = any(
+                        (t["kind"] == kind and t["paragraph"] == index + 1)
+                        or (t["kind"] == "figure" and t["local_id"] in item.get("figure_ids", []))
+                        for t in own_targets
+                    )
+                else:
+                    local = item[f"{kind}_id"]
+                    record.update(local_id=local, global_number=numbering[sid][kind][local])
+                    matched = any(t["kind"] == kind and t["local_id"] == local for t in own_targets)
+                if matched:
+                    selected.update(record["owner_evidence"])
+                records.append(record)
+    uses = []
+    for record in records:
+        pairs = [
+            (eid, owner)
+            for eid, owner in zip(record["evidence_ids"], record["owner_evidence"], strict=True)
+            if owner in selected
+        ]
+        if pairs:
+            uses.append(
+                {
+                    **record,
+                    "evidence_ids": [eid for eid, _ in pairs],
+                    "owner_evidence": sorted({owner for _, owner in pairs}),
+                }
+            )
+    return uses
+
+
 def _task(result: dict) -> str:
     lines = [
         "# Selected manuscript editing task",
@@ -148,6 +213,29 @@ def _task(result: dict) -> str:
                 lines.append("")
         for sid, reason in action.get("related_sections", {}).items():
             lines += [f"Related section {sid}: {reason}", f"Draft: {result['drafts'][sid]}", ""]
+        if "evidence_uses" in action:
+            lines += [
+                "### Declared evidence links — reread, not automatic edits",
+                "",
+                "These locations share an explicitly bound evidence source with this target. "
+                "They are not proof of scientific dependence or evidence sufficiency. "
+                "Assess which interpretations require narrowing or new evidence; preserve "
+                "unaffected prose. Undeclared dependencies and free-text copies are not detected.",
+                "",
+            ]
+            for use in action["evidence_uses"]:
+                label = (
+                    f"paragraph {use['paragraph']}"
+                    if use["kind"] == "paragraph"
+                    else f"{use['kind']} {use['global_number']} (local {use['local_id']})"
+                )
+                lines += [
+                    f"- {use['section_id']}, {label}: {', '.join(use['owner_evidence'])}; "
+                    f"{use['draft_path']} {use['draft_pointer']}",
+                ]
+            if not action["evidence_uses"]:
+                lines.append("No declared evidence uses found; inspect the target in context.")
+            lines.append("")
     inactive = [a for a in result["actions"] if a["decision"] != "accept"]
     if inactive:
         lines += ["## Rejected/deferred decisions (not editing instructions)", ""]
@@ -217,6 +305,9 @@ def prepare_manuscript_revision(
         decision = action.get("decision")
         if decision not in {"accept", "reject", "defer"}:
             raise ValueError(f"Unknown action decision: {decision}")
+        trace = action.get("trace_evidence", False)
+        if type(trace) is not bool:
+            raise ValueError("trace_evidence must be a boolean")
         quote = _text(action, "report_quote")
         _text(action, "rationale")
         if quote not in report:
@@ -234,7 +325,13 @@ def prepare_manuscript_revision(
             if not isinstance(requested, list) or not requested:
                 raise ValueError("Accepted action requires at least one target")
             targets = [_target(t, locators, drafts, combined) for t in requested]
-        resolved.append({**action, "resolved_targets": targets})
+        item = {**action, "resolved_targets": targets}
+        if decision == "accept" and trace:
+            item["evidence_uses"] = _evidence_links(manuscript, targets, drafts, locators)
+        else:
+            # Output-only links must be computed, not inherited from a supplied action.
+            item.pop("evidence_uses", None)
+        resolved.append(item)
     assert_manuscript_current(manuscript)
     result = {
         "kind": "manuscript-revision-task",

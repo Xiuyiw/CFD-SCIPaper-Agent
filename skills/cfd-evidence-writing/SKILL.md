@@ -169,6 +169,10 @@ definitions. Imported recommendations do not authorize changes or start the jour
 For selected edits, the same reference describes `--actions`: the host maps complete-report
 quotations to current paragraph/object locators, then works in a separate ordinary manuscript copy.
 Preserve unselected drafts and reassemble; task generation is not automatic scientific revision.
+For a scientific definition or interpretation change, use the reference's `trace_evidence`
+option to locate other declared uses. Read those passages before deciding what to revise;
+follow the same reference to separate a missing attachment, a definition conflict and genuinely
+missing scientific evidence. Do not activate this wider reading for a local formatting change.
 
 ## Manuscript paragraph and page formatting
 

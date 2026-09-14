@@ -33,6 +33,32 @@ look for supplied complementary metrics with a different ordering and separate a
 from changing normalization denominators. Report a source-value mistake only if the manuscript
 actually uses it; an unused suspect source field is a latent input risk, not an observed paper error.
 
+## Resolve the evidence gap, not just its wording
+
+Locate the affected claim and its actual cases, model assumptions and quantity definition before
+asking for more material. Follow the existing source index to the smallest relevant setup record,
+metric definition, field manifest or final-history summary; do not rescan every historical run.
+Distinguish three situations in the existing action rationale or evidence notes:
+
+- **Available but omitted from the package:** identify the exact local record and its case/state.
+  Bring the required dependency into the existing source-file route when authorized. Finding a
+  file proves availability, not successful replay or correspondence to the reported final state.
+- **Conflicting definitions or provenance:** resolve the domain, operator, weighting, reference
+  and source state before choosing a value. Similar values or identical units do not reconcile
+  a surface/volume maximum, integrated rate/source density, or differently normalized comparison.
+  Do not average competing definitions or silently select the value that supports the story.
+- **Evidence not established:** name the particular inference that lacks support and the smallest
+  useful record, export, diagnostic or comparison that could address it. Request new solving or
+  a changed physical model only through the author's relevant decision, not as an automatic
+  consequence of a reviewer's suggestion.
+
+Then decide whether the supported result survives a narrower claim. A documented conditional
+model comparison can remain while an unisolated mechanism or broader design prediction is removed.
+If the unresolved definition, case comparability or source state determines the result itself,
+pause that affected claim or quantitative binding until resolved; continue unrelated supported
+work. Do not preserve an unsupported ranking merely by appending caveats. Keep acquisition details
+in notes and only consequential scientific limitations in the manuscript.
+
 ## Actual presentation
 
 The existing manuscript export route supplies Word/PDF separately. To include
@@ -99,6 +125,15 @@ For multiple local citation roles sharing that number, add the matching `local_i
 Optional `related_sections` maps section IDs to concrete reasons to reread connected claims.
 Keep rejected/deferred items and their reasons even if their target is still unresolved.
 
+For a scientific definition or interpretation correction, an accepted action may request
+`trace_evidence: true` to list other paragraphs, tables and equations
+sharing declared evidence with its targets through existing `evidence_bindings` and draft
+`evidence_ids`. The resulting `evidence_uses` are off by default; do not enable tracing for a
+wording-only or formatting edit. Rejected/deferred actions do not create active reading links.
+Use this as a reading aid, not an automatically accepted edit list. Shared evidence
+does not prove that another claim is affected, and an absent link does not prove independence:
+untagged qualitative summaries and wider model assumptions still require host judgment.
+
 ```text
 cfdpaper review PROJECT --package REVIEW_RETURN --actions actions.json --output EDIT_TASK
 ```
@@ -115,6 +150,13 @@ Results/Discussion/Abstract/Conclusions; declare the genuinely related sections 
 changing only displayed numbers. Do not rewrite the full paper to satisfy a local style suggestion.
 Keep interpretation, evidence needs and editing actions distinct. Missing physical evidence
 cannot be repaired by confident wording or by repeatedly stating limitations.
+
+After resolving or narrowing the body claim, read its Abstract and Conclusions uses together.
+Retain the same case scope, metric, denominator and qualification; remove a summary ranking or
+mechanism if its body support was withdrawn. A changed source value can update tokens without
+updating the meaning of a sentence. Conversely, a local wording clarification need not trigger
+rewriting unrelated sections. Record the concrete affected passages in the existing action or
+notes; do not create another tracking framework.
 
 ```text
 cfdpaper write PROJECT --artifact manuscript --package EDIT_TASK/working --draft EDIT_TASK/working/drafts.json --output REVISED_CANDIDATE

@@ -320,3 +320,40 @@ Word/PDF embedding remains unchanged and still needs later final-output verifica
 
 This batch changes reusable interchange behavior and the shipped figure guidance. It does not
 add a universal native-field analysis engine, modify the current manuscript, or release v0.9.
+
+## 10. Evidence gaps and linked scientific revision
+
+2026-09-14. Continue product improvement rather than private-manuscript polishing. Accepted
+scientific actions may set `trace_evidence: true` in the existing action input. Task preparation
+then uses current section bindings and draft evidence IDs to locate paragraphs, tables and
+equations using the targeted evidence. Paragraph and table/equation targets select their declared
+evidence; reference targets use the local citation evidence ID; figure targets use the evidence
+of explicitly associated paragraphs. Output includes actual draft locations and canonical owning
+evidence IDs, without equating same names, numeric values or prose with a scientific binding.
+
+This is optional rereading assistance, not semantic validation or editing permission. Normal
+wording/format changes do not expand into evidence review, and rejected/deferred actions cannot
+create active evidence-use lists. Free-text copies and undeclared model dependencies still need
+host judgment. No new database, public contract, approval stage or automatic source modification.
+
+Builtin writing guidance distinguishes omitted-but-available material, conflicting definitions,
+and unestablished scientific evidence. It directs the host to existing case-specific records,
+to preserve supported conditional results while narrowing unjustified inferences, and to suspend
+only the affected claim where its definition/comparison cannot be established. Summary statements
+must be reread with the revised body claim; adding caveats does not repair missing support.
+
+### Outcome
+
+62 revision/review/CLI/Skill tests pass; Ruff, formatting and Skill validation pass. Tests cover
+result-to-summary and summary-to-owner links, object targets, old action behavior, false matches
+from identical local IDs/prose, and no active tasks from deferred advice. Current private-trial
+lookup identifies nine paragraphs and one table across four sections sharing the chosen hotspot
+evidence. It does not edit or scientifically approve any of those passages. Three existing-review
+examples illustrate the host's evidence-gap decisions; they are not autonomous classification
+tests. P04's recorded diagnostic-versus-quantitative-source lessons were reused without reopening
+its source assets. No new CFD, manuscript rewrite, format regression or v0.9 release this batch.
+
+Next: assess v0.9 against its bounded software scope and consolidate the candidate. Keep the
+remaining model/mesh/literature and final-preview issues explicit; do not claim their closure
+from software tests, or turn a trial paper's unperformed scientific studies into endless product
+development. Any eventual release description must distinguish these levels.
