@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+
+- Whole-manuscript review packages with global paragraph/object locations and complete
+  report return, followed by selected host-editing tasks that preserve the reviewed original.
+- Optional shared-evidence locations for scientific revisions across Results, Discussion,
+  Abstract and Conclusions. Links identify passages to reread, not automatic edits.
+- `scalar_select` and exact `paired_change` calculations in section inputs, including
+  explicit temperature-rise references for relative changes of absolute temperatures.
+- Portable figure-source directory trees and preview resolution at the intended printed width.
+- A runnable synthetic whole-paper review/edit/reassembly example using the installed CLI.
+
+### Fixed
+
+- Native equation grouping and subscripts, short-table pagination, and Celsius display labels.
+- Material-analysis proposal comparison qualifications remain distinct from paired-record
+  selectors; existing population/partition proposals retain their format and validation.
+
+The v0.9 candidate supports host-led scientific review and revision. Model adequacy, literature
+support and submission readiness still require evidence-specific author assessment.
+
 ## [0.8.0] — 2026-09-13
 
 ### Added

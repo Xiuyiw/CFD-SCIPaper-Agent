@@ -45,6 +45,22 @@ def compile_data(package, data, output=None):
     return compile_analysis(package, path, "regional-transport", output or package.parent / "run")
 
 
+def test_proposal_comparison_survives_serialization_without_becoming_pair_selector(package):
+    from cfdpaper.analysis_suggestions import _Candidate
+    from cfdpaper.publication.section import _TableCalculation
+
+    data = proposal(package)
+    raw = data["candidates"][0]
+    chosen = _Candidate.model_validate(raw)
+    saved = chosen.model_dump()
+    assert saved["calculations"][0]["comparison"] == raw["calculations"][0]["comparison"]
+    assert _Candidate.model_validate(saved).model_dump() == saved
+    output = compile_data(package, data)
+    calc = json.loads(output.read_text(encoding="utf-8"))["table_calculations"][0]
+    assert "comparison" not in calc
+    assert _TableCalculation.model_validate(calc).model_dump() == calc
+
+
 def test_portable_package_compiles_current_values(package, tmp_path):
     moved = tmp_path / "moved"
     shutil.copytree(package, moved)

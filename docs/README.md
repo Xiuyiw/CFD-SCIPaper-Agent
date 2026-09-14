@@ -2,6 +2,9 @@
 
 ## Start here
 
+- [Literature-linked manuscript and whole-paper review](../examples/literature-manuscript/README.md):
+  seven-section assembly, shared sources, and the v0.9 development review/editing round trip.
+
 - [Existing-material analysis](../examples/material-analysis/README.md): start from exported
   tables and method notes, choose a host-proposed analysis and generate a bound subsection.
 - [Figure-grounded subsection](../examples/section-writing/README.md): use existing
@@ -32,7 +35,8 @@
 
 ## Releases
 
-- [v0.7.0 candidate](releases/v0.7.0.md)
+- [v0.8.0](releases/v0.8.0.md)
+- [v0.7.0](releases/v0.7.0.md)
 - [v0.6.0](releases/v0.6.0.md)
 - [v0.5.0](releases/v0.5.0.md)
 - [v0.4.0](releases/v0.4.0.md)

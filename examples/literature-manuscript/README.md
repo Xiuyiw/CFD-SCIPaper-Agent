@@ -174,3 +174,23 @@ The original manuscript and full report remain unchanged. This creates a copy of
 version, not an automatic merge into later author edits. Inspect CHANGES and the changed scientific
 argument, preserve unrelated drafts, and generate a fresh Word/PDF. The task itself neither edits
 prose nor certifies that a recommendation was correctly implemented.
+
+For a scientific interpretation or definition change, an accepted action may also set
+`"trace_evidence": true`. The task lists paragraphs, tables and equations sharing explicitly
+bound owner evidence, including Abstract and Conclusions. These are rereading locations,
+not required edits or proof of semantic dependence; untagged prose still needs judgment.
+Leave this option off for wording and formatting changes. The bundled
+[review guidance](../../skills/cfd-evidence-writing/references/manuscript-review.md)
+distinguishes missing attachments, conflicting definitions and genuinely missing evidence.
+The [calculation guide](../../skills/cfd-evidence-writing/references/mechanism-subsections.md)
+describes `scalar_select`, exact `paired_change` comparisons and temperature-rise references.
+
+For a runnable software demonstration, after assembling `my-manuscript` above, run:
+
+```text
+python examples/literature-manuscript/review_example.py my-manuscript review-demo
+```
+
+It creates an explicitly synthetic report, shows cross-section evidence locations, relocates
+the editing task and applies one authored wording edit before reassembly. The original candidate
+and unrelated drafts remain unchanged. It does not invoke an AI or demonstrate scientific review.

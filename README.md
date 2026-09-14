@@ -15,6 +15,11 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
+The **v0.9 development branch** adds whole-paper review, complete report return and selected
+editing tasks, paired source-table calculations and portable figure dependencies. See the
+[review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09-development-checkout)
+and [unreleased changes](CHANGELOG.md#unreleased). These additions are not in the released v0.8 wheel.
+
 ## Capability matrix
 
 | Capability | State | Current boundary |
@@ -34,6 +39,7 @@ the QoI and figure claim, and approve the final artifact.
 | Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate; reassembly preserves unedited drafts. Word-only edits must be reconciled into the draft. |
 | External drawing tasks | Available | Host-facing data, conceptual and hybrid tasks; import Python, SVG or uncompressed draw.io editing sources with previews and listed supporting files. Import does not run scripts or approve figures. |
+| Whole-paper review and selected editing | Experimental | v0.9 development checkout: complete reports, exact targets and optional shared-evidence locations travel with editable drafts; the host evaluates and implements changes. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
 
 Autonomous full-paper reasoning and journal revision are not provided: the host and author develop

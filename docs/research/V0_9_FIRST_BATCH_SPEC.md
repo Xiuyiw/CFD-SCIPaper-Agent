@@ -357,3 +357,47 @@ Next: assess v0.9 against its bounded software scope and consolidate the candida
 remaining model/mesh/literature and final-preview issues explicit; do not claim their closure
 from software tests, or turn a trial paper's unperformed scientific studies into endless product
 development. Any eventual release description must distinguish these levels.
+
+## 11. Candidate consolidation — 2026-09-14
+
+The bounded v0.9 software scope is implemented. A separate read-only scope review found no
+missing feature required by sections 1–10. Publication preparation, not another scientific
+feature batch, is the next step.
+
+| Scope | Current disposition |
+|---|---|
+| Real-material input, first draft and complete external feedback | Trial completed and retained privately; not a submission-ready or independently validated paper |
+| Whole-paper export, full report return and selected editing | Implemented; public installed-CLI round trip preserves original reports and unrelated drafts |
+| Paired calculations and cross-section evidence rereading | Implemented; exact source identities and explicit bindings, with host interpretation |
+| Portable figure dependencies and printed-resolution reporting | Implemented; known native-field script replay completed, not a generic solver adapter |
+| Word presentation repairs | Implemented and prior actual Word pages inspected; no new cross-engine visual claim |
+
+The first full regression uncovered a real integration error: material-analysis proposals use
+`comparison` for scientific qualification, while paired calculations use it for a row selector.
+Remove the proposal's inheritance collision, preserve its population/partition input format,
+and validate its calculation payload through the existing table model. Qualifications, units,
+definitions, source membership and missing-value checks remain active. The saved proposal keeps
+its scientific comparison object; the emitted table calculation does not receive that object.
+One obsolete test expecting `review` to be unimplemented now checks the still-roadmap `revise`.
+
+Verification: 57 targeted tests passed after this fix. The subsequent full run produced
+1512 passed, 5 skipped and one documentation-state assertion failure introduced by the updated
+README. After keeping the established capability-state vocabulary, all three public Quickstart
+tests passed. No production code changed after that full run. The five skips are two optional
+Pandoc checks and three Windows symlink-permission checks. Ruff lint/format and diff checks pass.
+
+A non-editable wheel installed outside the repository ran the analytical seven-section example,
+complete synthetic report return, evidence-linked task relocation, one explicit host wording edit,
+reassembly and DOCX export. Four sections shared the selected evidence; originals and unrelated
+drafts stayed unchanged. Word retains a table, native math and two images. The older material-analysis
+example also runs from this installation. The reusable review example is now part of installed-wheel
+CI; it is explicitly synthetic, not an independent AI or scientific-review result.
+
+Remaining release work: synchronize version/CITATION/CLI/CI and release-facing documentation,
+run the supported Windows/Linux Python 3.10–3.12 matrix and package job on the final candidate,
+then merge/tag/publish through the normal release route. This batch does not change the version,
+push, merge or publish. Private CFD sources and the trial manuscript remain unchanged.
+
+The trial's model applicability, hotspot-QoI mesh support, literature breadth and final composite
+preview remain author/research tasks. They constrain scientific claims about that trial; they
+are not prerequisites for shipping the bounded review/editing software with accurate limitations.
