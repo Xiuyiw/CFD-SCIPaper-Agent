@@ -11,11 +11,13 @@ import math
 import os
 import re
 import stat
+import zipfile
+from itertools import islice
 from pathlib import Path
 from typing import Any
 
 from .adapters import CSVAdapter, ExtractionRequest, SourceChangedError
-from .adapters.csv import source_sha256
+from .adapters.csv import _split_header, source_sha256
 
 MAX_FILES = 100
 MAX_ENTRIES = 2000
@@ -24,6 +26,7 @@ MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_TOTAL_BYTES = 32 * 1024 * 1024
 MAX_EXCERPT_LINES = 120
 MAX_EXCERPT_CHARS = 8000
+MAX_PREVIEW_ROWS = 20
 _DOCUMENTS = {".md", ".txt", ".json"}
 _FIGURES = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".svg", ".webp", ".gif"}
 _EXCLUDED = {
@@ -106,7 +109,7 @@ def _discover(root: Path, issues: list[dict]) -> list[Path]:
                             else:
                                 pending.append((path, depth + 1))
                         elif entry.is_file(follow_symlinks=False):
-                            if path.suffix.lower() in _DOCUMENTS | _FIGURES | {".csv"}:
+                            if path.suffix.lower() in _DOCUMENTS | _FIGURES | {".csv", ".npz"}:
                                 found.append(path)
                                 if len(found) >= MAX_FILES:
                                     _issue(
@@ -223,16 +226,112 @@ def _document(path: Path, relative: str) -> dict[str, Any]:
     }
 
 
+def _table_preview(path: Path, relative: str) -> dict[str, Any]:
+    """Inventory all rows in a stream, without materializing a large table."""
+    inventory = CSVAdapter().inventory(path)
+    rows = []
+    remaining = MAX_EXCERPT_CHARS
+    with path.open(encoding="utf-8-sig", newline="") as stream:
+        reader = csv.reader(stream)
+        headers = next(reader, [])
+        if not headers or any(not label for label in inventory.variables):
+            raise ValueError("CSV requires nonempty column headers")
+        for number, row in enumerate(islice(reader, MAX_PREVIEW_ROWS), 2):
+            length = sum(len(value) for value in row)
+            if length > remaining:
+                break
+            rows.append({"locator": f"row:{number}", "values": row})
+            remaining -= length
+    if source_sha256(path) != inventory.source_hash:
+        raise SourceChangedError("CSV changed while building its material preview")
+    return {
+        "path": relative,
+        "size_bytes": path.stat().st_size,
+        "row_count": inventory.row_count,
+        "profile_scope": "bounded-preview",
+        "columns": [
+            {
+                "name": header,
+                "label": _split_header(header)[0],
+                "unit": _split_header(header)[1],
+                "source": {"path": relative, "locator": "row:1", "column": index},
+            }
+            for index, header in enumerate(headers, 1)
+        ],
+        "preview_rows": rows,
+        "preview_truncated": len(rows) < inventory.row_count,
+        "source": {
+            "path": relative,
+            "header_locator": "row:1",
+            "data_locator": f"row:2-row:{inventory.row_count + 1}" if inventory.row_count else None,
+            "source_hash": inventory.source_hash,
+        },
+    }
+
+
+def _array_source(path: Path, relative: str) -> dict[str, Any]:
+    """Read NPY headers only; array payloads (including pickle) are never loaded."""
+    result: dict[str, Any] = {
+        "path": relative,
+        "format": "npz",
+        "size_bytes": path.stat().st_size,
+        "profile_scope": "array-metadata",
+        "arrays": [],
+        "source": {"path": relative, "source_hash": source_sha256(path)},
+    }
+    try:
+        from numpy.lib import format as npy_format
+    except ImportError:
+        result["metadata_issue"] = "NumPy unavailable; native file retained without array metadata."
+        return result
+    try:
+        with zipfile.ZipFile(path) as archive:
+            for member in archive.infolist():
+                if not member.filename.endswith(".npy"):
+                    continue
+                if len(result["arrays"]) >= MAX_ENTRIES:
+                    result["metadata_issue"] = "Array entry limit reached; metadata is partial."
+                    break
+                with archive.open(member) as stream:
+                    version = npy_format.read_magic(stream)
+                    if version == (1, 0):
+                        read_header = npy_format.read_array_header_1_0
+                    elif version == (2, 0):
+                        read_header = npy_format.read_array_header_2_0
+                    else:
+                        raise ValueError(f"Unsupported NPY header version: {version}")
+                    shape, _, dtype = read_header(stream)
+                result["arrays"].append(
+                    {
+                        "key": member.filename[:-4],
+                        "shape": list(shape),
+                        "dtype": str(dtype),
+                        "object_dtype": dtype.hasobject,
+                    }
+                )
+    except (OSError, ValueError, EOFError, zipfile.BadZipFile) as exc:
+        result["metadata_issue"] = str(exc)
+    if source_sha256(path) != result["source"]["source_hash"]:
+        raise SourceChangedError("NPZ changed while building its material profile")
+    return result
+
+
 def profile_materials(root: Path, *, paths: list[Path] | None = None) -> dict[str, Any]:
-    """Profile small exported files without changing originals or inferring physics.
+    """Profile exported files without changing originals or inferring physics.
 
     Relative explicit paths are rooted at ``root``. Explicit selection bypasses
-    default directory exclusions, but never root containment, links or read-size
-    limits. CSV statistics cover all rows in each accepted file. Issues report
-    unreadable files and omissions instead of silently presenting partial coverage.
+    default directory exclusions, but never root containment or links. Full CSV
+    statistics have a read-size budget; larger tables use streaming inventory and
+    bounded previews, retaining the complete source for downstream calculations.
     """
     root = Path(root).absolute()
-    result: dict[str, Any] = {"tables": [], "documents": [], "figures": [], "issues": []}
+    result: dict[str, Any] = {
+        "tables": [],
+        "documents": [],
+        "figures": [],
+        "arrays": [],
+        "issues": [],
+    }
     issues = result["issues"]
     try:
         if any(_is_link(part) for part in [root, *root.parents]):
@@ -272,6 +371,9 @@ def profile_materials(root: Path, *, paths: list[Path] | None = None) -> dict[st
             if suffix in _FIGURES:
                 result["figures"].append({"path": relative})
                 continue
+            if suffix == ".npz":
+                result["arrays"].append(_array_source(path, relative))
+                continue
             if suffix not in _DOCUMENTS | {".csv"}:
                 _issue(
                     issues, relative, "unsupported", "Select CSV, Markdown, text, JSON or images."
@@ -279,6 +381,9 @@ def profile_materials(root: Path, *, paths: list[Path] | None = None) -> dict[st
                 continue
             size = path.stat().st_size
             if size > MAX_FILE_BYTES or total_bytes + size > MAX_TOTAL_BYTES:
+                if suffix == ".csv":
+                    result["tables"].append(_table_preview(path, relative))
+                    continue
                 _issue(
                     issues,
                     relative,

@@ -6,7 +6,6 @@ mappings and source locations, not whether a method passage proves the proposal.
 
 from __future__ import annotations
 
-import csv
 import json
 import re
 import shutil
@@ -26,7 +25,11 @@ from cfdpaper.publication.section import (
     _write,
 )
 from cfdpaper.publication.style import PublicationStyle
-from cfdpaper.publication.table_evidence import calculate_table, resolve_table_result
+from cfdpaper.publication.table_evidence import (
+    calculate_table,
+    read_source_records,
+    resolve_table_result,
+)
 
 
 class _Definition(_Record):
@@ -49,6 +52,8 @@ class _Calculation(_Record):
     domain: str
     group_by: str | None = None
     weight_kind: Literal["area", "volume"] | None = None
+    region_fraction: StrictStr | None = None
+    region_complement: bool = Field(default=False, strict=True)
     quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
         "ordinary"
     )
@@ -63,6 +68,9 @@ class _Calculation(_Record):
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if self.region_fraction is None and not self.region_complement:
+            result.pop("region_fraction", None)
+            result.pop("region_complement", None)
         if self.operation != "weighted_population":
             result.pop("weight_kind", None)
             result.pop("quantity_kind", None)
@@ -117,8 +125,14 @@ HOST_PROMPT = """# Propose a small, useful scientific analysis
 Read skills/cfd-qoi-physics/SKILL.md and skills/cfd-figure-production/SKILL.md
 for analysis and visual-evidence selection; their legacy CLI applies only to that route.
 Read materials.json and the actual method/definition files under sources/. The
-summary is a reading aid, not physical semantics. Read the full source when its
-excerpt is truncated. Actually view relevant images if your host can; otherwise
+summary is a reading aid, not physical semantics. Large CSV profiles contain exact
+row counts and bounded previews, not full-table statistics; calculations must use
+the complete CSV at package_path. NPZ entries describe stored keys, shapes and dtypes,
+not physical units or domain. Read the native source only with explicit method-backed
+array mappings; never infer weights, mesh connectivity or conversions from key names.
+Only source_files/package_path entries are included; an issue may report an uncopied
+source. Read the full source when its excerpt is truncated.
+Actually view relevant images if your host can; otherwise
 say they were not viewed. Do not claim quantitative image measurements from sight.
 
 Write proposal.json using proposal-example.json and proposal-schema.json. Propose
@@ -149,6 +163,15 @@ excluded rows, solver execution or arbitrary code. A partition requires method-b
 regions and a stated coverage; a supplied subset is not silently the full domain.
 List expected_members/expected_groups when the method declares the full set so
 missing records can be detected. Units must be explicit; use "1" for dimensionless.
+
+For NPZ, columns name aligned one-dimensional array keys, not CSV headers. Use member_id
+["__index__"] for zero-based array identities when there is no identity array. No array flattening
+or unit conversion is inferred. weighted_population optionally accepts region_fraction naming
+an explicit dimensionless overlap-fraction column/key in [0,1]; region_complement=true uses its
+complement. Declare the region and how its fractions were obtained in the method definition.
+This weights supplied element values by their regional measure, not unresolved subelement fields.
+Do not turn centroid membership into exact geometric overlap. If fractions are unavailable,
+continue supported whole-domain analysis and identify the necessary regional extraction.
 
 Separate existing observations, calculable relationships, and interpretations
 requiring extra evidence. An identity/decomposition is not causal proof. Do not
@@ -207,14 +230,14 @@ def _source(root: Path, relative: str, *, packaged: bool) -> Path:
 
 
 def prepare_analysis(root: Path, output_dir: Path, *, question: str = "") -> Path:
-    """Copy profiled small sources and host instructions into a fresh portable package."""
+    """Copy complete sources and bounded profiles into a fresh portable package."""
     from cfdpaper.materials import profile_materials
 
     root, output_dir = Path(root).resolve(), Path(output_dir)
     materials = profile_materials(root)
     included = []
     with _stage(output_dir) as staged:
-        for category in ("tables", "documents", "figures"):
+        for category in ("tables", "documents", "figures", "arrays"):
             for item in materials.get(category, []):
                 original = item if isinstance(item, str) else item["path"]
                 source = _source(root, original, packaged=False)
@@ -317,33 +340,33 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
     if not "\n".join(lines[bounds[0] - 1 : bounds[-1]]).strip():
         raise ValueError(f"{calc.id}: definition locator contains no text")
     source = _source(package, calc.source, packaged=True)
-    CSVAdapter().inventory(source)  # Existing header and row-shape checks.
-    with source.open(encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream)
-        headers = reader.fieldnames or []
-        required = set(calc.columns.values()) | set(calc.member_id)
-        if calc.group_by:
-            required.add(calc.group_by)
-        if not required <= set(headers):
-            raise ValueError(f"{calc.id}: missing columns {sorted(required - set(headers))}")
-        if len(set(calc.member_id)) != len(calc.member_id) or any(
-            not name.strip() for name in calc.member_id
-        ):
-            raise ValueError(f"{calc.id}: member_id columns must be unique and nonblank")
-        for role, header in calc.columns.items():
-            _, unit = _split_header(header)
-            if unit is not None and unit != calc.units[role]:
-                raise ValueError(f"{calc.id}: declared unit conflicts with header {header!r}")
-        members: dict[str, set[tuple[str, ...]]] = {}
-        for line, row in enumerate(reader, 2):
-            identity = tuple((row[name] or "").strip() for name in calc.member_id)
-            group = (row[calc.group_by] or "") if calc.group_by else "all"
-            if not group.strip() or any(not value for value in identity):
-                raise ValueError(f"{calc.id}: missing group/member identity at CSV record {line}")
-            group_members = members.setdefault(group, set())
-            if identity in group_members:
-                raise ValueError(f"{calc.id}: duplicate member {identity} in group {group}")
-            group_members.add(identity)
+    is_array = source.suffix.lower() == ".npz"
+    if not is_array:
+        CSVAdapter().inventory(source)
+    required = set(calc.columns.values()) | set(calc.member_id)
+    if calc.group_by:
+        required.add(calc.group_by)
+    if calc.region_fraction:
+        required.add(calc.region_fraction)
+    rows = read_source_records(source, sorted(required))
+    if len(set(calc.member_id)) != len(calc.member_id) or any(
+        not name.strip() for name in calc.member_id
+    ):
+        raise ValueError(f"{calc.id}: member_id columns must be unique and nonblank")
+    for role, header in calc.columns.items():
+        _, unit = _split_header(header) if not is_array else (header, None)
+        if unit is not None and unit != calc.units[role]:
+            raise ValueError(f"{calc.id}: declared unit conflicts with header {header!r}")
+    members: dict[str, set[tuple[str, ...]]] = {}
+    for line, row in enumerate(rows, 0 if is_array else 2):
+        identity = tuple((row[name] or "").strip() for name in calc.member_id)
+        group = (row[calc.group_by] or "") if calc.group_by else "all"
+        if not group.strip() or any(not value for value in identity):
+            raise ValueError(f"{calc.id}: missing group/member identity at source record {line}")
+        group_members = members.setdefault(group, set())
+        if identity in group_members:
+            raise ValueError(f"{calc.id}: duplicate member {identity} in group {group}")
+        group_members.add(identity)
     if calc.expected_groups is not None and set(calc.expected_groups) != set(members):
         raise ValueError(f"{calc.id}: expected groups do not match observed groups")
     if calc.expected_members is not None:
@@ -361,6 +384,8 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
         units=calc.units,
         weight_kind=calc.weight_kind,
         quantity_kind=calc.quantity_kind,
+        region_fraction=calc.region_fraction,
+        region_complement=calc.region_complement,
     )
     if any(group["status"] != "computed" for group in result["groups"]):
         raise ValueError(f"{calc.id}: selected calculation has missing numeric values")

@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.10.1] — 2026-09-14
+
+### Improved
+
+- Large CSV sources remain available for analysis with streaming row inventory and bounded
+  previews instead of being rejected by the full-profile size budget.
+- NPZ metadata and explicitly mapped one-dimensional arrays feed analysis and source-bound
+  text/tables directly, without a host-created CSV conversion.
+- Area/volume-weighted statistics support supplied regional overlap fractions and their
+  complements, with the same regional definition used in plotting and table calculations.
+- Word keeps numeric signs and recognized value/unit groups together across line breaks.
+- A public synthetic array example covers regional statistics, relocation and source updates.
+
+Regional fractions must be supplied; this patch does not infer geometric intersections or
+claim improved autonomous scientific interpretation.
+
 ## [0.10.0] — 2026-09-14
 
 ### Added

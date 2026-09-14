@@ -37,6 +37,8 @@ def calculate_table(
     quantity_kind="ordinary",
     temperature_reference=None,
     weight_kind=None,
+    region_fraction=None,
+    region_complement=False,
 ):
     """Apply an explicit calculation to every CSV row, retaining source row locations.
 
@@ -98,7 +100,21 @@ def calculate_table(
             raise ValueError("temperature_reference requires a finite absolute-temperature origin")
     if len(set(columns.values())) != len(columns):
         raise ValueError("Calculation roles require distinct columns")
-    rows = read_numeric_table(path, list(columns.values()))
+    if region_fraction is not None:
+        if (
+            operation != "weighted_population"
+            or not isinstance(region_fraction, str)
+            or not region_fraction.strip()
+        ):
+            raise ValueError("A region fraction column is only supported for weighted_population")
+        if region_fraction in columns.values():
+            raise ValueError("Region fraction must be distinct from value and weight")
+    elif region_complement:
+        raise ValueError("Region complement requires a region fraction column")
+    numeric_columns = list(columns.values()) + ([region_fraction] if region_fraction else [])
+    rows = read_numeric_table(
+        path, numeric_columns, extra_columns=[key for key in (group_by, pair_by) if key]
+    )
     if not rows:
         raise ValueError("Calculation table is empty")
     groups = {}
@@ -129,7 +145,21 @@ def calculate_table(
         elif operation == "population":
             result, status = population_summary(values["value"]), "computed"
         elif operation == "weighted_population":
-            result = _weighted_population_summary(values["value"], values["weight"])
+            weights = values["weight"]
+            if region_fraction:
+                fractions = [r[region_fraction] for _, r in items]
+                if any(f is None or not math.isfinite(f) or not 0 <= f <= 1 for f in fractions):
+                    raise ValueError("Region fractions must be finite values in [0, 1]")
+                weights = [
+                    w * (1 - f if region_complement else f)
+                    for w, f in zip(weights, fractions, strict=True)
+                ]
+            selected_values = [
+                (v, w) for v, w in zip(values["value"], weights, strict=True) if w > 0
+            ]
+            if not selected_values:
+                raise ValueError(f"Group {name!r}: selected region has zero measure")
+            result = _weighted_population_summary(*zip(*selected_values, strict=True))
             status = "computed"
         elif operation == "scalar_select":
             result, status = {"value": values["value"][0]}, "computed"
@@ -159,7 +189,9 @@ def calculate_table(
         results.append(
             {
                 "group": name,
-                "csv_records": [n for n, _ in items],
+                ("array_indices" if Path(path).suffix.lower() == ".npz" else "csv_records"): [
+                    n - 2 if Path(path).suffix.lower() == ".npz" else n for n, _ in items
+                ],
                 "status": status,
                 "result": result,
             }
@@ -167,13 +199,50 @@ def calculate_table(
     return {"rows_read": len(rows), "groups": results}
 
 
-def read_numeric_table(path: Path, columns: list[str]) -> list[dict]:
-    """Read every row; blank numeric cells remain None, invalid cells raise."""
-    with Path(path).open(encoding="utf-8-sig", newline="") as stream:
+def read_source_records(path: Path, requested: list[str]) -> list[dict]:
+    """Read CSV records or explicitly selected, aligned one-dimensional NPZ arrays.
+
+    NPZ units and meanings are supplied by the caller. __index__ is the zero-based
+    element index; unrelated geometry arrays are neither flattened nor loaded.
+    """
+    path = Path(path)
+    if path.suffix.lower() == ".npz":
+        import numpy as np
+
+        with np.load(path, allow_pickle=False) as archive:
+            if "__index__" in archive.files:
+                raise ValueError("NPZ __index__ is reserved for element identity")
+            keys = set(requested) - {"__index__"}
+            if not keys or not keys <= set(archive.files):
+                raise ValueError("Missing requested NPZ array keys")
+            arrays = {key: archive[key] for key in keys}
+            if any(a.ndim != 1 or a.dtype.kind not in "biufUS" for a in arrays.values()):
+                raise ValueError(
+                    "NPZ calculation arrays must be one-dimensional numeric/text arrays"
+                )
+            sizes = {len(a) for a in arrays.values()}
+            if len(sizes) != 1:
+                raise ValueError("NPZ calculation arrays must have identical lengths")
+            return [
+                {**{key: str(a[i].item()) for key, a in arrays.items()}, "__index__": str(i)}
+                for i in range(sizes.pop())
+            ]
+    with path.open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        if not set(columns) <= set(reader.fieldnames or []):
-            raise ValueError("Missing requested numeric columns")
+        if not set(requested) <= set(reader.fieldnames or []):
+            raise ValueError(
+                "Missing requested numeric columns: missing columns "
+                + str(sorted(set(requested) - set(reader.fieldnames or [])))
+            )
         rows = list(reader)
+        if any(None in row or any(v is None for v in row.values()) for row in rows):
+            raise ValueError("CSV row shape does not match headers")
+        return rows
+
+
+def read_numeric_table(path: Path, columns: list[str], *, extra_columns=()) -> list[dict]:
+    """Read every row; blank numeric cells remain None, invalid cells raise."""
+    rows = read_source_records(path, [*columns, *extra_columns])
     for line, row in enumerate(rows, 2):
         for column in columns:
             raw = row[column]
@@ -346,7 +415,15 @@ def resolve_table_result(
     result = selected.get("result")
     if selected.get("status") != "computed" or not isinstance(result, dict):
         raise ValueError(f"{location}: result unavailable ({selected.get('status')})")
-    records = selected.get("csv_records")
+    array_source = "array_indices" in selected
+    raw_records = selected.get("array_indices" if array_source else "csv_records")
+    records = (
+        [i + 2 for i in raw_records]
+        if array_source
+        and isinstance(raw_records, list)
+        and all(type(i) is int for i in raw_records)
+        else raw_records
+    )
     if (
         not isinstance(records, list)
         or not records
@@ -402,7 +479,9 @@ def resolve_table_result(
         "unit": "%" if percentage else unit,
         "raw_value": raw_value,
         "source": source,
-        "csv_records": supporting_records,
+        ("array_indices" if array_source else "csv_records"): [n - 2 for n in supporting_records]
+        if array_source
+        else supporting_records,
         "calculation_id": calculation_id,
         "group": group,
         "field": field,

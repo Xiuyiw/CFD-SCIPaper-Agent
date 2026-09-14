@@ -22,7 +22,7 @@ def test_table_profile_preserves_headers_units_codes_and_all_row_statistics(tmp_
 
     profile = profile_materials(tmp_path)
 
-    assert set(profile) == {"tables", "documents", "figures", "issues"}
+    assert set(profile) == {"tables", "documents", "figures", "arrays", "issues"}
     table = profile["tables"][0]
     case, pressure, group, unknown, mixed = table["columns"]
     assert table["row_count"] == 9
@@ -193,8 +193,9 @@ def test_depth_limit_and_size_limit_do_not_imply_complete_profile(
     monkeypatch.setattr(materials, "MAX_DEPTH", 0)
     monkeypatch.setattr(materials, "MAX_FILE_BYTES", 10)
     profile = profile_materials(tmp_path)
-    assert profile["tables"] == []
-    assert {issue["code"] for issue in profile["issues"]} == {"depth_limit", "size_limit"}
+    assert profile["tables"][0]["row_count"] == 100
+    assert profile["tables"][0]["profile_scope"] == "bounded-preview"
+    assert {issue["code"] for issue in profile["issues"]} == {"depth_limit"}
 
 
 def test_total_read_limit_applies_to_explicit_paths_too(tmp_path: Path, monkeypatch) -> None:
@@ -203,8 +204,9 @@ def test_total_read_limit_applies_to_explicit_paths_too(tmp_path: Path, monkeypa
         (tmp_path / path).write_text("a\n1\n")
     monkeypatch.setattr(materials, "MAX_TOTAL_BYTES", 6)
     profile = profile_materials(tmp_path, paths=paths)
-    assert len(profile["tables"]) == 1
-    assert profile["issues"][0]["code"] == "size_limit"
+    assert len(profile["tables"]) == 2
+    assert profile["tables"][1]["profile_scope"] == "bounded-preview"
+    assert profile["issues"] == []
 
 
 def test_empty_table_has_no_fabricated_data_locator_or_extrema(tmp_path: Path) -> None:

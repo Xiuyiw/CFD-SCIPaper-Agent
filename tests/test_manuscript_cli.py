@@ -113,7 +113,7 @@ def test_three_section_cli_and_docx_preserve_structure_and_body_style(tmp_path, 
         assert len(shared) == 1
         assert text.count("Analytical example note") == 1
         assert text.count(f"constant properties [{shared[0]['number']}]") == 3
-    assert "6.4 Pa" in text and "19.2 Pa" in text
+    assert "6.4\u00a0Pa" in text and "19.2\u00a0Pa" in text
     assert "Figure 1" in text and "Figure 2" in text
     body = next(p for p in doc.paragraphs if p.text.startswith("The reference considers"))
     assert body.paragraph_format.space_before.pt == 0

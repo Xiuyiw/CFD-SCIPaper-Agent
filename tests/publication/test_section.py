@@ -199,7 +199,7 @@ def test_real_docx_editable_text_and_images(tmp_path):
     output = module.export_section_docx(section, tmp_path / "section.docx")
     with zipfile.ZipFile(output) as archive:
         xml = archive.read("word/document.xml").decode()
-        assert "1.2300e3 K" in xml and "First response" in xml
+        assert "1.2300e3\u00a0K" in xml and "First response" in xml
         assert "normalization" not in xml
         assert xml.count("<wp:inline") == 2
         assert any(name.startswith("word/media/") for name in archive.namelist())
@@ -471,7 +471,7 @@ def test_table_and_equation_use_bound_values_and_native_word_elements(tmp_path):
     out = api().export_section_docx(section, tmp_path / "native.docx")
     doc = docx.Document(out)
     assert len(doc.tables) == 1
-    assert doc.tables[0].cell(1, 1).text == "2.00 kg/s"
+    assert doc.tables[0].cell(1, 1).text == "2.00\u00a0kg/\u2060s"
     assert doc.tables[0].cell(1, 1).paragraphs[0].alignment == 2
     assert doc.tables[0].rows[0]._tr.xpath("./w:trPr/w:tblHeader")
     assert doc.element.xpath(".//m:oMath/m:sSub")

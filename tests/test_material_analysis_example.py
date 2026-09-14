@@ -45,8 +45,8 @@ def test_default_replay_binds_six_values_in_native_table(tmp_path):
     assert len(document.tables) == 1
     assert len(document.inline_shapes) == 0
     assert [[c.text for c in r.cells] for r in document.tables[0].rows][1:] == [
-        ["Reference", "5.00 m²", "50.00 W", "10.00 W m⁻²"],
-        ["Modified", "10.00 m²", "70.00 W", "7.00 W m⁻²"],
+        ["Reference", "5.00\u00a0m²", "50.00\u00a0W", "10.00\u00a0W\u00a0m⁻²"],
+        ["Modified", "10.00\u00a0m²", "70.00\u00a0W", "7.00\u00a0W\u00a0m⁻²"],
     ]
     body = next(p for p in document.paragraphs if p.text.startswith("The modified"))
     assert body.text == body.text.lstrip()

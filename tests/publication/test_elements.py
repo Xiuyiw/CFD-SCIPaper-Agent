@@ -3,6 +3,106 @@ import pytest
 from cfdpaper.publication.elements import MathNode, SectionTable, math_text, math_xml
 
 
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        ("Change: -5.51 K.", "Change: −\u20605.51\u00a0K."),
+        ("(-.51); +2.0 and -5", "(−\u2060.51); +\u20602.0 and −\u20605"),
+        ("-1.20e-3 Pa", "−\u20601.20e−\u20603\u00a0Pa"),
+        ("2E+4 W and 5.51 %", "2E+\u20604\u00a0W and 5.51\u00a0%"),
+        ("43.40 °C; 2.939 K", "43.40\u00a0°C; 2.939\u00a0K"),
+        ("5 W m^-2 K^-1", "5\u00a0W\u00a0m^−\u20602\u00a0K^−\u20601"),
+        ("1.2 m/s; 3 kg m⁻³", "1.2\u00a0m/\u2060s; 3\u00a0kg\u00a0m⁻³"),
+        ("5 mm and 4 minutes", "5\u00a0mm and 4 minutes"),
+    ],
+)
+def test_scientific_display_glues_signs_and_recognized_units(source, expected):
+    from cfdpaper.publication.elements import display_scientific_text
+
+    assert display_scientific_text(source) == expected
+    assert display_scientific_text(expected) == expected
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "Case-5.51 G1.3 ID_2E-4 run-123 1.2-3 v0.10.0 -5.51-case -5.51.dat",
+        "2026-09-14 2026/09/14 10:30",
+        "https://example.org/-5.51?unit=2e-3 https://example.org/5%20K",
+        "[1-3] [Smith-2025] [@paper-5.51] {{value:e-3}}",
+        "`x=-5.51 K` and ```x = -1.20e-3```",
+        r"$x=-5.51$ $$x=-5.51$$ \(x=-5.51\) \[x=-5.51\]",
+        "5 Kelvin 3 seconds; - value; thermal-support; x-5.51",
+    ],
+)
+def test_scientific_display_preserves_nonquantity_syntax(source):
+    from cfdpaper.publication.elements import display_scientific_text
+
+    assert display_scientific_text(source) == source
+
+
+def test_scientific_display_in_docx_does_not_mutate_table_source():
+    docx = pytest.importorskip("docx")
+    from cfdpaper.publication.elements import add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    table = SectionTable(
+        table_id="case-5",
+        caption="Change at 5 W",
+        after_section_id="results",
+        columns=["Case ID", "Change at 300 K"],
+        rows=[["ID-5.51", "-5.51 K"]],
+        note="Difference: -1.2e-3 Pa.",
+    )
+    original = table.model_dump()
+    document = docx.Document()
+    add_table(document, table, PublicationStyle())
+    assert table.model_dump() == original
+    assert document.paragraphs[0].text == "Table case-5. Change at 5\u00a0W"
+    assert document.tables[0].rows[0].cells[1].text == "Change at 300\u00a0K"
+    assert document.tables[0].rows[1].cells[0].text == "ID-5.51"
+    assert document.tables[0].rows[1].cells[1].text == "−\u20605.51\u00a0K"
+    assert document.paragraphs[-1].text == "Difference: −\u20601.2e−\u20603\u00a0Pa."
+
+
+def test_docx_body_and_figure_caption_use_display_only_typesetting(tmp_path):
+    import json
+
+    docx = pytest.importorskip("docx")
+    from docx.oxml.ns import qn
+    from PIL import Image
+
+    from cfdpaper.publication.section import export_section_docx
+
+    Image.new("RGB", (800, 500), "white").save(tmp_path / "plot.png")
+    prose = "Difference: -5.51 K [1-3]. Formula: "
+    data = {
+        "title": "Scientific display",
+        "paragraphs": [
+            {
+                "text": prose,
+                "figure_ids": ["f-5"],
+                "runs": [
+                    {"text": prose},
+                    {"math": {"kind": "text", "text": "-5.51 K"}},
+                ],
+            }
+        ],
+        "figures": [{"id": "f-5", "path": "plot.png", "caption": "Response at 5 W."}],
+        "references": [],
+        "bindings": [{"evidence_id": "e-5", "value": "-5.51", "unit": "K"}],
+    }
+    source = tmp_path / "section.json"
+    source.write_text(json.dumps(data), encoding="utf-8")
+    original = source.read_bytes()
+    output = export_section_docx(tmp_path, tmp_path / "display.docx", layout="near-reference")
+    document = docx.Document(output)
+    assert document.paragraphs[1].text == "Difference: −\u20605.51\u00a0K [1-3]. Formula: "
+    assert document.paragraphs[-1].text == "Figure f-5. Response at 5\u00a0W."
+    assert [node.text for node in document.element.iter(qn("m:t"))] == ["-5.51 K"]
+    assert source.read_bytes() == original
+
+
 def test_numbered_markdown_table_matches_prose_and_docx_caption():
     from cfdpaper.publication.export import _markdown_table
 
