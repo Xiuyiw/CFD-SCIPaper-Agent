@@ -58,6 +58,8 @@ def _points(data: dict, root: Path) -> list[dict]:
                 quantity_kind=item.get("quantity_kind", "ordinary"),
                 temperature_reference=item.get("temperature_reference"),
                 weight_kind=item.get("weight_kind"),
+                region_fraction=item.get("region_fraction"),
+                region_complement=item.get("region_complement", False),
             ),
         }
         for item in data["table_calculations"]

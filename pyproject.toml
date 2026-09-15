@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfd-paper-agent"
-version = "0.10.0"
+version = "0.10.1"
 description = "Author-in-the-loop CFD evidence analysis, figure generation, and scientific writing"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,6 +21,7 @@ classifiers = [
 ]
 dependencies = [
   "matplotlib>=3.8,<4",
+  "numpy>=1.26,<3",
   "pydantic>=2.8,<3",
   "pyyaml>=6,<7",
   "typer>=0.12,<1",

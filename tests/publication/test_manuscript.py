@@ -901,7 +901,7 @@ def test_keywords_follow_abstract_in_markdown_and_docx(tmp_path):
     docx = export_section_docx(output, tmp_path / "manuscript.docx", layout="near-reference")
     paragraphs = Document(docx).paragraphs
     index = next(i for i, p in enumerate(paragraphs) if p.text.startswith("Keywords:"))
-    assert paragraphs[index - 1].text == "Mean: 2.00 K."
+    assert paragraphs[index - 1].text == "Mean: 2.00\u00a0K."
     assert paragraphs[index + 1].text == "Methods"
     assert paragraphs[index].paragraph_format.first_line_indent.pt == 0
 

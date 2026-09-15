@@ -2,6 +2,10 @@
 
 ## Start here
 
+- [Direct arrays and spatial diagnostics](../examples/spatial-diagnostics/README.md): NPZ
+  inputs, explicit regional weighting, portable field maps and source-bound Word tables.
+- [v0.10.1 release notes](releases/v0.10.1.md): field-intake and numerical-display refinements.
+
 - [Literature-linked manuscript and whole-paper review](../examples/literature-manuscript/README.md):
   seven-section assembly, shared sources, and the v0.9 review/editing round trip.
 

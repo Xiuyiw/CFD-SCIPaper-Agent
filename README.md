@@ -5,9 +5,9 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and manuscript prose. Version 0.10.0
-adds explicit area/volume-weighted statistics and host guidance for reading spatial fields together
-with their summary values. A portable field-and-Word example demonstrates the connected workflow.
+defensible paper topics, figures, and manuscript prose. Version 0.10.1
+supports direct NPZ analysis, large CSV intake and explicit regional area/volume-weighted statistics.
+Portable array and field-and-Word examples demonstrate the connected workflow.
 Whole-paper review, targeted host editing, paired source-table calculations, cross-section evidence
 links and shared literature remain available alongside editable Word output.
 The workflow preserves the connection between the original observations, scientific interpretation,
@@ -17,7 +17,7 @@ The software does not replace scientific judgment. Authors still choose the rese
 the QoI and figure claim, and approve the final artifact.
 
 Start with the [spatial-diagnostics example](examples/spatial-diagnostics/README.md) and
-[v0.10.0 release notes](docs/releases/v0.10.0.md) for weighted analysis, a source-rendered field map
+[v0.10.1 release notes](docs/releases/v0.10.1.md) for weighted analysis, a source-rendered field map
 and Word output. The [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
 continues to cover whole-manuscript feedback and selected editing.
 
@@ -30,11 +30,11 @@ continues to cover whole-manuscript feedback and selected editing.
 | Scientific comparison qualification | Available | Strict records, observation membership, units, locators, comparison roles, convergence, conservation, verification, and validation. |
 | Discrete QoI analysis and claim ceiling | Available | Locked observed cases only; no interpolation or continuous optimization. |
 | Figure production | Available | One evidence-bound panel with source data, runnable script, SVG/PDF/PNG/TIFF, physical dimensions, caption, and QA results. |
-| Evidence writing | Available | Numeric paragraph or host-authored multi-figure subsection; current CSV calculations bind to evidence tokens with units and source records. |
+| Evidence writing | Available | Numeric paragraph or host-authored multi-figure subsection; CSV or explicitly mapped NPZ calculations bind to evidence tokens with units and source locations. |
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
-| Existing materials to subsection analysis | Available | CSV and method profiling; portable host-AI proposals; author-selected population, partition and explicit area/volume-weighted calculations, expression choices and source-linked writing. |
-| Spatially weighted evidence | Available | New in v0.10: weighted mean, population SD and measure sum from declared positive area/volume weights; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
+| Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. |
+| Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
 | Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
 | Shared literature workspace | Available | Local CSL JSON, DOI deduplication and aliases; claim-specific excerpts, locators, roles and author/host support decisions travel with the manuscript. Optional Pandoc imports BibLaTeX. |
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
@@ -49,8 +49,8 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For spatial weighting, use the v0.10
-checkout or its matching wheel; the published v0.9.0 wheel does not contain the weighted operator.
+CFD-Paper-Agent supports CPython 3.10–3.12. For direct arrays and regional weighting, use the v0.10.1
+checkout or its matching wheel; v0.10.0 supports whole-domain CSV weighting only.
 From the checkout root, install with Word support:
 
 ```text
@@ -61,7 +61,7 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.10.0 notes](docs/releases/v0.10.0.md) for the new version scope.
+remains available. See the [v0.10.1 notes](docs/releases/v0.10.1.md) for the new version scope.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -266,6 +266,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.10.1 notes](docs/releases/v0.10.1.md)
 - [v0.10.0 notes](docs/releases/v0.10.0.md)
 - [v0.9.0 notes](docs/releases/v0.9.0.md)
 - [v0.8.0 notes](docs/releases/v0.8.0.md)

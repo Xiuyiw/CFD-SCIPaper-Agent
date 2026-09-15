@@ -1,5 +1,40 @@
 # Spatial diagnostics and scientific explanation
 
+## Direct arrays and regional statistics
+
+The companion example exercises NPZ intake without an intermediate CSV. Install from
+the checkout with `python -m pip install ".[docs]"`, then run:
+
+```powershell
+python examples/spatial-diagnostics/run_array_example.py output/array-demo
+cfdpaper write . --artifact results-section --package output/array-demo/section --docx --layout near-reference --output output/array-demo/array-demo.docx
+```
+
+Two synthetic constant-temperature elements have areas 1 and 3 m², temperatures
+300 and 320 K, and explicit regional overlap fractions 1 and 0.25. The example
+generates the NPZ directly and passes it through intake, proposal compilation and
+section assembly. It replays a supplied proposal and paragraph, not an AI model call.
+
+| Domain | Area (m²) | Area-weighted mean (K) |
+| --- | ---: | ---: |
+| Whole wall | 4 | 315.000 |
+| Region | 1.75 | 308.571 |
+| Complement | 2.25 | 320.000 |
+
+Regional area-weighted temperature integrals sum to the whole-wall value
+(1260 K·m²); this is a partition identity, not an energy balance. Fractional
+elements retain their constant element temperatures. The example does not infer
+geometric intersections from centroids or resolve sub-element variation.
+
+Move the **entire** output directory to another location to continue. Reassembly
+from `section-input/writing` and `draft.json` rereads `sources/wall.npz` and updates
+both bound prose and table values. Only modify that copied source when testing
+updates; changing a generated Markdown file does not change the calculation.
+Array keys and units are explicit in `proposal.json`; `__index__` denotes zero-based
+array position. No flattening or unit inference is performed.
+
+## Full-wall map and recorded writing example
+
 This v0.10 example uses prescribed analytical fields, **not CFD results**.
 It exercises area/volume-weighted statistics, a portable field figure, bound prose
 and a native Word table. It does not demonstrate a cooling mechanism or validate a solver.

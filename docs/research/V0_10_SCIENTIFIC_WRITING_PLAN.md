@@ -235,3 +235,106 @@ headers and values alike. A regression reproduced the defect before the fix; 27 
 then passed. The corrected one-page Word/PDF was rendered through Word and inspected. It is under
 `private-fixtures/v010-host-trial/public-replay/table-alignment-fix/`; the previous PDF is retained
 but superseded. No source values, column widths, manuscript text or figure assets changed.
+
+## Post-release field usability batch (2026-09-14)
+
+v0.10.0 has been released. A same-input, isolated-host real-data comparison with v0.9 did not
+demonstrate a clear improvement in scientific prose. Both first drafts connected spatial fields,
+means, peaks and regional responses. The concrete remaining costs were field-data intake and
+host-written array reduction/serialization, plus numeric line-breaking defects in Word.
+
+The author authorized addressing those observed costs, not another manuscript rewrite. Work is
+on `workstream/field-analysis-usability`; the public version remains 0.10.0 until release work.
+Responsibilities: controller owns calculations/array-to-writing integration; intake task owns
+material profiling/copying; typesetting task owns the shared Word display helper. No new platform,
+solver execution, approval registry or automatic scientific claim generation is included.
+
+### Implemented scope
+
+- CSVs over the 8 MiB textual profiling budget receive streaming inventory and bounded previews
+  while remaining available as complete analysis sources. The separate 20 MiB per-source portable
+  package copy limit remains explicit. NPZ key/shape/dtype metadata and original sources travel
+  with the same package; no pickle execution or numerical flattening is needed.
+- Table calculations accept explicit aligned one-dimensional NPZ arrays directly, with declared
+  units and zero-based array indices. Reassembly reads those arrays again, instead of trusting
+  a host-created intermediate CSV. Unselected geometry arrays remain untouched.
+- `weighted_population` accepts `region_fraction` and optional `region_complement=true`.
+  Regional weights are measure times fraction or its complement. Fractions must be supplied
+  with a physical definition; the engine does not infer polygon intersections or replace them
+  with centroid membership. Partial elements use the supplied piecewise-constant values.
+- Word display uses a scientific minus attached to its number, and nonbreaking spaces for
+  recognized number/unit groups. Source prose, numeric bindings, identifiers and native equations
+  remain unchanged. This is bounded notation support, not a general unit grammar.
+- The packaged QoI skill and analysis prompt explain the new input and regional calculation route.
+
+### Evidence and remaining scope
+
+The retained four-case cooling exports contain 52,900 facets. The public intake now retains the
+9,214,402-byte CSV and all four NPZs; a direct NPZ proposal compiled through the public API into a
+writing package without a custom NPZ-to-CSV adapter. Mean/SD matched the previous independent
+array calculation within 3e-14 K and 5e-16 K respectively. Original arrays are in K, and comparisons
+to Celsius references used an explicit conversion only in the private check. No source was changed.
+
+Synthetic tests exercise unequal weights, partial overlap, region/complement closure, missing and
+invalid fractions, direct source updates reaching prose/tables, explicit identities and alignment.
+The real inputs do not contain overlap fractions, so this batch does not claim a real-geometry
+regional extraction. Their construction from arbitrary geometry remains outside current support.
+
+The unchanged B first draft was exported with the updated public renderer and inspected on both
+Word-generated PDF pages. The previously split negative numbers and units now stay together;
+table alignment and original figure layout remain intact. No scientific prose was improved manually.
+The source image's font design was not changed. The Word/Poppler check is not a cross-engine test.
+
+Private replay is under `private-fixtures/v09-v010-comparison/product-replay/`; no private paths,
+scientific data or generated manuscript artifacts are included in the public implementation.
+
+The 651-test related run initially had 647 passes, three environment/optional skips and one
+outdated DOCX ordinary-space expectation. That assertion now expects the deliberate nonbreaking
+space while retaining the unchanged Markdown expectation. Final targeted validation passed 135
+tests, including two additional NPZ grouped/paired tests. Ruff, diff whitespace and the skill
+validator passed. This is local validation, not a new release or supported-platform CI claim.
+The next packaging step is a public runnable source-array example and isolated installation
+validation; do not repeat the retained host writing comparison or silently declare a new version.
+
+### Public example and installation completion — 2026-09-14
+
+`examples/spatial-diagnostics/run_array_example.py` now generates a small synthetic NPZ
+and uses the public intake, proposal compiler and section assembler directly. Explicit
+element-overlap fractions yield whole/region/complement means of 315.000/308.571/320.000 K.
+The README includes the definitions, runnable commands and whole-folder relocation route.
+This is a deterministic supplied-proposal/draft example, not an autonomous writing assessment.
+
+The example exposed a missing regional argument in the figure-point computation. Both
+`region_fraction` and `region_complement` now reach that calculation; a regression compares
+plot inputs to the regional table results, checks the partition identity, relocates the package
+and changes its copied NPZ to verify that bound prose and table update together.
+
+A fresh Python 3.12.14 environment outside the checkout installed the non-editable wheel.
+Import location was its site-packages. Both public spatial examples ran; relocated array
+assembly and subsequent source updates passed. Installed exports retained native tables,
+matching numeric/header alignment, nonbreaking value/unit groups and the packaged regional
+skill instructions. Both one-page DOCX outputs were rendered and visually inspected with
+the workspace document tools. Files are temporary software examples, not manuscript deliverables.
+
+The 646-test related run completed with 643 passes and three existing environment/optional
+skips; the 14-test direct-array suite also passed. Ruff, formatting and workflow YAML parsing
+passed. The existing CI wheel step now includes the array relocation/update case and expects
+the intentional nonbreaking spaces in the older spatial Word example. Remote CI and release
+remain subsequent integration work; the public version number has not changed.
+
+### v0.10.1 integration candidate — 2026-09-14
+
+The field-usability batch is packaged as a maintenance release of the v0.10 path, not
+the start of a new v0.11 feature program. Version metadata, CLI help, citation metadata,
+README, documentation navigation, release notes and CI artifact names are synchronized.
+
+Full local regression collected 1,643 tests: the first run had 1,633 passes, five skips
+and five failures. Three were old ordinary-space expectations in Word integration tests;
+these now require the intended nonbreaking spaces without relaxing numeric or unit checks.
+Two reflected the version update occurring during the running test process. A fresh targeted
+run of all affected suites and CLI checks passed 33 tests. No production-code change followed
+the full run. Ruff check and format check passed across the public tree.
+
+Supported-platform CI, merging and publishing remain separate from this local candidate.
+The prior installed-array/relocation and document-render evidence remains applicable because
+its scientific and rendering implementation is unchanged.

@@ -43,6 +43,22 @@ domains, definition locations, duplicate declared identities, missing declared m
 unsupported comparison status must be resolved for the selected calculation. Independent
 supported candidates remain available.
 
+CSV preview limits do not determine whether a field can be analyzed. Read the complete copied
+source for calculations. NPZ sources can be used directly: map exact one-dimensional array keys
+as columns, declare their units, and use member_id ["__index__"] for zero-based element identity
+when no exported identity array exists. Selected arrays must have equal lengths; unrelated
+geometry arrays are left untouched. No conversion to CSV or guessed flattening is needed.
+
+For an explicitly supplied regional area/volume fraction, set region_fraction to that column or
+array key on weighted_population. Fractions must lie in [0,1]; weights become measure times
+fraction. Set region_complement=true in a second calculation to use measure times (1-fraction).
+Keep the whole-domain calculation as the reference when explaining redistribution. Regional
+means and SD use the same element values, with piecewise-constant reconstruction on partial
+elements; they do not resolve within-element gradients. A centroid mask is not exact overlap.
+If the input only contains coordinates/geometry without a supported overlap definition, identify
+the needed region extraction instead of inventing fractions. Use these computations when spatial
+redistribution answers the question, not as mandatory extra indicators for every subsection.
+
 Prefer a few purposeful result-bound metrics. If automatic scalar anchors are provided, they are
 a selection pool, not a request to narrate every value. Inspect `table-results.json`; no hand-copied
 numeric claims should replace `result_ref`. Keep zero-mean CV undefined rather than reporting zero.

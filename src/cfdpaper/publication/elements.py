@@ -10,6 +10,50 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cfdpaper.publication.export import ManuscriptTable
 
+_PROTECTED_TEXT = re.compile(
+    r"(`+[^`]*`+|https?://\S+|www\.\S+|\[[^\]\n]*\]|\{\{.*?\}\}"
+    r"|\${1,2}[^$]*\${1,2}|\\\(.*?\\\)|\\\[.*?\\\])",
+    re.DOTALL,
+)
+_NUMBER = r"[+\-−]?\u2060?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+\-−]?\u2060?\d+)?"
+# Deliberately bounded publication notation, not a general unit parser.
+_UNIT_ATOM = (
+    r"(?:MW|kW|W|MJ|kJ|J|MPa|kPa|Pa|bar|°C|°F|degC|K|kg|mg|g|"
+    r"km|cm|mm|[µμ]m|nm|mL|L|mol|ms|min|s|h|kHz|Hz|N|rad|m|%)"
+    r"(?:\^?[+\-−]?\u2060?\d+|[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)?(?![\w°])"
+)
+_UNIT = rf"{_UNIT_ATOM}(?:(?:[ \t\u00a0]+|[·/]\u2060?){_UNIT_ATOM})*"
+_SCIENTIFIC_VALUE = re.compile(
+    rf"(?<![\w./:+−\-])(?P<number>{_NUMBER})(?!\w|[.\-]\w)"
+    rf"(?P<unit>[ \t\u00a0]+{_UNIT})?"
+)
+
+
+def display_scientific_text(value: str) -> str:
+    """Typeset ordinary DOCX prose only; never change source or native math.
+
+    Use a mathematical minus and word joiner to keep numeric signs attached;
+    glue existing spaces in recognized number/unit groups with nonbreaking spaces.
+    URLs, identifiers, dates, citations, code and explicit math retain their text.
+    """
+
+    def typeset(match):
+        number = re.sub(
+            r"([+−-])\u2060?(?=[\d.])",
+            lambda sign: ("−" if sign[1] == "-" else sign[1]) + "\u2060",
+            match["number"],
+        )
+        unit = match["unit"] or ""
+        unit = re.sub(r"[ \t\u00a0]+", "\u00a0", unit)
+        unit = re.sub(r"[-−]\u2060?(?=\d)", "−\u2060", unit)
+        unit = re.sub(r"/\u2060?", "/\u2060", unit)
+        return number + unit
+
+    return "".join(
+        part if index % 2 else _SCIENTIFIC_VALUE.sub(typeset, part)
+        for index, part in enumerate(_PROTECTED_TEXT.split(value))
+    )
+
 
 class SectionTable(ManuscriptTable):
     evidence_ids: list[str] = Field(default_factory=list)
@@ -174,7 +218,9 @@ def add_table(document, table: SectionTable, style):
     widths = table.column_widths_mm or [available / len(table.columns)] * len(table.columns)
     if sum(widths) > available + 0.001:
         raise ValueError(f"Table {table.table_id}: column widths exceed the text area")
-    caption = document.add_paragraph(f"Table {table.table_id}. {table.caption}", style="Caption")
+    caption = document.add_paragraph(
+        f"Table {table.table_id}. {display_scientific_text(table.caption)}", style="Caption"
+    )
     caption.paragraph_format.keep_with_next = True
 
     # Only bind tables whose conservative wrapped-text estimate occupies at most
@@ -216,7 +262,7 @@ def add_table(document, table: SectionTable, style):
             row._tr.get_or_add_trPr().append(OxmlElement("w:tblHeader"))
         for index, (cell, value, width) in enumerate(zip(row.cells, values, widths, strict=True)):
             cell.width = Mm(width)
-            cell.text = value
+            cell.text = display_scientific_text(value)
             paragraph = cell.paragraphs[0]
             paragraph.paragraph_format.keep_with_next = (
                 compact and row_index < len(table.rows)
@@ -238,4 +284,4 @@ def add_table(document, table: SectionTable, style):
         for cell in item.rows[-1].cells:
             for paragraph in cell.paragraphs:
                 paragraph.paragraph_format.keep_with_next = True
-        document.add_paragraph(table.note, style="Caption")
+        document.add_paragraph(display_scientific_text(table.note), style="Caption")

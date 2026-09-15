@@ -123,10 +123,15 @@ class _TableCalculation(_Record):
     )
     temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
     weight_kind: Literal["area", "volume"] | None = None
+    region_fraction: StrictStr | None = None
+    region_complement: bool = Field(default=False, strict=True)
 
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if self.region_fraction is None and not self.region_complement:
+            result.pop("region_fraction", None)
+            result.pop("region_complement", None)
         # New paired options must not make an unchanged historical input look stale.
         if self.operation != "paired_change":
             for key in (
@@ -153,6 +158,16 @@ class _TableCalculation(_Record):
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
         paired = (self.pair_by, self.reference, self.comparison)
+        if self.region_fraction is not None:
+            if (
+                self.operation != "weighted_population"
+                or self.region_fraction in self.columns.values()
+            ):
+                raise ValueError(
+                    "Region fractions require weighted_population and a distinct column"
+                )
+        elif self.region_complement:
+            raise ValueError("Region complement requires region_fraction")
         if self.operation == "weighted_population":
             if self.weight_kind is None:
                 raise ValueError("Weighted population requires area or volume weight_kind")
@@ -337,6 +352,8 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
             quantity_kind=item.quantity_kind,
             temperature_reference=item.temperature_reference,
             weight_kind=item.weight_kind,
+            region_fraction=item.region_fraction,
+            region_complement=item.region_complement,
         )
         results.append({**item.model_dump(), **result})
     if results and write:
@@ -759,9 +776,11 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
         document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
         if layout == "after-text":
             document.paragraphs[-1].paragraph_format.page_break_before = True
-        document.add_paragraph(caption, style="Caption")
+        document.add_paragraph(
+            f"Figure {figure['id']}. {display_scientific_text(figure['caption'])}", style="Caption"
+        )
 
-    from cfdpaper.publication.elements import add_equation, add_table
+    from cfdpaper.publication.elements import add_equation, add_table, display_scientific_text
 
     placed, placed_tables, placed_equations = set(), set(), set()
     current_section = None
@@ -811,8 +830,7 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
         )
         for run in paragraph.get("runs", [{"text": paragraph["text"]}]):
             if "text" in run:
-                # Keep a percentage symbol with its value at Word line breaks.
-                p.add_run(re.sub(r"(?<=\d) +(?=%)", "\u00a0", run["text"]))
+                p.add_run(display_scientific_text(run["text"]))
             else:
                 from docx.oxml import OxmlElement
 
