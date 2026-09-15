@@ -4,7 +4,7 @@ message: >-
 title: CFD-Paper-Agent
 type: software
 version: "0.10.1"
-date-released: 2026-09-14
+date-released: 2026-09-15
 authors:
   - name: bluesarrow
     email: 727197749@qq.com

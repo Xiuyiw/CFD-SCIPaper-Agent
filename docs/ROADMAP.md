@@ -21,7 +21,7 @@ recorded here instead of being represented as already complete.
 | `v0.8.0` | Shared literature, cross-section evidence bindings, targeted change reports and optional numeric CSL formatting | Released; see the v0.8.0 notes and release tag |
 | `v0.9.0` | Real-material whole-manuscript trial, bounded review and selected-feedback editing | Delivered scope; see v0.9.0 release notes and the verified release tag |
 | `v0.10.0` | Explicit area/volume-weighted evidence, spatial-reasoning guidance, portable field/Word example and aligned numeric table headers | Implemented scope; see v0.10.0 notes and release tag |
-| `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Release candidate; supported-platform integration pending |
+| `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Implemented; Windows/Linux Python 3.10–3.12 integration passed |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
