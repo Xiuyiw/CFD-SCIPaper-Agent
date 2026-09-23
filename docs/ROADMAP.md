@@ -22,7 +22,7 @@ recorded here instead of being represented as already complete.
 | `v0.9.0` | Real-material whole-manuscript trial, bounded review and selected-feedback editing | Delivered scope; see v0.9.0 release notes and the verified release tag |
 | `v0.10.0` | Explicit area/volume-weighted evidence, spatial-reasoning guidance, portable field/Word example and aligned numeric table headers | Implemented scope; see v0.10.0 notes and release tag |
 | `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Implemented; Windows/Linux Python 3.10–3.12 integration passed |
-| `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Release candidate; local integration passed, supported-platform CI pending |
+| `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -65,11 +65,11 @@ figure-to-Word readability, evaluated together on real scientific writing tasks.
 usable evidence-to-document workbench; stable improvements in unfamiliar-project scientific
 writing and the original heterogeneous-validation goals remain unproven.
 
-The v0.11 release candidate implements linked computed comparisons, old/new result context for
+The v0.11 increment implements linked computed comparisons, old/new result context for
 affected prose and external-figure sizing metadata. Known-project paired trials and rendered-document
 assessment are complete: practical input/display improvements were demonstrated, not a systematic
-scientific-writing depth improvement. Local installation and integration passed; supported-platform
-CI remains pending. It retains the existing
+scientific-writing depth improvement. Local installation and supported-platform CI passed.
+It retains the existing
 author/host workflow, avoids new approval machinery, and keeps native-solver intake, temporal/multiphase
 analysis, selective Word editing return and real journal revision on the longer-term route.
 
