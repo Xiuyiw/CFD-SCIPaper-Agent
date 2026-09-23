@@ -141,7 +141,9 @@ class _TableCalculation(_Record):
                 "temperature_reference",
             ):
                 result.pop(key, None)
-        if self.operation not in {"paired_change", "weighted_population"}:
+        if self.operation not in {"paired_change", "weighted_population"} and not (
+            self.operation == "scalar_select" and self.quantity_kind != "ordinary"
+        ):
             result.pop("quantity_kind", None)
         if self.operation != "weighted_population":
             result.pop("weight_kind", None)
@@ -179,10 +181,53 @@ class _TableCalculation(_Record):
         elif (
             any(x is not None for x in paired)
             or self.temperature_reference is not None
-            or (self.quantity_kind != "ordinary" and self.operation != "weighted_population")
+            or (
+                self.quantity_kind != "ordinary"
+                and self.operation not in {"weighted_population", "scalar_select"}
+            )
         ):
             raise ValueError("Pair selectors and temperature_reference are only for paired_change")
         return self
+
+
+class _ScalarResult(_Record):
+    calculation_id: StrictStr = Field(min_length=1)
+    group: StrictStr = Field(min_length=1)
+    field: Literal[
+        "mean",
+        "sum",
+        "value",
+        "weighted_mean",
+        "weighted_std",
+        "weight_sum",
+        "area",
+        "rate",
+        "mean_flux",
+    ]
+
+
+class _ResultComparison(_Record):
+    id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
+    reference: _ScalarResult
+    comparison: _ScalarResult
+    domain: StrictStr = Field(min_length=1)
+    definition_source: StrictStr = Field(min_length=1)
+    comparison_scope: StrictStr = Field(min_length=1)
+    status: Literal["supported", "unknown", "not-comparable"]
+    temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def explicit_comparison(self):
+        if any(not x.strip() for x in (self.domain, self.comparison_scope, self.definition_source)):
+            raise ValueError("Result comparisons require a domain, scope and located definition")
+        if self.reference == self.comparison:
+            raise ValueError("Result comparisons require distinct references")
+        return self
+
+    def engine_arguments(self):
+        if self.status != "supported":
+            raise ValueError(f"{self.id}: result comparison is {self.status}")
+        return self.model_dump(exclude={"status", "comparison_scope"})
 
 
 class _Input(_Record):
@@ -195,7 +240,15 @@ class _Input(_Record):
     context: str = ""
     source_files: list[str] = Field(default_factory=list)
     table_calculations: list[_TableCalculation] = Field(default_factory=list)
+    result_comparisons: list[_ResultComparison] = Field(default_factory=list)
     style: PublicationStyle = Field(default_factory=PublicationStyle)
+
+    @model_serializer(mode="wrap")
+    def serialize_input(self, handler):
+        result = handler(self)
+        if not self.result_comparisons:
+            result.pop("result_comparisons", None)
+        return result
 
 
 class _Paragraph(_Record):
@@ -265,12 +318,17 @@ def _load_input(
             record for record in raw.get("evidence", []) if record["id"] not in evidence_overrides
         ] + [record for record in evidence_overrides.values() if record is not None]
     data = _Input.model_validate(raw)
-    calc_ids = [c.id for c in data.table_calculations]
+    calc_ids = [c.id for c in [*data.table_calculations, *data.result_comparisons]]
     if len(calc_ids) != len(set(calc_ids)):
         raise ValueError("Calculation IDs must be unique")
     for calculation in data.table_calculations:
         if calculation.source not in data.source_files:
             data.source_files.append(calculation.source)
+    for comparison in data.result_comparisons:
+        comparison.engine_arguments()
+        name = _check_comparison_definition(path.parent, comparison.definition_source)
+        if name not in data.source_files:
+            data.source_files.append(name)
     asset_ids = [figure.id.casefold() for figure in data.figures]
     if len(asset_ids) != len(set(asset_ids)):
         raise ValueError("Figure IDs must be unique on case-insensitive filesystems")
@@ -303,6 +361,23 @@ def _references(ids, allowed):
         raise ValueError(f"Unresolved IDs: {sorted(unknown)}")
 
 
+def _check_comparison_definition(root: Path, locator: str) -> str:
+    match = re.fullmatch(r"(sources/.+):(L[1-9]\d*(?:-L?[1-9]\d*)?)", locator)
+    if not match:
+        raise ValueError("Comparison definition requires sources/path:Lx-Ly")
+    name, lines = match.groups()
+    source = (root / name).resolve()
+    if not source.is_relative_to(root.resolve()) or not source.is_file():
+        raise ValueError("Comparison definition source is missing or outside the package")
+    content = source.read_text(encoding="utf-8-sig").splitlines()
+    bounds = [int(n) for n in re.findall(r"\d+", lines)]
+    if bounds[0] > bounds[-1] or bounds[-1] > len(content):
+        raise ValueError("Comparison definition locator is outside source lines")
+    if not "\n".join(content[bounds[0] - 1 : bounds[-1]]).strip():
+        raise ValueError("Comparison definition locator contains no text")
+    return name
+
+
 def _copy_figures(data: _Input, source_dir: Path, output: Path):
     (output / "figures").mkdir()
     for figure in data.figures:
@@ -333,7 +408,7 @@ def _copy_sources(data: _Input, source_dir: Path, output: Path):
 
 def _calculate_sources(data: _Input, output: Path, *, write=True):
     """Compute on copied source tables, before the host begins drafting."""
-    from cfdpaper.publication.table_evidence import calculate_table
+    from cfdpaper.publication.table_evidence import calculate_result_comparison, calculate_table
 
     results = []
     for item in data.table_calculations:
@@ -356,6 +431,9 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
             region_complement=item.region_complement,
         )
         results.append({**item.model_dump(), **result})
+    parents = list(results)
+    for item in data.result_comparisons:
+        results.append(calculate_result_comparison(parents, **item.engine_arguments()))
     if results and write:
         _write(output / "table-results.json", results)
     return results

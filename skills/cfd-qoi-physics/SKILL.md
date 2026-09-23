@@ -43,6 +43,18 @@ domains, definition locations, duplicate declared identities, missing declared m
 unsupported comparison status must be resolved for the selected calculation. Independent
 supported candidates remain available.
 
+Use `scalar_select` for a declared scalar already present as exactly one source record per
+group, mapping `columns.value` and `units.value`; it does not filter multiple rows. For two
+source records within each group, use `paired_change` with
+`paired_selector: {pair_by: "configuration", reference: "base", comparison: "new"}`.
+The selector is distinct from scientific `comparison: {status, scope}`, which remains required.
+Each selected configuration must occur exactly once per group. Declare member_id columns that
+uniquely identify source records, including configuration if needed. Bind the scalar `value` or
+paired `difference`, `relative_change`, `relative_reduction` through result_ref; automatic paired
+anchors use only the signed difference. Declare quantity_kind on temperature scalars and pairs.
+Absolute-temperature differences use K; a relative change additionally needs a method-backed
+temperature_reference in the original unit. Without it, do not request a percentage.
+
 CSV preview limits do not determine whether a field can be analyzed. Read the complete copied
 source for calculations. NPZ sources can be used directly: map exact one-dimensional array keys
 as columns, declare their units, and use member_id ["__index__"] for zero-based element identity
@@ -63,6 +75,19 @@ Prefer a few purposeful result-bound metrics. If automatic scalar anchors are pr
 a selection pool, not a request to narrate every value. Inspect `table-results.json`; no hand-copied
 numeric claims should replace `result_ref`. Keep zero-mean CV undefined rather than reporting zero.
 Changing copied source values requires recalculation and fresh downstream figure/writing output.
+
+When the question compares two calculated scalars, use candidate `result_comparisons`, not a
+hand-transcribed intermediate CSV. Each entry declares id, reference and comparison
+(`calculation_id`, `group`, `field`), the common domain, a located definition_source such as
+`sources/method.md:L1-L3`, comparison_scope and status `supported`. Establish matching coverage,
+weighting, quantity definition and boundary conditions from the materials first; matching unit
+strings alone do not establish comparability. The operation compares compatible original scalar
+outputs, not other comparisons. Bind its group `all` and field `difference`, `relative_change` or
+`relative_reduction` through the usual result_ref. Difference is comparison minus reference;
+relative change uses reference as denominator. Absolute-temperature relative change additionally
+needs a physically justified temperature_reference in the source unit; otherwise use the K
+difference. A zero denominator remains undefined. Inspect both supporting_results, not a merged
+source locator. An updated number does not automatically correct an old physical explanation.
 
 Distinguish numeric anchors for prose from the evidence needed in a figure. Before selecting
 figure_plan.metric_ids, identify which relationship is central and whether the selected metrics

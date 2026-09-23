@@ -1,5 +1,29 @@
 # Spatial diagnostics and scientific explanation
 
+## Comparisons of computed results in v0.11.0
+
+Version 0.11.0 adds a shallow comparison between existing computed scalars. Install the matching
+checkout or wheel (the v0.10.1 wheel does not include this operation), then run:
+
+```powershell
+python examples/spatial-diagnostics/run_linked_example.py output/linked-demo
+cfdpaper write . --artifact results-section --package output/linked-demo/section --docx --output output/linked-demo/comparison.docx
+```
+
+This reuses the synthetic wall below, with a recorded proposal and paragraph. It binds the
+Modified-minus-Reference mean difference (-2.200 K) and spatial-SD difference (approximately
+2.412 K) directly to their calculated parents. It is not a new CFD case or a fresh AI trial.
+The opposing responses matter: a lower mean alone does not demonstrate greater uniformity.
+No percentage change of absolute temperature is produced without a meaningful temperature origin.
+
+`proposal.json` shows `result_comparisons`; each has two references, the shared domain, a located
+definition and the supported comparison scope. The ordinary metric `result_ref` selects its
+`difference` (or a defined relative quantity) in group `all`. Calculations preserve full precision;
+display rounding is applied afterwards. Both upstream sources remain individually located.
+Reassemble after changing copied sources, then reconsider the recorded physical wording; bound
+numbers update, free prose and supplied images do not. Whole-manuscript `CHANGES.md` includes
+old/new computed values and flags changed difference signs for targeted host review.
+
 ## Direct arrays and regional statistics
 
 The companion example exercises NPZ intake without an intermediate CSV. Install from

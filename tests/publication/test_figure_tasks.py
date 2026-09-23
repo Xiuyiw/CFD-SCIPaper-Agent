@@ -8,6 +8,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from cfdpaper.publication.figure_tasks import import_figure_task, prepare_figure_task
+from cfdpaper.publication.style import FigureSizing, PublicationStyle, figure_placement
 
 
 def write_json(path, data):
@@ -285,3 +286,101 @@ def test_existing_id_based_task_can_still_be_imported(tmp_path):
     returned = delivery(tmp_path)
     candidate = import_figure_task(package, returned, tmp_path / "candidate")
     assert (candidate / source["path"]).read_bytes() == (tmp_path / "data.csv").read_bytes()
+
+
+def test_declared_sizing_is_reusable_for_word_placement(tmp_path):
+    task = make_task(tmp_path)
+    task["final_width_mm"] = 100
+    package = prepare_figure_task(write_json(tmp_path / "input.json", task), tmp_path / "package")
+    returned = delivery(tmp_path)
+    record = json.loads(returned.read_text())
+    record["sizing"] = {
+        "source_width_mm": 200,
+        "target_width_mm": 100,
+        "minimum_source_font_pt": 16,
+    }
+    write_json(returned, record)
+    candidate = import_figure_task(package, returned, tmp_path / "candidate")
+    imported = json.loads((candidate / "delivery.json").read_text())
+    assert imported["sizing"] == record["sizing"]
+    assert imported["placement"]["width_mm"] == 100
+    assert imported["placement"]["minimum_font_pt"] == 8
+    assert imported["placement"]["scale"] == 0.5
+    assert imported["font_size_basis"] == "declared_source_metadata"
+    assert imported["placement"] == figure_placement(
+        pixels=(100, 60),
+        caption=f"Figure f1. {record['caption']}",
+        sizing=FigureSizing.model_validate(imported["sizing"]),
+        style=PublicationStyle.model_validate(imported["placement_style"]),
+    )
+
+
+@pytest.mark.parametrize(
+    ("sizing", "message"),
+    [
+        ({"source_width_mm": 200, "minimum_source_font_pt": 8}, "below 8 pt"),
+        ({"minimum_source_font_pt": 12}, "requires actual source_width_mm"),
+        ({"target_width_mm": 100}, "conflicts with task final_width_mm"),
+        ({"source_width_mm": -1}, "greater than 0"),
+        ({"minimum_source_font_pt": float("nan")}, "finite number"),
+    ],
+)
+def test_invalid_sizing_fails_before_copying(tmp_path, sizing, message):
+    package = prepare(tmp_path)
+    returned = delivery(tmp_path)
+    record = json.loads(returned.read_text())
+    record["sizing"] = sizing
+    write_json(returned, record)
+    with pytest.raises(ValueError, match=message):
+        import_figure_task(package, returned, tmp_path / "candidate")
+    assert not (tmp_path / "candidate").exists()
+
+
+@pytest.mark.parametrize("sizing", [None, {"source_width_mm": 200}])
+def test_unknown_font_stays_unknown_including_legacy_deliveries(tmp_path, sizing):
+    package = prepare(tmp_path)
+    returned = delivery(tmp_path)
+    if sizing is not None:
+        record = json.loads(returned.read_text())
+        record["sizing"] = sizing
+        write_json(returned, record)
+    candidate = import_figure_task(package, returned, tmp_path / "candidate")
+    imported = json.loads((candidate / "delivery.json").read_text())
+    assert imported["sizing"]["target_width_mm"] == 160
+    assert imported["sizing"]["minimum_source_font_pt"] is None
+    assert imported["placement"]["minimum_font_pt"] is None
+    assert imported["font_size_basis"] == "unknown"
+
+
+def test_final_size_report_and_font_check_use_page_clamped_width(tmp_path):
+    package = prepare(tmp_path)
+    returned = delivery(tmp_path)
+    record = json.loads(returned.read_text())
+    record["sizing"] = {"source_width_mm": 200, "minimum_source_font_pt": 16}
+    write_json(returned, record)
+    style = PublicationStyle(margin_mm=55)  # 100 mm of usable page width.
+    candidate = import_figure_task(package, returned, tmp_path / "candidate", style=style)
+    imported = json.loads((candidate / "delivery.json").read_text())
+    assert imported["sizing"]["target_width_mm"] == 160
+    assert imported["placement"]["width_mm"] == 100
+    assert imported["placement"]["minimum_font_pt"] == 8
+    assert imported["preview_geometry"]["final_width_mm"] == 100
+    assert imported["preview_geometry"]["effective_ppi"] == 25.4
+    with pytest.raises(ValueError, match="7.20 pt, below 8 pt"):
+        import_figure_task(
+            package, returned, tmp_path / "too-narrow", style=PublicationStyle(margin_mm=60)
+        )
+
+
+def test_tall_image_font_check_uses_actual_height_limited_scale(tmp_path):
+    package = prepare(tmp_path)
+    returned = delivery(tmp_path)
+    image = Image.new("RGB", (100, 600), "white")
+    ImageDraw.Draw(image).line((10, 20, 80, 400), fill="black", width=2)
+    image.save(returned.parent / "preview.png")
+    record = json.loads(returned.read_text())
+    record["sizing"] = {"source_width_mm": 160, "minimum_source_font_pt": 16}
+    write_json(returned, record)
+    with pytest.raises(ValueError, match="below 8 pt"):
+        import_figure_task(package, returned, tmp_path / "candidate")
+    assert not (tmp_path / "candidate").exists()

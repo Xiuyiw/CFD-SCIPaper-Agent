@@ -9,8 +9,13 @@ from collections import OrderedDict
 from pathlib import Path
 
 from cfdpaper.publication.render_figure import PlotStyle
-from cfdpaper.publication.section import _stage, _write, prepare_section
-from cfdpaper.publication.table_evidence import calculate_table, display_unit, resolve_table_result
+from cfdpaper.publication.section import _ResultComparison, _stage, _write, prepare_section
+from cfdpaper.publication.table_evidence import (
+    calculate_result_comparison,
+    calculate_table,
+    display_unit,
+    resolve_table_result,
+)
 
 _LABELS = {
     "mean": "Mean",
@@ -64,6 +69,10 @@ def _points(data: dict, root: Path) -> list[dict]:
         }
         for item in data["table_calculations"]
     ]
+    parents = list(reports)
+    for item in data.get("result_comparisons", []):
+        comparison = _ResultComparison.model_validate(item)
+        reports.append(calculate_result_comparison(parents, **comparison.engine_arguments()))
     available = {e["id"]: e for e in data["evidence"] if e.get("result_ref")}
     plan = data.get("figure_plan") or {}
     selected = plan.get("metric_ids") or list(available)
@@ -289,6 +298,8 @@ def build_analysis_section(input_path: Path, output_dir: Path) -> Path:
             ),
         }[presentation]
         section_input["context"] += "\nPresentation: " + intent
+        if data.get("result_comparisons"):
+            section_input["result_comparisons"] = data["result_comparisons"]
         if "style" in data:
             section_input["style"] = data["style"]
         if data.get("presentation_reason"):

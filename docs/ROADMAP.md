@@ -22,6 +22,7 @@ recorded here instead of being represented as already complete.
 | `v0.9.0` | Real-material whole-manuscript trial, bounded review and selected-feedback editing | Delivered scope; see v0.9.0 release notes and the verified release tag |
 | `v0.10.0` | Explicit area/volume-weighted evidence, spatial-reasoning guidance, portable field/Word example and aligned numeric table headers | Implemented scope; see v0.10.0 notes and release tag |
 | `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Implemented; Windows/Linux Python 3.10–3.12 integration passed |
+| `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -56,7 +57,23 @@ The [first-batch specification](research/V0_9_FIRST_BATCH_SPEC.md) defines real-
 preparation and whole-paper review delivery without expanding the solver or submission scope.
 Native solver platforms and submission automation are not prerequisites for this writing route.
 
-## Product direction
+## Current forward priority — assessed 2026-09-23
+
+The [post-v0.10 maturity assessment and development plan](research/POST_V010_DEVELOPMENT_PLAN.md)
+updates the next priorities: linked computed diagnostics, targeted explanation revision, and
+figure-to-Word readability, evaluated together on real scientific writing tasks. v0.10.1 is a
+usable evidence-to-document workbench; stable improvements in unfamiliar-project scientific
+writing and the original heterogeneous-validation goals remain unproven.
+
+The v0.11 increment implements linked computed comparisons, old/new result context for
+affected prose and external-figure sizing metadata. Known-project paired trials and rendered-document
+assessment are complete: practical input/display improvements were demonstrated, not a systematic
+scientific-writing depth improvement. Local installation and supported-platform CI passed.
+It retains the existing
+author/host workflow, avoids new approval machinery, and keeps native-solver intake, temporal/multiphase
+analysis, selective Word editing return and real journal revision on the longer-term route.
+
+## Delivered v0.10 direction
 
 The v0.10 increment is defined in the
 [v0.10 scientific-writing plan](research/V0_10_SCIENTIFIC_WRITING_PLAN.md): explicit spatial

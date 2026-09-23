@@ -102,9 +102,10 @@ do not invent a hotspot or force conflicting rankings in every study. A field ma
 location and extent while a compact table provides the exact moments. It need not become an
 extra graph of every scalar. Threshold exceedance requires a meaningful threshold and declared
 area/volume definition, not a convenient new plot added merely to make the figure more complex.
-The current weighted operator does not expose extrema, threshold fractions or differences between
-calculated outputs. Preserve such unbound diagnostic calculations separately; do not label them as
-engine-bound values or turn them into claimed automatic capabilities.
+The weighted operator does not expose extrema or threshold fractions. To compare compatible
+computed means or SDs, use `result_comparisons` with the two original result references rather
+than copying rounded intermediate values; the QoI Skill describes the available selectors.
+Unsupported diagnostics remain separate, not engine-bound values or automatic capabilities.
 
 ## Exported table example
 

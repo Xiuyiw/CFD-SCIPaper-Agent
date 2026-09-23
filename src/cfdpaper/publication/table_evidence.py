@@ -10,6 +10,18 @@ from pathlib import Path
 
 def display_unit(unit: str) -> str:
     """Typeset supported unit labels without converting their numerical scale."""
+    scaled = re.fullmatch(r"10\^([+-]?\d+)\s+(.+)", unit)
+    if scaled:
+        suffix = scaled[2]
+        shown = display_unit(suffix)
+        # Only labels already supported below, or these explicit SI atoms.
+        # Unknown source descriptions must not become a guessed unit grammar.
+        if shown != suffix or suffix in {"W", "kW", "MW", "J", "kJ", "Pa", "kPa", "K"}:
+            power = scaled[1].translate(str.maketrans("+-0123456789", "⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹"))
+            return f"× 10{power} {shown}"
+    molar_rate = re.fullmatch(r"(kgmol|kmol|mol)/s", unit)
+    if molar_rate:
+        return f"{molar_rate[1]}·s⁻¹"
     if unit == "degC":
         return "°C"
     area = re.fullmatch(r"(m|cm|mm)(?:\^?2|²)", unit)
@@ -74,7 +86,9 @@ def calculate_table(
             raise ValueError("Paired change requires pair_by, reference and comparison")
         if reference == comparison:
             raise ValueError("Reference and comparison must differ")
-    if operation in {"paired_change", "weighted_population"}:
+    if operation in {"paired_change", "weighted_population"} or (
+        operation == "scalar_select" and quantity_kind != "ordinary"
+    ):
         unit = (units or {}).get("value")
         if not isinstance(unit, str):
             raise ValueError("Calculation requires a declared value unit")
@@ -87,7 +101,7 @@ def calculate_table(
         if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
             raise ValueError("Absolute temperature requires Celsius or Kelvin units")
         if (
-            operation == "weighted_population"
+            operation in {"weighted_population", "scalar_select"}
             and quantity_kind == "temperature-difference"
             and unit != "K"
         ):
@@ -165,20 +179,7 @@ def calculate_table(
             result, status = {"value": values["value"][0]}, "computed"
         elif operation == "paired_change":
             baseline, compared = values["value"]
-            delta = compared - baseline
-            denominator = baseline
-            if quantity_kind == "absolute-temperature":
-                denominator = (
-                    None if temperature_reference is None else baseline - temperature_reference
-                )
-            ratio = delta / denominator if denominator else None
-            if not math.isfinite(delta) or (ratio is not None and not math.isfinite(ratio)):
-                raise ValueError("Paired calculation produced a nonfinite result")
-            result = {
-                "difference": delta,
-                "relative_change": ratio,
-                "relative_reduction": -ratio if ratio is not None else None,
-            }
+            result = _paired_result(baseline, compared, quantity_kind, temperature_reference)
             status = "computed"
         else:
             result = partition_summary(values["area"], values["rate"])
@@ -197,6 +198,115 @@ def calculate_table(
             }
         )
     return {"rows_read": len(rows), "groups": results}
+
+
+def _paired_result(baseline, compared, quantity_kind, temperature_reference):
+    delta = compared - baseline
+    denominator = baseline
+    if quantity_kind == "absolute-temperature":
+        denominator = None if temperature_reference is None else baseline - temperature_reference
+    if denominator is not None and not math.isfinite(denominator):
+        raise ValueError("Paired calculation produced a nonfinite denominator")
+    ratio = delta / denominator if denominator else None
+    if not math.isfinite(delta) or (ratio is not None and not math.isfinite(ratio)):
+        raise ValueError("Paired calculation produced a nonfinite result")
+    return {
+        "difference": delta,
+        "relative_change": ratio,
+        "relative_reduction": -ratio if ratio is not None else None,
+    }
+
+
+_COMPARABLE_FIELDS = {
+    "population": {"mean", "sum"},
+    "scalar_select": {"value"},
+    "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
+    "partition": {"area", "rate", "mean_flux"},
+}
+
+
+def calculate_result_comparison(
+    reports, *, id, reference, comparison, domain, definition_source, temperature_reference=None
+) -> dict:
+    """Compare two explicitly chosen, definition-compatible computed scalars.
+
+    The caller establishes scientific comparability. This shallow operation checks
+    declared definitions, not geometry or physical meaning, and never converts units.
+    Both parents retain independent source locations; no combined CSV is invented.
+    """
+    for label, value in (("id", id), ("domain", domain), ("definition_source", definition_source)):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Result comparison requires a nonempty {label}")
+    if any(report.get("id") == id for report in reports):
+        raise ValueError(f"Result comparison ID {id!r} already exists")
+    if reference == comparison:
+        raise ValueError("Reference and comparison must differ")
+    upstream = {}
+    for role, ref in (("reference", reference), ("comparison", comparison)):
+        if (
+            not isinstance(ref, dict)
+            or set(ref) != {"calculation_id", "group", "field"}
+            or any(not isinstance(value, str) or not value.strip() for value in ref.values())
+        ):
+            raise ValueError("Result references require only calculation_id, group and field")
+        matches = [report for report in reports if report.get("id") == ref["calculation_id"]]
+        if len(matches) != 1:
+            raise ValueError(f"{role}: expected one calculation ID, found {len(matches)}")
+        parent = matches[0]
+        operation, field = parent.get("operation"), ref["field"]
+        if field not in _COMPARABLE_FIELDS.get(operation, set()):
+            raise ValueError(f"{role}: unsupported parent operation or scalar field")
+        if parent.get("domain") != domain:
+            raise ValueError(f"{role}: parent domain must match the comparison domain")
+        resolved = resolve_table_result(reports, **ref)
+        kind = parent.get("quantity_kind", "ordinary")
+        if field in {"weight_sum", "area", "rate", "mean_flux"}:
+            kind = "ordinary"
+        elif field == "weighted_std" and kind == "absolute-temperature":
+            kind = "temperature-difference"
+        if kind not in {"ordinary", "absolute-temperature", "temperature-difference"}:
+            raise ValueError(f"{role}: unknown quantity_kind")
+        unit = resolved["unit"]
+        if kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
+            raise ValueError(f"{role}: absolute temperature requires Celsius or Kelvin units")
+        if kind == "temperature-difference" and unit != "K":
+            raise ValueError(f"{role}: temperature difference requires Kelvin units")
+        if kind == "ordinary" and unit in {"degC", "°C", "C", "K"}:
+            raise ValueError(f"{role}: declare temperature quantity_kind")
+        upstream[role] = {
+            **resolved,
+            "operation": operation,
+            "domain": parent["domain"],
+            "weight_kind": parent.get("weight_kind"),
+            "quantity_kind": kind,
+            "definition_source": parent.get("definition_source"),
+        }
+    baseline, compared = upstream["reference"], upstream["comparison"]
+    for key in ("operation", "field", "weight_kind", "quantity_kind", "unit"):
+        if baseline[key] != compared[key]:
+            raise ValueError(f"Result comparison requires matching {key}")
+    kind = baseline["quantity_kind"]
+    if temperature_reference is not None and (
+        kind != "absolute-temperature"
+        or type(temperature_reference) not in (int, float)
+        or not math.isfinite(temperature_reference)
+    ):
+        raise ValueError("temperature_reference requires a finite absolute-temperature origin")
+    result = _paired_result(
+        baseline["raw_value"], compared["raw_value"], kind, temperature_reference
+    )
+    return {
+        "operation": "result_comparison",
+        "id": id,
+        "domain": domain,
+        "definition_source": definition_source,
+        "units": {"value": "K" if kind == "absolute-temperature" else baseline["unit"]},
+        "quantity_kind": "temperature-difference" if kind == "absolute-temperature" else kind,
+        "temperature_reference": temperature_reference,
+        "parents": {"reference": dict(reference), "comparison": dict(comparison)},
+        "upstream": upstream,
+        "groups": [{"group": "all", "status": "computed", "result": result}],
+    }
 
 
 def read_source_records(path: Path, requested: list[str]) -> list[dict]:
@@ -396,6 +506,7 @@ def resolve_table_result(
         "scalar_select": {"value"},
         "paired_change": {"difference", "relative_change", "relative_reduction"},
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
+        "result_comparison": {"difference", "relative_change", "relative_reduction"},
     }
     operation = report.get("operation")
     if not isinstance(field, str) or field not in fields.get(operation, set()):
@@ -415,6 +526,46 @@ def resolve_table_result(
     result = selected.get("result")
     if selected.get("status") != "computed" or not isinstance(result, dict):
         raise ValueError(f"{location}: result unavailable ({selected.get('status')})")
+    if operation == "result_comparison":
+        raw_value = result.get(field)
+        if type(raw_value) not in (int, float) or not math.isfinite(raw_value):
+            raise ValueError(f"{location}: missing or nonfinite numeric value")
+        unit = report.get("units", {}).get("value") if field == "difference" else ""
+        if not isinstance(unit, str):
+            raise ValueError(f"{location}: missing declared role units")
+        upstream = report.get("upstream")
+        if not isinstance(upstream, dict) or set(upstream) != {"reference", "comparison"}:
+            raise ValueError(f"{location}: missing supporting_results")
+        supporting = []
+        for role in ("reference", "comparison"):
+            parent = upstream[role]
+            if not isinstance(parent, dict):
+                raise ValueError(f"{location}: missing supporting result for {role}")
+            records_key = "array_indices" if "array_indices" in parent else "csv_records"
+            records = parent.get(records_key)
+            minimum = 0 if records_key == "array_indices" else 2
+            if (
+                parent.get("field") not in _COMPARABLE_FIELDS.get(parent.get("operation"), set())
+                or not isinstance(parent.get("source"), str)
+                or not parent["source"]
+                or not isinstance(records, list)
+                or not records
+                or any(type(n) is not int or n < minimum for n in records)
+                or len(set(records)) != len(records)
+            ):
+                raise ValueError(f"{location}: invalid supporting result for {role}")
+            supporting.append({**parent, records_key: list(records)})
+        display_value = Decimal(str(raw_value)) * 100 if percentage else raw_value
+        return {
+            "value": format_value(display_value, places),
+            "unit": "%" if percentage else unit,
+            "raw_value": raw_value,
+            "calculation_id": calculation_id,
+            "group": group,
+            "field": field,
+            "source_record": source_record,
+            "supporting_results": supporting,
+        }
     array_source = "array_indices" in selected
     raw_records = selected.get("array_indices" if array_source else "csv_records")
     records = (

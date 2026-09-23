@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import math
 import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -13,6 +14,7 @@ from PIL import Image
 from pydantic import Field, model_validator
 
 from cfdpaper.publication.section import _Record, _stage, _write
+from cfdpaper.publication.style import FigureSizing, PublicationStyle, figure_placement
 
 
 class _Source(_Record):
@@ -65,6 +67,7 @@ class _Delivery(_Record):
     caption: str
     exports: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    sizing: FigureSizing = Field(default_factory=FigureSizing)
 
 
 def _asset(root: Path, name: str) -> Path:
@@ -165,6 +168,10 @@ def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
             "a nonblank PNG/TIFF preview and caption. Include other exports/dependencies in "
             "exports. Do not list unchanged sources/ files as delivery artifacts; they are "
             "preserved automatically. Do not overwrite task files or original sources.\n"
+            "In sizing, declare the actual source_width_mm and minimum_source_font_pt when "
+            "known from the editable source; leave unknown values null. Font size must refer "
+            "to that source width, not raster DPI. target_width_mm must match the task's "
+            "final_width_mm. These are declarations, not automatically detected measurements.\n"
             f"Inspect at {task.final_width_mm:g} mm final width; check labels, arrows, units "
             "and source-data mapping. Record raster-only components and any remaining issues "
             "in notes. Export success is not scientific approval.\n",
@@ -180,22 +187,35 @@ def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
                 "caption": "Replace with the evidence-bounded caption.",
                 "exports": [],
                 "notes": [],
+                "sizing": FigureSizing(target_width_mm=task.final_width_mm).model_dump(),
             },
         )
     return output_dir
 
 
-def import_figure_task(package_dir: Path, delivery_path: Path, output_dir: Path) -> Path:
+def import_figure_task(
+    package_dir: Path,
+    delivery_path: Path,
+    output_dir: Path,
+    *,
+    style: PublicationStyle | None = None,
+) -> Path:
     """Preserve source provenance and copy a candidate delivery without running its scripts.
 
     Syntax/image checks establish usable file types, not correspondence between returned
     artwork and source numbers or scientific approval. Author review remains necessary.
+    Sizing uses declared source metadata and the existing Word placement calculation;
+    the report applies to this style and caption, not a later changed manuscript layout.
     """
     package_dir, delivery_path, output_dir = map(Path, (package_dir, delivery_path, output_dir))
     task = _load(package_dir / "task.json", _Task)
     delivery = _load(delivery_path, _Delivery)
     if delivery.figure_id != task.figure_id:
         raise ValueError("Delivery figure_id does not match task")
+    target_width = delivery.sizing.target_width_mm
+    if target_width is not None and not math.isclose(target_width, task.final_width_mm):
+        raise ValueError("Delivery sizing.target_width_mm conflicts with task final_width_mm")
+    delivery.sizing = delivery.sizing.model_copy(update={"target_width_mm": task.final_width_mm})
     originals = [(item.path, _asset(package_dir, item.path)) for item in task.sources]
     names = [*delivery.editable_sources, delivery.preview, *delivery.exports]
     if len({Path(name).as_posix().casefold() for name in names}) != len(names):
@@ -216,6 +236,18 @@ def import_figure_task(package_dir: Path, delivery_path: Path, output_dir: Path)
     if task.kind == "schematic" and not suffixes.intersection({".svg", ".drawio"}):
         raise ValueError("Schematic deliveries require editable SVG or draw.io")
     preview_geometry = _check_preview(paths[delivery.preview], task.final_width_mm)
+    config = style or PublicationStyle()
+    placement = figure_placement(
+        pixels=(preview_geometry["width_px"], preview_geometry["height_px"]),
+        caption=f"Figure {task.figure_id}. {delivery.caption}",
+        sizing=delivery.sizing,
+        style=config,
+    )
+    preview_geometry.update(
+        final_width_mm=placement["width_mm"],
+        final_height_mm=placement["height_mm"],
+        effective_ppi=placement["effective_dpi"],
+    )
     with _stage(output_dir) as staged:
         for name, path in [*originals, *paths.items()]:
             destination = staged / name
@@ -232,6 +264,13 @@ def import_figure_task(package_dir: Path, delivery_path: Path, output_dir: Path)
                 "scientific_approval": False,
                 "checks": {"editable_syntax": True, "preview_decoded_nonblank": True},
                 "preview_geometry": preview_geometry,
+                "placement": placement,
+                "placement_style": config.model_dump(),
+                "font_size_basis": (
+                    "declared_source_metadata"
+                    if delivery.sizing.minimum_source_font_pt is not None
+                    else "unknown"
+                ),
                 "sources": [source.model_dump() for source in task.sources],
             },
         )

@@ -4,7 +4,8 @@
 
 - [Direct arrays and spatial diagnostics](../examples/spatial-diagnostics/README.md): NPZ
   inputs, explicit regional weighting, portable field maps and source-bound Word tables.
-- [v0.10.1 release notes](releases/v0.10.1.md): field-intake and numerical-display refinements.
+- [v0.11.0 release notes](releases/v0.11.0.md): linked calculated comparisons, targeted change
+  context and figure-to-Word sizing.
 
 - [Literature-linked manuscript and whole-paper review](../examples/literature-manuscript/README.md):
   seven-section assembly, shared sources, and the v0.9 review/editing round trip.
@@ -32,6 +33,7 @@
 
 - [Current limitations](limitations.md)
 - [Public roadmap](ROADMAP.md)
+- [Post-v0.10 maturity assessment and current development](research/POST_V010_DEVELOPMENT_PLAN.md)
 - [Approved post-v0.6 writing plan and progress](research/POST_V060_WRITING_PLAN.md)
 - [External figure Skill integration study](research/FIGURE_SKILL_INTEGRATION_STUDY.md)
 - [Contributing](../CONTRIBUTING.md)

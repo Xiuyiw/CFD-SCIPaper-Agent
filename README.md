@@ -5,9 +5,9 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and manuscript prose. Version 0.10.1
-supports direct NPZ analysis, large CSV intake and explicit regional area/volume-weighted statistics.
-Portable array and field-and-Word examples demonstrate the connected workflow.
+defensible paper topics, figures, and manuscript prose. Version 0.11.0 adds linked comparisons
+between calculated results, direct scalar/pair analysis proposals, and figure sizing that carries
+through to Word. Direct NPZ analysis, large CSV intake and explicit regional weighting remain available.
 Whole-paper review, targeted host editing, paired source-table calculations, cross-section evidence
 links and shared literature remain available alongside editable Word output.
 The workflow preserves the connection between the original observations, scientific interpretation,
@@ -17,7 +17,7 @@ The software does not replace scientific judgment. Authors still choose the rese
 the QoI and figure claim, and approve the final artifact.
 
 Start with the [spatial-diagnostics example](examples/spatial-diagnostics/README.md) and
-[v0.10.1 release notes](docs/releases/v0.10.1.md) for weighted analysis, a source-rendered field map
+[v0.11.0 release notes](docs/releases/v0.11.0.md) for linked comparisons, a source-rendered field map
 and Word output. The [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
 continues to cover whole-manuscript feedback and selected editing.
 
@@ -35,6 +35,7 @@ continues to cover whole-manuscript feedback and selected editing.
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. |
 | Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
+| Linked computed comparisons | Available | Compare two compatible calculated scalars while retaining both sources; update bound prose, tables and cross-section values. Chained comparisons and inferred comparability are not supported. |
 | Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
 | Shared literature workspace | Available | Local CSL JSON, DOI deduplication and aliases; claim-specific excerpts, locators, roles and author/host support decisions travel with the manuscript. Optional Pandoc imports BibLaTeX. |
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
@@ -49,8 +50,8 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For direct arrays and regional weighting, use the v0.10.1
-checkout or its matching wheel; v0.10.0 supports whole-domain CSV weighting only.
+CFD-Paper-Agent supports CPython 3.10–3.12. For linked calculated comparisons, use the v0.11.0
+checkout or its matching wheel; v0.10.1 retains direct arrays and regional weighting.
 From the checkout root, install with Word support:
 
 ```text
@@ -61,7 +62,7 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.10.1 notes](docs/releases/v0.10.1.md) for the new version scope.
+remains available. See the [v0.11.0 notes](docs/releases/v0.11.0.md) for the new version scope.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -266,7 +267,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
-- [v0.10.1 notes](docs/releases/v0.10.1.md)
+- [v0.11.0 notes](docs/releases/v0.11.0.md)
 - [v0.10.0 notes](docs/releases/v0.10.0.md)
 - [v0.9.0 notes](docs/releases/v0.9.0.md)
 - [v0.8.0 notes](docs/releases/v0.8.0.md)
