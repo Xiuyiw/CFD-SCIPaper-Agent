@@ -1,8 +1,13 @@
 # Limitations
 
-CFD-Paper-Agent v0.9.0 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent v0.10.1 is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
+
+The unreleased `workstream/linked-diagnostics` work adds comparisons of declared computed scalars,
+old/new result context in targeted manuscript updates, and external-figure sizing metadata.
+These are not capabilities of the published v0.10.1 wheel. Comparison scope is still supplied by
+the host/author; matching definitions and units do not independently establish physical validity.
 
 The public CLI supports `init`, `status`, `inspect`, `plan`, `qualify`, `analyze`, `figure`, and
 `write` and `review`. The implemented scientific path expects structured case records, located scalar
@@ -10,9 +15,12 @@ observations, a declared comparison, and a proposed QoI. It does not convert arb
 STAR-CCM+, or other native solver files into complete scientific records. Guided intake is
 experimental and still requires the author to supply the scientific meaning of the data.
 
-The v0.6 material-analysis route can also start directly from exported CSVs and method notes,
-without the structured topic-planning sequence. A host proposes the analysis and the author
-selects it; population and partition calculations still need explicit definitions and support.
+The material-analysis route can also start directly from exported CSVs, explicitly mapped 1D
+NPZ arrays and method notes, without the structured topic-planning sequence. A host proposes
+the analysis and the author selects it. Population, partition and area/volume-weighted calculations
+still need explicit definitions and support. Regional fractions must be supplied; their geometric
+extraction is not implemented. Individual sources over the current 20 MiB portable-copy limit are
+reported as uncopied, even when they can be profiled.
 
 The manuscript workspace assembles host-authored sections with shared paper-spine context,
 terminology and section duties. Its writing guidance covers Introduction, Methods, Results,

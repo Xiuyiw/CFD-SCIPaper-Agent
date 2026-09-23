@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-09-23
+
+### Added
+
+- Shallow comparisons of compatible computed scalars with two upstream source references,
+  shared domain/quantity checks and bindings into prose, tables, figures and other sections.
+- Direct scalar selection and paired changes through material-analysis proposals.
+- Old/new computed values and affected passage/figure context in manuscript change reports.
+- Declared source font/width and final manuscript width carried through external figure delivery
+  into DOCX sizing and effective-font reporting.
+- A portable linked-diagnostics example and installed-wheel relocation/update checks.
+
+### Fixed
+
+- Preserve explicit scalar temperature semantics and separate scientific comparison scope
+  from the paired row selector.
+- Display supported scaled molar-flow units formally and keep Word number/scale/unit groups together.
+- Remove outdated writing guidance that excluded comparisons of calculated results.
+
+The host and author still interpret the evidence and revise scientific explanations after data
+changes. This release does not establish an autonomous scientific-writing quality improvement.
+
 ## [0.10.1] — 2026-09-15
 
 ### Improved

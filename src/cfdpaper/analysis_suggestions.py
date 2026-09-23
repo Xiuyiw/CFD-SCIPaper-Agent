@@ -16,9 +16,11 @@ from pydantic import Field, StrictStr, model_serializer, model_validator
 
 from cfdpaper.adapters.csv import CSVAdapter, _split_header
 from cfdpaper.publication.section import (
+    _check_comparison_definition,
     _Evidence,
     _Figure,
     _Record,
+    _ResultComparison,
     _ResultRef,
     _stage,
     _TableCalculation,
@@ -26,6 +28,7 @@ from cfdpaper.publication.section import (
 )
 from cfdpaper.publication.style import PublicationStyle
 from cfdpaper.publication.table_evidence import (
+    calculate_result_comparison,
     calculate_table,
     read_source_records,
     resolve_table_result,
@@ -42,15 +45,25 @@ class _Comparison(_Record):
     scope: str
 
 
+class _PairedSelector(_Record):
+    pair_by: StrictStr
+    reference: StrictStr
+    comparison: StrictStr
+
+
 class _Calculation(_Record):
     # Proposal comparison is a scientific qualification, not a paired-row selector.
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
-    operation: Literal["population", "partition", "weighted_population"]
+    operation: Literal[
+        "population", "partition", "weighted_population", "scalar_select", "paired_change"
+    ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
     group_by: str | None = None
+    paired_selector: _PairedSelector | None = None
+    temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
     weight_kind: Literal["area", "volume"] | None = None
     region_fraction: StrictStr | None = None
     region_complement: bool = Field(default=False, strict=True)
@@ -73,7 +86,14 @@ class _Calculation(_Record):
             result.pop("region_complement", None)
         if self.operation != "weighted_population":
             result.pop("weight_kind", None)
+        if self.operation not in {"paired_change", "weighted_population"} and not (
+            self.operation == "scalar_select" and self.quantity_kind != "ordinary"
+        ):
             result.pop("quantity_kind", None)
+        if self.paired_selector is None:
+            result.pop("paired_selector", None)
+        if self.temperature_reference is None:
+            result.pop("temperature_reference", None)
         return result
 
     def table_calculation(self) -> _TableCalculation:
@@ -81,7 +101,12 @@ class _Calculation(_Record):
         fields = (set(_TableCalculation.model_fields) & set(type(self).model_fields)) - {
             "comparison"
         }
-        return _TableCalculation.model_validate({name: getattr(self, name) for name in fields})
+        data = {name: getattr(self, name) for name in fields}
+        if self.paired_selector is not None:
+            if self.operation != "paired_change":
+                raise ValueError("paired_selector is only for paired_change")
+            data.update(self.paired_selector.model_dump())
+        return _TableCalculation.model_validate(data)
 
     @model_validator(mode="after")
     def explicit_definition(self):
@@ -112,12 +137,20 @@ class _Candidate(_Record):
     presentation_reason: str | None = None
     style: PublicationStyle = Field(default_factory=PublicationStyle)
     calculations: list[_Calculation] = Field(min_length=1)
+    result_comparisons: list[_ResultComparison] = Field(default_factory=list)
     metrics: list[_Metric] = Field(default_factory=list)
     figures: list[_Figure] = Field(default_factory=list)
     supporting_evidence: list[_Evidence] = Field(default_factory=list)
     figure_plan: _FigurePlan | None = None
     interpretation_limits: list[StrictStr] = Field(min_length=1)
     missing_questions: list[StrictStr] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def serialize_candidate(self, handler):
+        result = handler(self)
+        if not self.result_comparisons:
+            result.pop("result_comparisons", None)
+        return result
 
 
 HOST_PROMPT = """# Propose a small, useful scientific analysis
@@ -154,7 +187,16 @@ calculations cannot run. Keep independent supported candidates available.
 The executable operators are population (equal-record count/sum/mean/population CV, ddof=0),
 partition (sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
 shares), and weighted_population (value plus positive area/volume weights, giving weighted_mean,
-weighted_std and weight_sum). For spatial statistics declare weight_kind area or volume and map
+weighted_std and weight_sum). scalar_select maps value to exactly one record per group; it does
+not filter a multi-record group. paired_change compares two records in each group using an explicit
+paired_selector {pair_by, reference, comparison}: pair_by names the identity column/key, and the
+other two fields name its exact reference/comparison values. Each selector must match exactly one
+record per group. This object is separate from the existing scientific comparison {status, scope}.
+Use member_id columns that identify all source records, including the paired configuration where
+necessary. Bind value for scalar_select and difference, relative_change or relative_reduction for
+paired_change. Difference is comparison minus reference; absolute-temperature percentages require
+temperature_reference in the source unit, otherwise only the K difference is available.
+For spatial statistics declare weight_kind area or volume and map
 the exact measure column and unit; point counts are not area weights. Declare quantity_kind for
 temperature values: absolute-temperature for Celsius, and absolute-temperature or
 temperature-difference for K. Spatial SD is not solver uncertainty. Do not infer missing
@@ -172,6 +214,17 @@ complement. Declare the region and how its fractions were obtained in the method
 This weights supplied element values by their regional measure, not unresolved subelement fields.
 Do not turn centroid membership into exact geometric overlap. If fractions are unavailable,
 continue supported whole-domain analysis and identify the necessary regional extraction.
+
+To compare calculated diagnostics, add result_comparisons, not manually copied intermediate
+values. Each record has id, reference and comparison ({calculation_id, group, field}), domain,
+definition_source (sources/method.md:L1-L3), comparison_scope and status. Only supported
+comparisons run. Compare the same operator/field, domain, weighting and units; a located
+definition does not prove physical comparability. The references select original scalar
+calculation outputs, not another result comparison. Bind its difference, relative_change or
+relative_reduction with result_ref using its id and group "all". Differences are comparison
+minus reference. Relative absolute-temperature changes need an explicit temperature_reference;
+undefined relative changes (including a zero denominator) are unavailable, not zero.
+Select complementary diagnostics for the physical question, not a list of every possible contrast.
 
 Separate existing observations, calculable relationships, and interpretations
 requiring extra evidence. An identity/decomposition is not causal proof. Do not
@@ -348,6 +401,8 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
         required.add(calc.group_by)
     if calc.region_fraction:
         required.add(calc.region_fraction)
+    if calc.paired_selector:
+        required.add(calc.paired_selector.pair_by)
     rows = read_source_records(source, sorted(required))
     if len(set(calc.member_id)) != len(calc.member_id) or any(
         not name.strip() for name in calc.member_id
@@ -375,15 +430,20 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
             raise ValueError(f"{calc.id}: invalid expected member identities")
         if any(actual != expected for actual in members.values()):
             raise ValueError(f"{calc.id}: missing or unexpected members in declared groups")
-    base = calc.table_calculation().model_dump()
+    table = calc.table_calculation()
+    base = table.model_dump()
     result = calculate_table(
         source,
         operation=calc.operation,
         columns=calc.columns,
         group_by=calc.group_by,
+        pair_by=table.pair_by,
+        reference=table.reference,
+        comparison=table.comparison,
         units=calc.units,
         weight_kind=calc.weight_kind,
         quantity_kind=calc.quantity_kind,
+        temperature_reference=calc.temperature_reference,
         region_fraction=calc.region_fraction,
         region_complement=calc.region_complement,
     )
@@ -419,10 +479,15 @@ def compile_analysis(
     chosen = _Candidate.model_validate(candidates[ids.index(candidate_id)])
     if chosen.missing_questions:
         raise ValueError(f"Resolve selected candidate questions: {chosen.missing_questions}")
-    calc_ids = [calc.id for calc in chosen.calculations]
+    calc_ids = [calc.id for calc in [*chosen.calculations, *chosen.result_comparisons]]
     if len(calc_ids) != len(set(calc_ids)):
         raise ValueError("Calculation IDs must be unique")
     reports = [_check_calculation(package, calc) for calc in chosen.calculations]
+    comparison_sources = set()
+    parents = list(reports)
+    for item in chosen.result_comparisons:
+        comparison_sources.add(_check_comparison_definition(package, item.definition_source))
+        reports.append(calculate_result_comparison(parents, **item.engine_arguments()))
     metrics = chosen.metrics or _automatic_metrics(reports)
     if len({metric.id for metric in metrics}) != len(metrics):
         raise ValueError("Metric IDs must be unique")
@@ -433,7 +498,8 @@ def compile_analysis(
             _Evidence(
                 id=metric.id,
                 text=metric.text,
-                source=resolved["source"],
+                source=resolved.get("source")
+                or "; ".join(parent["source"] for parent in resolved["supporting_results"]),
                 kind="metric",
                 result_ref=metric.result_ref,
             ).model_dump(exclude_none=True)
@@ -468,6 +534,7 @@ def compile_analysis(
             for path in (calc.source, calc.definition_source.path)
         }
         | supporting_sources
+        | comparison_sources
     )
     payload = {
         "section_id": chosen.id,
@@ -496,6 +563,12 @@ def compile_analysis(
         "style": chosen.style.model_dump(),
         "figure_plan": chosen.figure_plan.model_dump() if chosen.figure_plan else None,
     }
+    if chosen.result_comparisons:
+        payload["result_comparisons"] = [item.model_dump() for item in chosen.result_comparisons]
+        payload["context"] += "\n" + "\n".join(
+            f"{item.id}: {item.comparison_scope}; definition {item.definition_source}"
+            for item in chosen.result_comparisons
+        )
     with _stage(output_dir) as staged:
         for name in sources:
             destination = staged / name
@@ -537,6 +610,9 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "population": ("mean", "cv"),
             "partition": ("area", "rate", "mean_flux"),
             "weighted_population": ("weighted_mean", "weighted_std", "weight_sum"),
+            "scalar_select": ("value",),
+            "paired_change": ("difference",),
+            "result_comparison": ("difference",),
         }[report["operation"]]
         for number, group in enumerate(report["groups"], 1):
             for field in fields:

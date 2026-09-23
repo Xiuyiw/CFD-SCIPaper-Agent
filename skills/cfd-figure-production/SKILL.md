@@ -112,6 +112,13 @@ relationships; distinguish hypotheses from measured observations. A concept illu
 be passed off as a CFD field. Keep original field images unchanged in mixed layouts.
 
 Return `delivery-template.json` with the actual editable source files, raster preview and caption.
+Where known, set its `sizing.source_width_mm` and `sizing.minimum_source_font_pt` from the actual
+exported figure. `target_width_mm` inherits the task's final width; revise the task explicitly if
+that width changes. Import returns reusable `sizing` and a page-constrained `placement`, including
+scaled minimum font size. Carry `sizing` into the section figure and use the same publication style;
+Word export recomputes placement if the page or caption changes. These font values are declared
+metadata, not automatic image-text measurements. Unknown font size stays unknown. Inspect the
+final document as well as the standalone preview; more pixels do not repair small embedded text.
 For field-based plots, follow the native-field dependency and relocated-script procedure in the
 external-tool reference. Carry the actual selected arrays/geometry/helpers, not just the preview.
 Import copies these files; it does not run arbitrary returned code, generate the figure, judge

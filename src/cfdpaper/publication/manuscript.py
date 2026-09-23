@@ -596,6 +596,67 @@ def _writing_state(data, loaded, library, raw_drafts):
     return state
 
 
+def _snapshot_scalar(state, sid, eid):
+    """Follow existing bindings to the original, unrounded computed result."""
+    sections = (state or {}).get("sections", {})
+    visited = set()
+    while (sid, eid) not in visited:
+        visited.add((sid, eid))
+        section = sections.get(sid, {})
+        target = section.get("bindings", {}).get(eid)
+        if target:
+            sid, eid = target.split("/")
+            continue
+        result = section.get("evidence", {}).get(eid, {}).get("resolved", {})
+        if "raw_value" not in result:
+            return None
+        return {
+            "owner": f"{sid}/{eid}",
+            **{
+                key: result[key]
+                for key in ("raw_value", "unit", "calculation_id", "group", "field")
+            },
+        }
+    return None
+
+
+def _passage_context(previous, current, sid, paragraph):
+    section = current["sections"][sid]
+    result_changes = []
+    for eid in paragraph.get("evidence_ids", []):
+        before = _snapshot_scalar(previous, sid, eid)
+        after = _snapshot_scalar(current, sid, eid)
+        if before == after or not (before or after):
+            continue
+        sign_changed = None
+        if (
+            before
+            and after
+            and before["unit"] == after["unit"]
+            and before["field"] == after["field"] == "difference"
+        ):
+            left, right = before["raw_value"], after["raw_value"]
+            sign_changed = ((left > 0) - (left < 0)) != ((right > 0) - (right < 0))
+        result_changes.append(
+            {
+                "evidence_id": eid,
+                "before": before,
+                "after": after,
+                "difference_sign_changed": sign_changed,
+            }
+        )
+    figures = [
+        {
+            "id": figure["id"],
+            "path": figure["path"],
+            "caption": section["draft"].get("captions", {}).get(figure["id"], figure["caption"]),
+        }
+        for figure in section["input"].get("figures", [])
+        if figure["id"] in paragraph.get("figure_ids", [])
+    ]
+    return {"text": paragraph["text"], "figures": figures, "result_changes": result_changes}
+
+
 def _change_report(previous, current):
     report = compare_manuscript_states(previous, current)
     passages = {}
@@ -612,12 +673,28 @@ def _change_report(previous, current):
         )
         draft = current["sections"][sid]["draft"]
         passages[sid] = [
-            {"paragraph": index, "evidence_ids": p.get("evidence_ids", [])}
+            {
+                "paragraph": index,
+                "evidence_ids": p.get("evidence_ids", []),
+                **_passage_context(previous, current, sid, p),
+            }
             for index, p in enumerate(draft["paragraphs"], 1)
             if broad or exact.intersection(p.get("evidence_ids", []))
         ]
     report["affected_passages"] = passages
     return report
+
+
+def _relocate_result_sources(value, prefix):
+    """Keep each upstream locator separate when packaging derived evidence."""
+    relocated = dict(value)
+    if "source" in value:
+        relocated["source"] = (prefix / value["source"]).as_posix()
+    if "supporting_results" in value:
+        relocated["supporting_results"] = [
+            _relocate_result_sources(parent, prefix) for parent in value["supporting_results"]
+        ]
+    return relocated
 
 
 def _bound_review_materials(local, entry, loaded, resolutions):
@@ -643,12 +720,13 @@ def _bound_review_materials(local, entry, loaded, resolutions):
             "calculations": [c.model_dump() for c in data.table_calculations],
             "source_materials": materials,
         }
+        if data.result_comparisons:
+            evidence[eid]["result_comparisons"] = [c.model_dump() for c in data.result_comparisons]
         if eid in resolutions:
             value = resolutions[eid]
-            evidence[eid]["resolved"] = {
-                **value,
-                "source": (Path("bound-sources") / owner / value["source"]).as_posix(),
-            }
+            evidence[eid]["resolved"] = _relocate_result_sources(
+                value, Path("bound-sources") / owner
+            )
     _write(packet / "bound-evidence.json", evidence)
     for root in (local, packet):
         prompt = root / "review-prompt.md"
@@ -907,8 +985,9 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                     combined[field].append(item)
             for key, value in global_section["resolved_values"].items():
                 owner = value.get("owner_section", sid)
-                value["source"] = (Path("sections") / owner / value["source"]).as_posix()
-                combined["resolved_values"][mapping["evidence"][key]] = value
+                combined["resolved_values"][mapping["evidence"][key]] = _relocate_result_sources(
+                    value, Path("sections") / owner
+                )
             for field in ("image_observations", "observation_notes"):
                 combined[field].update(
                     {mapping["figure"][key]: value for key, value in global_section[field].items()}
@@ -931,6 +1010,32 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             change_lines.append(
                 "Recheck related figures/tables after source changes; images are not regenerated."
             )
+            for passage in changes["affected_passages"][sid]:
+                if not passage["result_changes"]:
+                    continue
+                change_lines += ["", f"Paragraph {passage['paragraph']}: {passage['text']}"]
+                for change in passage["result_changes"]:
+
+                    def reading(value):
+                        return (
+                            "unavailable"
+                            if value is None
+                            else f"{value['raw_value']:.12g} {value['unit']}"
+                        )
+
+                    change_lines.append(
+                        f"- {change['evidence_id']}: {reading(change['before'])} → "
+                        f"{reading(change['after'])}."
+                        + (
+                            " Difference sign changed; revisit the interpretation."
+                            if change["difference_sign_changed"]
+                            else ""
+                        )
+                    )
+                for figure in passage["figures"]:
+                    change_lines.append(
+                        f"- Figure {figure['id']}: {figure['path']} — {figure['caption']}"
+                    )
         if changes["baseline_available"] and not changes["changes"]:
             change_lines.append("No changes in the compared writing inputs and drafts.")
         (staged / "CHANGES.md").write_text("\n".join(change_lines) + "\n", encoding="utf-8")

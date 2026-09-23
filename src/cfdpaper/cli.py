@@ -583,5 +583,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.10.1.",
+        help="Roadmap command; not available in v0.11.0.",
     )(_placeholder_command(_command_name))

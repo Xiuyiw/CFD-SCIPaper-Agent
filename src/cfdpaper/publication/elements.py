@@ -19,12 +19,13 @@ _NUMBER = r"[+\-−]?\u2060?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+\-−]?\u2060?\d+)?"
 # Deliberately bounded publication notation, not a general unit parser.
 _UNIT_ATOM = (
     r"(?:MW|kW|W|MJ|kJ|J|MPa|kPa|Pa|bar|°C|°F|degC|K|kg|mg|g|"
-    r"km|cm|mm|[µμ]m|nm|mL|L|mol|ms|min|s|h|kHz|Hz|N|rad|m|%)"
+    r"km|cm|mm|[µμ]m|nm|mL|L|kgmol|kmol|mol|ms|min|s|h|kHz|Hz|N|rad|m|%)"
     r"(?:\^?[+\-−]?\u2060?\d+|[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)?(?![\w°])"
 )
 _UNIT = rf"{_UNIT_ATOM}(?:(?:[ \t\u00a0]+|[·/]\u2060?){_UNIT_ATOM})*"
 _SCIENTIFIC_VALUE = re.compile(
     rf"(?<![\w./:+−\-])(?P<number>{_NUMBER})(?!\w|[.\-]\w)"
+    rf"(?P<scale>[ \t\u00a0]+×[ \t\u00a0]+10[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)?"
     rf"(?P<unit>[ \t\u00a0]+{_UNIT})?"
 )
 
@@ -47,7 +48,8 @@ def display_scientific_text(value: str) -> str:
         unit = re.sub(r"[ \t\u00a0]+", "\u00a0", unit)
         unit = re.sub(r"[-−]\u2060?(?=\d)", "−\u2060", unit)
         unit = re.sub(r"/\u2060?", "/\u2060", unit)
-        return number + unit
+        scale = re.sub(r"[ \t\u00a0]+", "\u00a0", match["scale"] or "")
+        return number + scale + unit
 
     return "".join(
         part if index % 2 else _SCIENTIFIC_VALUE.sub(typeset, part)
