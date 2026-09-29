@@ -11,7 +11,7 @@ heat input and volumetric flow are stipulated in the synthetic method note, not 
 
 ## Run
 
-This example requires the v0.12 development source or its candidate wheel; released v0.11 does
+This example requires v0.12.0 or later; v0.11 does
 not provide the new context and long-table options. Use a Python environment with `cfdpaper[docs]`
 installed. From the repository root, for example:
 

@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-09-30
+
+### Added
+
+- Exact long-table row filters applied before numeric/member checks, with explicit unit-column
+  validation and original record positions in calculations, proposals and figure data.
+- Current section-writing context with related drafts, recomputed evidence, located literature
+  and keywords; partial draft mappings support writing one section at a time.
+- Paragraph-level shared-unit display without removing units from evidence or tables.
+- Optional split captions and tables in Word, preserving the previous default layout.
+- A portable three-section connected-writing example with mixed-unit sources and native tables.
+
+### Improved
+
+- Scientific intake, analysis and writing skills now cover long-table definitions and current
+  cross-section reasoning, including title/keyword consistency after scope changes.
+
+The example replays supplied synthetic drafts. Known-project trials demonstrated practical input,
+context and layout improvements, not a general increase in autonomous scientific reasoning.
+
 ## [0.11.0] — 2026-09-23
 
 ### Added
