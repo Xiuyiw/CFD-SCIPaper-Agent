@@ -43,8 +43,8 @@ domains, definition locations, duplicate declared identities, missing declared m
 unsupported comparison status must be resolved for the selected calculation. Independent
 supported candidates remain available.
 
-Use `scalar_select` for a declared scalar already present as exactly one source record per
-group, mapping `columns.value` and `units.value`; it does not filter multiple rows. For two
+Use `scalar_select` for a declared scalar present as exactly one selected source record per
+group, mapping `columns.value` and `units.value`. For two
 source records within each group, use `paired_change` with
 `paired_selector: {pair_by: "configuration", reference: "base", comparison: "new"}`.
 The selector is distinct from scientific `comparison: {status, scope}`, which remains required.
@@ -54,6 +54,16 @@ paired `difference`, `relative_change`, `relative_reduction` through result_ref;
 anchors use only the signed difference. Declare quantity_kind on temperature scalars and pairs.
 Absolute-temperature differences use K; a relative change additionally needs a method-backed
 temperature_reference in the original unit. Without it, do not request a percentage.
+
+For long tables, declare `row_filters: {"metric": "pressure_drop", "domain": "device"}`
+and `unit_column: "unit"` on the calculation, using the actual source strings. These equalities
+apply before numeric conversion, so other metrics may contain text or different units. Every
+selected value unit must exactly match `units.value`; there is no unit conversion or inferred
+alias. Add domain/definition filters when a metric name alone is ambiguous. Zero matches,
+duplicate scalar/pair members and conflicting units require a corrected selection or definition,
+not the first row or an automatic average. Population aggregation still needs its usual physical
+basis. Source CSV record numbers remain original (header is record 1); NPZ indices stay zero-based.
+`unit_column` checks only the value role, not weighted measures or partition area/rate roles.
 
 CSV preview limits do not determine whether a field can be analyzed. Read the complete copied
 source for calculations. NPZ sources can be used directly: map exact one-dimensional array keys
@@ -75,6 +85,13 @@ Prefer a few purposeful result-bound metrics. If automatic scalar anchors are pr
 a selection pool, not a request to narrate every value. Inspect `table-results.json`; no hand-copied
 numeric claims should replace `result_ref`. Keep zero-mean CV undefined rather than reporting zero.
 Changing copied source values requires recalculation and fresh downstream figure/writing output.
+
+For each additional diagnostic, identify what it can distinguish that the current evidence cannot.
+A fixed-section flux and an axial profile may separate intensity change from displacement; a
+concentration and an integrated source may expose transport or normalization differences. First
+check their domains, denominators and imposed conditions. If the distinction needs an unavailable
+field or controlled comparison, keep the candidate explanation bounded and name that missing
+observation; do not add algebraically equivalent metrics to simulate independent support.
 
 When the question compares two calculated scalars, use candidate `result_comparisons`, not a
 hand-transcribed intermediate CSV. Each entry declares id, reference and comparison

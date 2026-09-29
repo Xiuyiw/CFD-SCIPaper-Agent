@@ -67,6 +67,8 @@ class _Calculation(_Record):
     weight_kind: Literal["area", "volume"] | None = None
     region_fraction: StrictStr | None = None
     region_complement: bool = Field(default=False, strict=True)
+    row_filters: dict[StrictStr, StrictStr] = Field(default_factory=dict)
+    unit_column: StrictStr | None = None
     quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
         "ordinary"
     )
@@ -81,6 +83,10 @@ class _Calculation(_Record):
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if not self.row_filters:
+            result.pop("row_filters", None)
+        if self.unit_column is None:
+            result.pop("unit_column", None)
         if self.region_fraction is None and not self.region_complement:
             result.pop("region_fraction", None)
             result.pop("region_complement", None)
@@ -187,8 +193,10 @@ calculations cannot run. Keep independent supported candidates available.
 The executable operators are population (equal-record count/sum/mean/population CV, ddof=0),
 partition (sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
 shares), and weighted_population (value plus positive area/volume weights, giving weighted_mean,
-weighted_std and weight_sum). scalar_select maps value to exactly one record per group; it does
-not filter a multi-record group. paired_change compares two records in each group using an explicit
+weighted_std and weight_sum). For long tables, row_filters selects exact column/value matches
+before numeric conversion. unit_column checks the selected value units against units.value;
+it does not convert units. scalar_select then requires exactly one selected record per group.
+paired_change compares two records in each group using an explicit
 paired_selector {pair_by, reference, comparison}: pair_by names the identity column/key, and the
 other two fields name its exact reference/comparison values. Each selector must match exactly one
 record per group. This object is separate from the existing scientific comparison {status, scope}.
@@ -201,8 +209,8 @@ the exact measure column and unit; point counts are not area weights. Declare qu
 temperature values: absolute-temperature for Celsius, and absolute-temperature or
 temperature-difference for K. Spatial SD is not solver uncertainty. Do not infer missing
 within-element variability from element averages. No inferred integrals, unit conversion,
-excluded rows, solver execution or arbitrary code. A partition requires method-backed disjoint
-regions and a stated coverage; a supplied subset is not silently the full domain.
+implicit row exclusions, solver execution or arbitrary code. A partition requires method-backed
+disjoint regions and a stated coverage; a supplied subset is not silently the full domain.
 List expected_members/expected_groups when the method declares the full set so
 missing records can be detected. Units must be explicit; use "1" for dimensionless.
 
@@ -397,6 +405,9 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
     if not is_array:
         CSVAdapter().inventory(source)
     required = set(calc.columns.values()) | set(calc.member_id)
+    required.update(calc.row_filters)
+    if calc.unit_column:
+        required.add(calc.unit_column)
     if calc.group_by:
         required.add(calc.group_by)
     if calc.region_fraction:
@@ -414,6 +425,8 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
             raise ValueError(f"{calc.id}: declared unit conflicts with header {header!r}")
     members: dict[str, set[tuple[str, ...]]] = {}
     for line, row in enumerate(rows, 0 if is_array else 2):
+        if any(row[key] != value for key, value in calc.row_filters.items()):
+            continue
         identity = tuple((row[name] or "").strip() for name in calc.member_id)
         group = (row[calc.group_by] or "") if calc.group_by else "all"
         if not group.strip() or any(not value for value in identity):
@@ -446,6 +459,8 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
         temperature_reference=calc.temperature_reference,
         region_fraction=calc.region_fraction,
         region_complement=calc.region_complement,
+        row_filters=calc.row_filters,
+        unit_column=calc.unit_column,
     )
     if any(group["status"] != "computed" for group in result["groups"]):
         raise ValueError(f"{calc.id}: selected calculation has missing numeric values")

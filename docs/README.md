@@ -2,8 +2,13 @@
 
 ## Start here
 
+- [Connected scientific writing](../examples/connected-writing/README.md): runnable example
+  for mixed-unit long tables, current dependency passages, and a portable three-section DOCX.
+  This is a recorded synthetic replay, not an autonomous writing demonstration.
 - [Direct arrays and spatial diagnostics](../examples/spatial-diagnostics/README.md): NPZ
   inputs, explicit regional weighting, portable field maps and source-bound Word tables.
+- [v0.12.0 release notes](releases/v0.12.0.md): long-table selection, current writing context,
+  concise units and configurable Word pagination.
 - [v0.11.0 release notes](releases/v0.11.0.md): linked calculated comparisons, targeted change
   context and figure-to-Word sizing.
 
@@ -33,6 +38,7 @@
 
 - [Current limitations](limitations.md)
 - [Public roadmap](ROADMAP.md)
+- [v0.12 development and observed results](research/V0_12_DEVELOPMENT_PLAN.md)
 - [Post-v0.10 maturity assessment and current development](research/POST_V010_DEVELOPMENT_PLAN.md)
 - [Approved post-v0.6 writing plan and progress](research/POST_V060_WRITING_PLAN.md)
 - [External figure Skill integration study](research/FIGURE_SKILL_INTEGRATION_STUDY.md)

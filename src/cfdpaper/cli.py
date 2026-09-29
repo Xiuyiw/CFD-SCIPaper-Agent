@@ -389,6 +389,7 @@ def write_project(
     author: Annotated[str | None, typer.Option("--author")] = None,
     section_input: Annotated[Path | None, typer.Option("--section-input")] = None,
     manuscript_input: Annotated[Path | None, typer.Option("--manuscript-input")] = None,
+    context_for: Annotated[str | None, typer.Option("--context-for")] = None,
     package: Annotated[Path | None, typer.Option("--package")] = None,
     draft: Annotated[Path | None, typer.Option("--draft")] = None,
     output: Annotated[Path | None, typer.Option("--output")] = None,
@@ -407,12 +408,32 @@ def write_project(
                 raise WorkflowInputError(
                     "Manuscript actions use --manuscript-input, --draft, or --docx."
                 )
+            if context_for is not None:
+                if (
+                    package is None
+                    or output is None
+                    or manuscript_input
+                    or docx
+                    or layout
+                    or pdf_preview
+                ):
+                    raise WorkflowInputError(
+                        "--context-for requires --package and a fresh --output; optional --draft "
+                        "supplies current partial drafts. Do not combine it with prepare/export."
+                    )
+                from cfdpaper.publication.manuscript import prepare_writing_context
+
+                result = prepare_writing_context(package, context_for, output, drafts_path=draft)
+                console.print(f"Current section writing context ready: {result}", markup=False)
+                return
             _write_manuscript_action(
                 manuscript_input, package, draft, output, docx, layout, pdf_preview
             )
             return
-        if manuscript_input is not None:
-            raise WorkflowInputError("--manuscript-input requires --artifact manuscript.")
+        if manuscript_input is not None or context_for is not None:
+            raise WorkflowInputError(
+                "--manuscript-input/--context-for require --artifact manuscript."
+            )
         if artifact == "results-section":
             if approve_final or author is not None:
                 raise WorkflowInputError("Results sections remain candidates for author review.")
@@ -583,5 +604,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.11.0.",
+        help="Roadmap command; not available in v0.12.0.",
     )(_placeholder_command(_command_name))

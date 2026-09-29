@@ -5,9 +5,10 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and manuscript prose. Version 0.11.0 adds linked comparisons
-between calculated results, direct scalar/pair analysis proposals, and figure sizing that carries
-through to Word. Direct NPZ analysis, large CSV intake and explicit regional weighting remain available.
+defensible paper topics, figures, and manuscript prose. Version 0.12.0 adds exact mixed-unit
+long-table selection, current cross-section context for host writing, concise bound-value display
+and configurable caption/table pagination in Word. Linked comparisons, direct NPZ analysis,
+large CSV intake and explicit regional weighting remain available.
 Whole-paper review, targeted host editing, paired source-table calculations, cross-section evidence
 links and shared literature remain available alongside editable Word output.
 The workflow preserves the connection between the original observations, scientific interpretation,
@@ -16,8 +17,8 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Start with the [spatial-diagnostics example](examples/spatial-diagnostics/README.md) and
-[v0.11.0 release notes](docs/releases/v0.11.0.md) for linked comparisons, a source-rendered field map
+Start with the [connected-writing example](examples/connected-writing/README.md) and
+[v0.12.0 release notes](docs/releases/v0.12.0.md) for long-table evidence, connected sections
 and Word output. The [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
 continues to cover whole-manuscript feedback and selected editing.
 
@@ -50,8 +51,8 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For linked calculated comparisons, use the v0.11.0
-checkout or its matching wheel; v0.10.1 retains direct arrays and regional weighting.
+CFD-Paper-Agent supports CPython 3.10–3.12. For current writing context and long-table selection,
+use the v0.12.0 checkout or its matching wheel.
 From the checkout root, install with Word support:
 
 ```text
@@ -62,7 +63,7 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.11.0 notes](docs/releases/v0.11.0.md) for the new version scope.
+remains available. See the [v0.12.0 notes](docs/releases/v0.12.0.md) for the new version scope.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -267,6 +268,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.12.0 notes](docs/releases/v0.12.0.md)
 - [v0.11.0 notes](docs/releases/v0.11.0.md)
 - [v0.10.0 notes](docs/releases/v0.10.0.md)
 - [v0.9.0 notes](docs/releases/v0.9.0.md)
