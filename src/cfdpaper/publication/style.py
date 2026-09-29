@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -28,6 +29,9 @@ class PublicationStyle(BaseModel):
     line_spacing: float = Field(default=1.08, ge=1)
     figure_width_mm: float = Field(default=160, gt=0)
     minimum_figure_font_pt: float = Field(default=8, gt=0)
+    # Opt-in pagination changes preserve text, font sizes and image dimensions.
+    figure_caption_pagination: Literal["keep", "allow-split"] = "keep"
+    table_pagination: Literal["auto", "allow-split"] = "auto"
 
     @model_validator(mode="after")
     def usable_page(self):

@@ -211,6 +211,21 @@ def add_equation(document, equation: SectionEquation):
     paragraph.add_run(f"   ({equation.equation_id})")
 
 
+def apply_figure_pagination(image_paragraph, caption_paragraph, style, *, page_break_before=False):
+    """Keep the image with the caption start, optionally allowing a long caption to flow.
+
+    Word can split the caption after its opening lines while keeping those lines
+    with the image. End the keep chain at the caption, not the following prose.
+    No image dimensions, text or font settings are changed here.
+    """
+    image_paragraph.paragraph_format.keep_with_next = True
+    image_paragraph.paragraph_format.page_break_before = page_break_before
+    caption = caption_paragraph.paragraph_format
+    caption.keep_with_next = False
+    caption.keep_together = style.figure_caption_pagination == "keep"
+    caption.widow_control = True
+
+
 def add_table(document, table: SectionTable, style):
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
@@ -224,6 +239,7 @@ def add_table(document, table: SectionTable, style):
         f"Table {table.table_id}. {display_scientific_text(table.caption)}", style="Caption"
     )
     caption.paragraph_format.keep_with_next = True
+    caption.paragraph_format.keep_together = True
 
     # Only bind tables whose conservative wrapped-text estimate occupies at most
     # half a page. Long tables must remain free to paginate with repeated headers.
@@ -241,7 +257,9 @@ def add_table(document, table: SectionTable, style):
     height_pt += (lines(caption.text, available) + lines(table.note, available)) * (
         style.caption_pt * 1.2
     )
-    compact = height_pt <= (style.page_height_mm - 2 * style.margin_mm) * 72 / 25.4 / 2
+    compact = style.table_pagination == "auto" and height_pt <= (
+        (style.page_height_mm - 2 * style.margin_mm) * 72 / 25.4 / 2
+    )
     item = document.add_table(rows=1, cols=len(table.columns))
     item.autofit = False
     item.alignment = 1
@@ -286,4 +304,6 @@ def add_table(document, table: SectionTable, style):
         for cell in item.rows[-1].cells:
             for paragraph in cell.paragraphs:
                 paragraph.paragraph_format.keep_with_next = True
-        document.add_paragraph(display_scientific_text(table.note), style="Caption")
+        note = document.add_paragraph(display_scientific_text(table.note), style="Caption")
+        note.paragraph_format.keep_with_next = False
+        note.paragraph_format.keep_together = True

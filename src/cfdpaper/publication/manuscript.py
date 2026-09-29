@@ -246,6 +246,7 @@ def _section_context(package, data, contract, library=None):
             "title": data.title,
             "context": data.context,
             "terms": data.terms,
+            "keywords": data.keywords,
             "spine": data.spine.model_dump(),
             "section": contract.model_dump(),
             "evidence_bindings": entry.evidence_bindings,
@@ -398,7 +399,115 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
             "For an object in another section use {{equation:section_id/local_id}}, "
             "{{table:section_id/local_id}} or {{figure:section_id/local_id}}; "
             "unqualified IDs refer to the current section. "
-            "Literal reference labels in prose are not renumbered.\n",
+            "Literal reference labels in prose are not renumbered.\n\n"
+            "Before drafting a dependent section, run `cfdpaper write --artifact manuscript "
+            "--package PACKAGE --context-for SECTION_ID --draft PARTIAL_DRAFT_MAP "
+            "--output FRESH_CONTEXT` to collect its current related passages, recomputed "
+            "evidence and located literature. The draft map may contain only sections "
+            "written so far; omit --draft when none exists. Refresh after source or prose "
+            "changes. This gathers context for your reasoning, not an automatic rewrite. "
+            "Compare the title and keywords with the current question and included results. "
+            "Report inherited out-of-scope terms with a suggested correction; do not treat "
+            "manifest metadata as proof that a study was performed.\n",
+            encoding="utf-8",
+        )
+    return output_dir
+
+
+def prepare_writing_context(
+    package_dir: Path,
+    section_id: str,
+    output_dir: Path,
+    *,
+    drafts_path: Path | None = None,
+) -> Path:
+    """Collect one task's current dependencies without requiring a completed manuscript.
+
+    A partial draft map is allowed. Only explicitly dependent/bound sections and
+    the target travel with the task; all source calculations are refreshed.
+    Draft text remains author-owned and is never rewritten to match new values.
+    """
+    package_dir, output_dir = Path(package_dir), Path(output_dir)
+    _fresh(output_dir)
+    data, loaded, library, bindings, resolutions = _inputs(package_dir / "manuscript-input.json")
+    entries = {item.section_id: item for item in data.sections}
+    if section_id not in entries:
+        raise ValueError(f"Unknown section: {section_id}")
+    drafts = _read(drafts_path) if drafts_path is not None else {}
+    if not isinstance(drafts, dict) or set(drafts) - entries.keys():
+        raise ValueError("Draft section IDs must belong to the manuscript")
+    selected = {section_id}
+    entry = entries[section_id]
+    selected.update(entry.depends_on)
+    selected.update(target.split("/")[0] for target in entry.evidence_bindings.values())
+    context = {
+        "target_section": section_id,
+        "title": data.title,
+        "question": data.context,
+        "terms": data.terms,
+        "keywords": data.keywords,
+        "spine": data.spine.model_dump(),
+        "sections": {},
+        "missing_dependency_drafts": [],
+        "reading": "Draft passages are current supplied wording; calculated evidence is refreshed "
+        "from the copied sources. Reconsider conflicting wording rather than copying it as fact.",
+    }
+    with _stage(output_dir) as staged:
+        if library is not None:
+            copy_literature(_relative(package_dir, data.literature), staged / "literature")
+        for contract in data.spine.sections:
+            sid = contract.section_id
+            if sid not in selected:
+                continue
+            source, section = loaded[sid]
+            local = prepare_section(
+                source,
+                staged / "sections" / sid,
+                evidence_overrides=_literature_overrides(library, sid, source.parent),
+                bound_evidence=bindings[sid],
+            )
+            _section_context(local, data, contract, library)
+            raw = None
+            if sid in drafts:
+                if not isinstance(drafts[sid], str):
+                    raise ValueError("Draft paths must be relative JSON paths")
+                raw = _read(_relative(Path(drafts_path).parent, drafts[sid]))
+                _Draft.model_validate(raw)
+                _write(local / "current-draft.json", raw)
+            elif sid != section_id:
+                context["missing_dependency_drafts"].append(sid)
+            reports = _calculate_sources(section, local, write=False)
+            evidence = {record.id: record.model_dump() for record in section.evidence}
+            for record in section.evidence:
+                if record.result_ref is not None:
+                    evidence[record.id]["resolved"] = resolve_table_result(
+                        reports, **record.result_ref.model_dump()
+                    )
+                elif record.id in resolutions.get(sid, {}):
+                    evidence[record.id]["resolved"] = resolutions[sid][record.id]
+            context["sections"][sid] = {
+                "input": f"sections/{sid}/input.json",
+                "responsibility": contract.model_dump(),
+                "draft": raw,
+                "evidence": evidence,
+                "literature_support": [
+                    support
+                    for support in (library or {}).get("supports", [])
+                    if support["section_id"] == sid
+                ],
+            }
+        _write(staged / "context.json", context)
+        (staged / "TASK.md").write_text(
+            f"# Write {section_id} within the current manuscript\n\n"
+            "Read context.json and the target section's TASK.md. Open the relevant figures "
+            "and source definitions in its sections/ packages. Literature sources resolve "
+            "from literature/literature.json. Use dependency passages to connect the argument, "
+            "not to repeat their numbers or assume their interpretation is proven. "
+            "Where results differ, examine domain, weighting and comparison basis before "
+            "choosing an explanation. Use located literature in its supported role. "
+            "Draft only the target section; preserve existing author edits. Missing dependency "
+            "drafts are listed explicitly: obtain them before claiming a whole-paper synthesis. "
+            "Refresh this task after changing sources or dependency drafts.\n",
             encoding="utf-8",
         )
     return output_dir

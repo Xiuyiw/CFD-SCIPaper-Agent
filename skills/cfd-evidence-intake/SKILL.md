@@ -25,6 +25,12 @@ below when an initialized project already has declared scientific records and ob
    `sources/` documents in full when excerpts are truncated. Open relevant figures when possible;
    otherwise state that they were not viewed. The summary does not establish physical meaning.
 
+   For related sections, locate the current paper question, Methods definitions and dependency
+   drafts before proposing another analysis. Start with the unresolved relationship, then select
+   the smallest complementary evidence set: for example, a spatial pattern plus its integrated
+   response, or a normalized index plus its numerator and reference. Reuse an existing calculation
+   when it already answers that question; more computed differences are not deeper evidence.
+
 2. As the host, write `proposal.json` using the packaged example/schema. Present one to three
    useful analyses, or zero with minimum evidence gaps. Ground mappings in method passages via
    `definition_source` paths and line locators, and state the operator, units, domain, member IDs,
@@ -32,6 +38,12 @@ below when an initialized project already has declared scientific records and ob
    Include expected members/groups when specified by the method. A source locator is traceability,
    not proof that the interpretation is correct. Keep observed, calculable and interpretive claims
    distinct. Recommend by scientific usefulness, not by the count of available statistics.
+
+   For a mixed-metric long table, map the original value column and use `row_filters` for exact
+   metric/domain/case strings plus `unit_column` for the exported value-unit column. Read the
+   definitions before choosing filters; identical metric names may have different spatial or
+   statistical support. Keep original record identities and locators, rather than making a
+   pivot or per-metric copy. The QoI Skill describes the supported calculation declaration.
 
 3. Let the author choose a candidate ID, or clarify only gaps affecting that choice. The host
    constructs the JSON; the author need not hand-write it. If their question is already explicit,

@@ -57,6 +57,13 @@ A mechanism reported elsewhere is a candidate here until the present evidence su
 Explain material differences rather than deleting conflicting diagnostics or treating different
 definitions as contradictions. An algebraic decomposition alone is not new causal evidence.
 
+Give a literature comparison a specific job in the current argument: identify the relevant
+finding in this study, the source's located finding and the matching or differing condition that
+makes the comparison informative. A source used to motivate the Introduction gap is not thereby
+evidence for the Results mechanism. Recheck its passage for the new claim; when only metadata or
+an abstract is available, keep the claim within that material and request the full passage only
+if it changes the conclusion. Missing recent coverage cannot support an absolute novelty claim.
+
 When several results support one explanation, state the distinct role of each. When plausible
 alternatives remain, identify the missing discriminating evidence without implying it was acquired.
 Separate a local diagnostic that locates changes from a controlled comparison that tests causality.

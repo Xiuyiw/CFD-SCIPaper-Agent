@@ -52,6 +52,14 @@ numerator and reference denominator; a ratio collapsing is not automatically a c
 of transport performance. Algebraically rearranged differences are not independent mechanism
 evidence. Do not invent mixing, covariance or transport budgets to bridge a gap in the fields.
 
+Let a related section resolve a question left by the previous one: a field may establish where
+the response changed, the next section may test its magnitude or competing explanation, and
+Discussion may compare that interpretation with a located literature passage. Read the current
+dependency paragraphs and definitions before choosing this role. A difference and its percentage
+are two expressions of one contrast; quote both only when the scale helps the reader. Put the
+complete case inventory in a table when needed, and retain in prose the numbers that decide the
+argument rather than replaying every row.
+
 ## Keep quantitative statements well defined
 
 - A sum of cell-integrated rates differs from a sum of per-volume source densities; the latter
@@ -199,6 +207,30 @@ explaining their integrated contributions.
 For one exported scalar per group, use `scalar_select` with `columns: {"value": "column"}`;
 it requires exactly one record and provides field `value`, with no statistical CV. Do not treat
 record-level population statistics as solver uncertainty or native field spatial statistics.
+
+### Mixed-metric long tables
+
+Keep the original table when it contains `record_id,case,metric,domain,value,unit` columns. For
+example, select one declared pressure-drop value per case with:
+
+```json
+{
+  "id": "pressure-drop", "source": "sources/metrics.csv",
+  "operation": "scalar_select", "columns": {"value": "value"},
+  "units": {"value": "Pa"}, "group_by": "case",
+  "row_filters": {"metric": "pressure_drop", "domain": "device"},
+  "unit_column": "unit", "domain": "Declared device inlet-to-outlet pressure difference"
+}
+```
+
+Filters are exact string equalities, checked before converting the selected numeric cells.
+The unit column must equal `units.value` for every selected row; this does not convert kPa to Pa
+or establish physical comparability. Select statistical support as well as metric name when
+needed. No match, duplicate scalar/pair member or unit conflict is an error, not an instruction
+to average or choose a first record. Original CSV record locations and source precision remain
+available, with `rows_read` counting selected records. Use the same filters with `paired_change`
+to compare declared case identities, or with a method-backed population aggregation. Keep the
+original `record_id` in the analysis proposal's `member_id` rather than renumbering a derived table.
 
 For two records of the SAME defined quantity, use `paired_change`. For example, on CSV columns
 `load,configuration,spread_K`, declare:

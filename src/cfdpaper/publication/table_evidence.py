@@ -51,11 +51,14 @@ def calculate_table(
     weight_kind=None,
     region_fraction=None,
     region_complement=False,
+    row_filters: dict[str, str] | None = None,
+    unit_column: str | None = None,
 ):
-    """Apply an explicit calculation to every CSV row, retaining source row locations.
+    """Calculate over explicitly selected records, retaining original source locations.
 
     Units and physical domains are declared by the caller, never inferred here.
-    No rows are silently excluded and no unit conversion is performed.
+    Filters are exact string equalities applied before numeric conversion. A unit
+    column checks the declared value unit; no unit conversion is performed.
     """
     scalar_ops = {"population", "scalar_select", "paired_change"}
     required = (
@@ -125,14 +128,47 @@ def calculate_table(
             raise ValueError("Region fraction must be distinct from value and weight")
     elif region_complement:
         raise ValueError("Region complement requires a region fraction column")
+    if row_filters is not None and (
+        not isinstance(row_filters, dict)
+        or any(
+            not isinstance(key, str) or not key.strip() or not isinstance(value, str)
+            for key, value in row_filters.items()
+        )
+    ):
+        raise ValueError("row_filters must map nonempty column names to exact strings")
+    if unit_column is not None and (
+        not isinstance(unit_column, str)
+        or not unit_column.strip()
+        or "value" not in columns
+        or not isinstance((units or {}).get("value"), str)
+    ):
+        raise ValueError("unit_column requires a column name and declared value unit")
     numeric_columns = list(columns.values()) + ([region_fraction] if region_fraction else [])
-    rows = read_numeric_table(
-        path, numeric_columns, extra_columns=[key for key in (group_by, pair_by) if key]
+    raw_rows = read_source_records(
+        path,
+        [
+            *numeric_columns,
+            *[key for key in (group_by, pair_by, unit_column) if key],
+            *(row_filters or {}),
+        ],
     )
+    rows = [
+        (index, row)
+        for index, row in enumerate(raw_rows, 2)
+        if all(row[key] == value for key, value in (row_filters or {}).items())
+    ]
     if not rows:
+        if row_filters:
+            raise ValueError(f"No records match row_filters {row_filters!r} in {path}")
         raise ValueError("Calculation table is empty")
     groups = {}
-    for index, row in enumerate(rows, 2):
+    for index, row in rows:
+        if unit_column is not None and row[unit_column] != units["value"]:
+            raise ValueError(
+                f"Unit mismatch at {path}:{index}:{unit_column}: "
+                f"expected {units['value']!r}, found {row[unit_column]!r}"
+            )
+        _convert_numeric_row(path, index, row, numeric_columns)
         if group_by and (group_by not in row or not str(row[group_by] or "").strip()):
             raise ValueError(f"Missing group at {path}:{index}")
         group = str(row[group_by]) if group_by else "all"
@@ -140,13 +176,20 @@ def calculate_table(
     results = []
     for name, items in groups.items():
         if operation == "scalar_select" and len(items) != 1:
-            raise ValueError(f"Scalar selection requires exactly one record in group {name!r}")
+            raise ValueError(
+                f"Scalar selection requires exactly one record in group {name!r}; "
+                f"found {len(items)} at {path}, source records {[n for n, _ in items]}"
+            )
         if operation == "paired_change":
             chosen = []
             for member in (reference, comparison):
                 matches = [(n, r) for n, r in items if r.get(pair_by) == member]
                 if len(matches) != 1:
-                    raise ValueError(f"Group {name!r}: expected one record for {member!r}")
+                    raise ValueError(
+                        f"Group {name!r}: expected one record for {member!r}; "
+                        f"found {len(matches)} at {path}, "
+                        f"source records {[n for n, _ in matches]}"
+                    )
                 chosen.extend(matches)
             items = chosen
         values = {key: [r[column] for _, r in items] for key, column in columns.items()}
@@ -354,13 +397,20 @@ def read_numeric_table(path: Path, columns: list[str], *, extra_columns=()) -> l
     """Read every row; blank numeric cells remain None, invalid cells raise."""
     rows = read_source_records(path, [*columns, *extra_columns])
     for line, row in enumerate(rows, 2):
-        for column in columns:
-            raw = row[column]
-            value = None if raw is None or not raw.strip() else float(raw)
-            if value is not None and not math.isfinite(value):
-                raise ValueError(f"Nonfinite value at {path}:{line}:{column}")
-            row[column] = value
+        _convert_numeric_row(path, line, row, columns)
     return rows
+
+
+def _convert_numeric_row(path, line, row, columns):
+    for column in columns:
+        raw = row[column]
+        try:
+            value = None if raw is None or not raw.strip() else float(raw)
+        except ValueError as exc:
+            raise ValueError(f"Invalid numeric value at {path}:{line}:{column}: {raw!r}") from exc
+        if value is not None and not math.isfinite(value):
+            raise ValueError(f"Nonfinite value at {path}:{line}:{column}")
+        row[column] = value
 
 
 def population_summary(values):

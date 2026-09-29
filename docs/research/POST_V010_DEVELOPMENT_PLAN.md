@@ -1,5 +1,9 @@
 # From v0.10.1 to a mature author-in-the-loop CFD writing system
 
+2026-09-29 navigation update: the linked-diagnostics increment below shipped as v0.11.0.
+Its original stage entries remain historical. Next work is defined in the
+[v0.12 development plan](V0_12_DEVELOPMENT_PLAN.md); do not restart the completed increment.
+
 2026-09-23. Status: scope accepted; first implementation batch is in local development on
 `workstream/linked-diagnostics`. No release is declared. This updates forward priorities,
 not the historical release record.

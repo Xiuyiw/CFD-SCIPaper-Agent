@@ -57,7 +57,17 @@ The [first-batch specification](research/V0_9_FIRST_BATCH_SPEC.md) defines real-
 preparation and whole-paper review delivery without expanding the solver or submission scope.
 Native solver platforms and submission automation are not prerequisites for this writing route.
 
-## Current forward priority — assessed 2026-09-23
+## Current forward priority — development candidate 2026-09-29
+
+The [v0.12.0 development plan](research/V0_12_DEVELOPMENT_PLAN.md) targets stronger scientific
+arguments across connected sections, exact mixed-unit long-table intake, concise bound-value
+presentation and practical manuscript layout. The code and portable example are implemented on
+the development branch; v0.11.0 remains the released baseline. The first-draft comparison found
+practical context/intake improvements, not demonstrated general scientific-depth superiority.
+It retains host-AI scientific authorship and compares first-draft quality and author effort with
+released v0.11.0 rather than treating document assembly or test counts as writing improvement.
+
+### Completed v0.11 increment and its remaining lessons
 
 The [post-v0.10 maturity assessment and development plan](research/POST_V010_DEVELOPMENT_PLAN.md)
 updates the next priorities: linked computed diagnostics, targeted explanation revision, and

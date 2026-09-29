@@ -90,6 +90,18 @@ in full; it guides single-figure reasoning and multi-evidence synthesis without 
    physical surface. Use the offline [table example](references/mechanism-subsections.md#exported-table-example)
    for declarations, source records and numeric selection.
 
+   For mixed-metric long tables, preserve the original source and declare exact `row_filters`
+   and a `unit_column` on each applicable value calculation. See the long-table example in the
+   same reference; no pivot or hand-copied metric values are needed.
+
+   When every bound value in one paragraph has the same display unit, the draft paragraph may
+   declare `shared_unit: "Pa"` and state that unit explicitly in its text, for example:
+   `"Pressure drops (Pa) are {{value:base}} and {{value:modified}}."` The usual value tokens then
+   show numbers only in that paragraph; source units, raw values and later captions/tables remain
+   unchanged. The shared unit must exactly equal every token's display unit (for example `°C`,
+   not `degC`, for bound Celsius results) and appear in the same paragraph. Do not apply it across
+   mixed units, omit a scaling factor, or rely on a preceding paragraph to define the unit.
+
 2. Assemble the host-authored draft:
 
    ```text
@@ -155,9 +167,31 @@ in a working copy, and assemble that copy to a fresh directory using its own `dr
 
 Read the current manuscript and adjacent sections before editing. Methods must introduce the
 domains, operators and comparisons used in Results; Results should not repeatedly restate those
-definitions. Keep the shared spine/terms current. Source or definition changes require a fresh
+definitions. Keep the shared spine/terms current. Reconcile title and keywords with the current
+question and included results when the scope changes; an inherited keyword is not evidence of
+an included study. Report a specific replacement without silently editing author metadata.
+Source or definition changes require a fresh
 scientific reading of dependent claims, not only numeric replacement. Word-only edits are not
 automatically imported: reconcile them with the authoring draft before exporting again.
+
+Use the packaged current dependency paragraphs, calculations/definitions, figures and located
+literature as the starting context, not an older assembled manuscript remembered from chat.
+Refresh a selected section's task before drafting or after a relevant source/draft change:
+
+```text
+cfdpaper write PROJECT_ROOT --artifact manuscript --package manuscript-package --context-for SECTION_ID --draft current-partial-drafts.json --output current-section-task
+```
+
+The optional `--draft` file maps available section IDs to their current draft JSON paths, relative
+to that mapping file; it need not contain a completed manuscript. Read the resulting `context.json`
+and target section TASK. This copies relevant declared dependencies, refreshes their computed
+evidence and identifies missing dependency drafts without rewriting supplied prose. Omit `--draft`
+only when no current draft is available; it does not implicitly select a draft remembered from chat.
+If a required dependency has no draft yet, write the independent section first and return in
+dependency order. After changing a finding, refresh the affected context before drafting its
+Discussion, Abstract or Conclusions. In each related Results section, advance the unresolved
+relationship from the preceding section instead of repeating its numerical inventory. Revisit
+the Introduction question against those findings before claiming the paper has answered it.
 
 ## Whole-manuscript review
 

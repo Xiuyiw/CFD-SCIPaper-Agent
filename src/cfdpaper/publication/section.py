@@ -125,10 +125,16 @@ class _TableCalculation(_Record):
     weight_kind: Literal["area", "volume"] | None = None
     region_fraction: StrictStr | None = None
     region_complement: bool = Field(default=False, strict=True)
+    row_filters: dict[StrictStr, StrictStr] = Field(default_factory=dict)
+    unit_column: StrictStr | None = None
 
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if not self.row_filters:
+            result.pop("row_filters", None)
+        if self.unit_column is None:
+            result.pop("unit_column", None)
         if self.region_fraction is None and not self.region_complement:
             result.pop("region_fraction", None)
             result.pop("region_complement", None)
@@ -159,6 +165,10 @@ class _TableCalculation(_Record):
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
+        if any(not key.strip() for key in self.row_filters):
+            raise ValueError("Row filter column names must not be blank")
+        if self.unit_column is not None and "value" not in self.columns:
+            raise ValueError("unit_column checks the declared value unit only")
         paired = (self.pair_by, self.reference, self.comparison)
         if self.region_fraction is not None:
             if (
@@ -256,6 +266,14 @@ class _Paragraph(_Record):
     evidence_ids: list[str]
     figure_ids: list[str]
     inline_math: dict[str, MathNode] = Field(default_factory=dict)
+    shared_unit: StrictStr | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_paragraph(self, handler):
+        result = handler(self)
+        if self.shared_unit is None:
+            result.pop("shared_unit", None)
+        return result
 
 
 class _Draft(_Record):
@@ -429,6 +447,8 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
             weight_kind=item.weight_kind,
             region_fraction=item.region_fraction,
             region_complement=item.region_complement,
+            row_filters=item.row_filters,
+            unit_column=item.unit_column,
         )
         results.append({**item.model_dump(), **result})
     parents = list(results)
@@ -573,7 +593,7 @@ def assemble_section(
         if len(ids) != len(set(ids)) or any(not re.fullmatch(r"[A-Za-z0-9_.-]+", i) for i in ids):
             raise ValueError("Table and equation IDs must be unique simple identifiers")
 
-    def resolve(text, declared_evidence, declared_figures):
+    def resolve(text, declared_evidence, declared_figures, shared_unit=None):
         def replace(match):
             kind, identifier = match.group(1), match.group(2)
             if kind in {"table", "equation"}:
@@ -597,9 +617,17 @@ def assemble_section(
                         raise ValueError(f"Evidence {identifier}: {exc}") from exc
                     resolved_values[identifier] = resolved
                     unit = display_unit(resolved["unit"])
+                    if shared_unit is not None:
+                        if shared_unit != unit:
+                            raise ValueError(f"Shared unit does not match evidence {identifier}")
+                        return resolved["value"]
                     return resolved["value"] + (f" {unit}" if unit else "")
                 if record.value is None or not record.value.strip():
                     raise ValueError(f"Missing value for {identifier}")
+                if shared_unit is not None:
+                    if shared_unit != record.unit:
+                        raise ValueError(f"Shared unit does not match evidence {identifier}")
+                    return record.value
                 return record.value + (f" {record.unit}" if record.unit else "")
             if record.kind != "literature":
                 raise ValueError(f"Citation {identifier} must be literature evidence")
@@ -616,6 +644,10 @@ def assemble_section(
 
     paragraphs = []
     for paragraph in draft.paragraphs:
+        if paragraph.shared_unit is not None and not re.search(
+            r"(?<!\w)" + re.escape(paragraph.shared_unit) + r"(?!\w)", paragraph.text
+        ):
+            raise ValueError("A shared unit must appear explicitly in its paragraph")
         _references(paragraph.evidence_ids, evidence)
         _references(paragraph.figure_ids, figures)
         used_evidence.update(paragraph.evidence_ids)
@@ -629,6 +661,7 @@ def assemble_section(
                         paragraph.text[cursor : match.start()],
                         paragraph.evidence_ids,
                         paragraph.figure_ids,
+                        paragraph.shared_unit,
                     )
                 }
             )
@@ -646,7 +679,14 @@ def assemble_section(
             runs.append({"math": expression})
             cursor = match.end()
         runs.append(
-            {"text": resolve(paragraph.text[cursor:], paragraph.evidence_ids, paragraph.figure_ids)}
+            {
+                "text": resolve(
+                    paragraph.text[cursor:],
+                    paragraph.evidence_ids,
+                    paragraph.figure_ids,
+                    paragraph.shared_unit,
+                )
+            }
         )
         text = "".join(
             run["text"] if "text" in run else math_text(MathNode.model_validate(run["math"]))
@@ -850,15 +890,21 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
         document.add_picture(
             str(path), width=Mm(placement["width_mm"]), height=Mm(placement["height_mm"])
         )
-        document.paragraphs[-1].paragraph_format.keep_with_next = True
-        document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        if layout == "after-text":
-            document.paragraphs[-1].paragraph_format.page_break_before = True
-        document.add_paragraph(
+        image_paragraph = document.paragraphs[-1]
+        image_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        caption_paragraph = document.add_paragraph(
             f"Figure {figure['id']}. {display_scientific_text(figure['caption'])}", style="Caption"
         )
+        apply_figure_pagination(
+            image_paragraph, caption_paragraph, config, page_break_before=layout == "after-text"
+        )
 
-    from cfdpaper.publication.elements import add_equation, add_table, display_scientific_text
+    from cfdpaper.publication.elements import (
+        add_equation,
+        add_table,
+        apply_figure_pagination,
+        display_scientific_text,
+    )
 
     placed, placed_tables, placed_equations = set(), set(), set()
     current_section = None

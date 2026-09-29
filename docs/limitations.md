@@ -1,12 +1,12 @@
 # Limitations
 
-CFD-Paper-Agent v0.10.1 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent v0.11.0 is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
-The unreleased `workstream/linked-diagnostics` work adds comparisons of declared computed scalars,
+The released v0.11.0 adds comparisons of declared computed scalars,
 old/new result context in targeted manuscript updates, and external-figure sizing metadata.
-These are not capabilities of the published v0.10.1 wheel. Comparison scope is still supplied by
+Comparison scope is still supplied by
 the host/author; matching definitions and units do not independently establish physical validity.
 
 The public CLI supports `init`, `status`, `inspect`, `plan`, `qualify`, `analyze`, `figure`, and
