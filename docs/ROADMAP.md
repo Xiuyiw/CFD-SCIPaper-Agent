@@ -23,6 +23,7 @@ recorded here instead of being represented as already complete.
 | `v0.10.0` | Explicit area/volume-weighted evidence, spatial-reasoning guidance, portable field/Word example and aligned numeric table headers | Implemented scope; see v0.10.0 notes and release tag |
 | `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Implemented; Windows/Linux Python 3.10–3.12 integration passed |
 | `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
+| `v0.12.0` | Exact long-table intake, current connected-section writing context, concise numeric units and configurable Word pagination | Implemented; supported-platform integration passed; see release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -57,13 +58,13 @@ The [first-batch specification](research/V0_9_FIRST_BATCH_SPEC.md) defines real-
 preparation and whole-paper review delivery without expanding the solver or submission scope.
 Native solver platforms and submission automation are not prerequisites for this writing route.
 
-## Current increment — v0.12.0 release preparation
+## Current increment — v0.12.0 connected scientific writing
 
 The [v0.12.0 development plan](research/V0_12_DEVELOPMENT_PLAN.md) targets stronger scientific
 arguments across connected sections, exact mixed-unit long-table intake, concise bound-value
 presentation and practical manuscript layout. The code and portable example are implemented;
-v0.12.0 is undergoing release CI, with v0.11.0 the last published baseline until that completes.
-The first-draft comparison found
+Windows/Linux Python 3.10–3.12 integration and the installed-wheel example replay passed.
+The [release notes](releases/v0.12.0.md) describe the delivered scope. The first-draft comparison found
 practical context/intake improvements, not demonstrated general scientific-depth superiority.
 It retains host-AI scientific authorship and compares first-draft quality and author effort with
 released v0.11.0 rather than treating document assembly or test counts as writing improvement.
