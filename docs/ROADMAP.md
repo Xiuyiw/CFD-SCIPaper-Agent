@@ -24,6 +24,7 @@ recorded here instead of being represented as already complete.
 | `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Implemented; Windows/Linux Python 3.10–3.12 integration passed |
 | `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.12.0` | Exact long-table intake, current connected-section writing context, concise numeric units and configurable Word pagination | Implemented; supported-platform integration passed; see release tag |
+| `v0.13.0` | Readable definition scripts, portable five-skill host workflow and a calculated-materials-to-manuscript tutorial | Implemented; release integration in progress |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -59,6 +60,14 @@ preparation and whole-paper review delivery without expanding the solver or subm
 Native solver platforms and submission automation are not prerequisites for this writing route.
 
 ## Current increment — v0.12.0 connected scientific writing
+
+The current development increment follows the [v0.13 integrated-workflow plan](research/V0_13_INTEGRATED_WORKFLOW_PLAN.md).
+It prioritizes an actual host-driven journey from an ordinary results directory through scientific
+analysis, figures, a connected manuscript and targeted author edits. Ordinary-material intake,
+portable skill routing, a reusable manuscript bridge and bounded local/whole-manuscript continuation
+have been exercised. A focused revision-pair reading and a known-project reacting-species trial
+are complete; integration and delivery checks remain, and v0.13 is not released. This is evidence
+of workflow usability, not matched-budget first-draft superiority or unfamiliar-domain validation.
 
 The [v0.12.0 development plan](research/V0_12_DEVELOPMENT_PLAN.md) targets stronger scientific
 arguments across connected sections, exact mixed-unit long-table intake, concise bound-value

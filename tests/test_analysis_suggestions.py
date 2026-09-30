@@ -1,11 +1,30 @@
 """The host supplies semantics; compilation checks the executable selected mapping."""
 
 import json
+import re
 import shutil
 
 import pytest
 
 from cfdpaper.analysis_suggestions import compile_analysis, prepare_analysis
+
+
+def test_material_package_preserves_python_definitions_without_execution(tmp_path):
+    root = tmp_path / "materials"
+    root.mkdir()
+    content = (
+        b"# pressure difference is inlet minus outlet, Pa\n"
+        b"raise RuntimeError('not runnable input')\n"
+    )
+    (root / "postprocess.py").write_bytes(content)
+    prepared = tmp_path / "package"
+
+    prepare_analysis(root, prepared, question="Explain the pressure diagnostic")
+
+    assert (prepared / "sources/postprocess.py").read_bytes() == content
+    profile = json.loads((prepared / "materials.json").read_text(encoding="utf-8"))
+    assert "sources/postprocess.py" in profile["source_files"]
+    assert profile["documents"][0]["source"]["locator"] == "line:1-line:2"
 
 
 @pytest.fixture
@@ -37,6 +56,21 @@ def proposal(package):
     calc["expected_members"] = [["inner"], ["outer"]]
     calc["expected_groups"] = ["A", "B"]
     return data
+
+
+def test_portable_host_package_contains_workflow_and_referenced_skills(package, tmp_path):
+    moved = tmp_path / "detached-package"
+    shutil.copytree(package, moved)
+    entry = moved / "skills/cfd-paper-workflow/SKILL.md"
+    assert entry.is_file()
+    assert "skills/cfd-paper-workflow/SKILL.md" in (moved / "host-task.md").read_text(
+        encoding="utf-8"
+    )
+    for target in re.findall(r"\]\(([^)]+/SKILL\.md)\)", entry.read_text(encoding="utf-8")):
+        assert (entry.parent / target).resolve().is_file(), target
+    writing = moved / "skills/cfd-evidence-writing"
+    for name in ("methods-sections.md", "mechanism-subsections.md", "manuscript-review.md"):
+        assert (writing / "references" / name).is_file()
 
 
 def compile_data(package, data, output=None):
@@ -104,6 +138,27 @@ def test_unknown_unrelated_candidate_does_not_block(package):
     data = proposal(package)
     data["candidates"].append({"id": "later", "missing_questions": ["Need wall domain"]})
     assert compile_data(package, data).is_file()
+
+
+def test_interpretation_gap_survives_supported_computation(package):
+    data = proposal(package)
+    limitation = "Local transport fields are absent; this contrast does not isolate mixing."
+    data["candidates"][0]["interpretation_limits"].append(limitation)
+    result = compile_data(package, data)
+    payload = json.loads(result.read_text(encoding="utf-8"))
+    assert limitation in json.dumps(payload)
+    reports = json.loads((result.parent / "table-results.json").read_text(encoding="utf-8"))
+    assert reports[0]["groups"][0]["result"]["rate"] == 25
+
+
+@pytest.mark.parametrize("scope", ["candidate", "calculation"])
+def test_selected_definition_question_still_blocks(package, scope):
+    data = proposal(package)
+    candidate = data["candidates"][0]
+    target = candidate if scope == "candidate" else candidate["calculations"][0]
+    target["missing_questions"] = ["Which physical wall regions are included?"]
+    with pytest.raises(ValueError, match="[Rr]esolve selected"):
+        compile_data(package, data)
 
 
 @pytest.mark.parametrize(

@@ -7,7 +7,8 @@ description: Read existing CFD materials and propose grounded subsection analyse
 
 ## Trigger
 
-Use when an author provides existing CSV exports, readable method notes and figures, even before
+Use when an author provides existing CSV exports, readable method notes, Python source and figures,
+even before
 they have organized a full scientific question or column mapping. Also use the strict pathway
 below when an initialized project already has declared scientific records and observations.
 
@@ -24,6 +25,8 @@ below when an initialized project already has declared scientific records and ob
    missing values, category hints and source locations. Read `host-task.md` and the relevant
    `sources/` documents in full when excerpts are truncated. Open relevant figures when possible;
    otherwise state that they were not viewed. The summary does not establish physical meaning.
+   Python postprocessing/setup files are included as readable source with line locations, not run.
+   Read their definitions without importing them; a check present in code is not evidence it passed.
 
    For related sections, locate the current paper question, Methods definitions and dependency
    drafts before proposing another analysis. Start with the unresolved relationship, then select
@@ -38,6 +41,12 @@ below when an initialized project already has declared scientific records and ob
    Include expected members/groups when specified by the method. A source locator is traceability,
    not proof that the interpretation is correct. Keep observed, calculable and interpretive claims
    distinct. Recommend by scientific usefulness, not by the count of available statistics.
+
+   `missing_questions` blocks the selected candidate/calculation: use it for facts needed to
+   define or support that comparison. Put missing evidence for a stronger interpretation in
+   `interpretation_limits` instead; a defined scalar comparison can proceed without a local
+   mechanism field, but cannot claim the mechanism. Do not reclassify unknown units, domains or
+   comparison conditions as optional limitations to obtain output.
 
    For a mixed-metric long table, map the original value column and use `row_filters` for exact
    metric/domain/case strings plus `unit_column` for the exported value-unit column. Read the

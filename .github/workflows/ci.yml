@@ -88,7 +88,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.12.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.13.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -117,7 +117,7 @@ jobs:
           & $cfdpaper status $project
           & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\generated-topic\prepare_project.py") $generatedProject
           & $cfdpaper plan $generatedProject --provider offline
-          & $smokePython -c "from importlib.resources import files; p=files('cfdpaper').joinpath('skills'); assert len(list(p.iterdir())) == 4; assert p.joinpath('cfd-evidence-writing/references/mechanism-subsections.md').is_file()"
+          & $smokePython -c "from importlib.resources import files; p=files('cfdpaper').joinpath('skills'); assert len(list(p.iterdir())) == 5; assert p.joinpath('cfd-paper-workflow/SKILL.md').is_file(); assert p.joinpath('cfd-evidence-writing/references/mechanism-subsections.md').is_file()"
           $sectionSource = Join-Path $env:RUNNER_TEMP "section-source"
           $sectionPackage = Join-Path $env:RUNNER_TEMP "section-package"
           $sectionOutput = Join-Path $env:RUNNER_TEMP "section-output"
@@ -210,9 +210,41 @@ jobs:
           '@ | & $smokePython - $moved
           & $cfdpaper write . --artifact manuscript --package "$env:RUNNER_TEMP/connected-updated" --docx --layout near-reference --output "$env:RUNNER_TEMP/connected-updated.docx"
           & $smokePython -c "from docx import Document; d=Document(r'$env:RUNNER_TEMP/connected-updated.docx'); assert len(d.tables)==1 and len(d.inline_shapes)==0; text=' '.join(c.text for r in d.tables[0].rows for c in r.cells); assert '308.50' in text and '130.00' in text"
+      - name: Replay materials to manuscript from installed wheel
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $smokePython = Join-Path $env:RUNNER_TEMP "cfdpaper-wheel-smoke\Scripts\python.exe"
+          $example = Join-Path $env:RUNNER_TEMP "material-manuscript-example"
+          $output = Join-Path $env:RUNNER_TEMP "material-manuscript-output"
+          $moved = Join-Path $env:RUNNER_TEMP "material-manuscript-relocated"
+          Copy-Item (Join-Path $env:GITHUB_WORKSPACE "examples\material-analysis") $example -Recurse
+          Set-Location $env:RUNNER_TEMP
+          & $smokePython (Join-Path $example "prepare_manuscript.py") $output
+          Move-Item -LiteralPath "$output/manuscript" -Destination $moved
+          @'
+          import json
+          import sys
+          from pathlib import Path
+          from zipfile import ZipFile
+          from cfdpaper.publication.manuscript import assemble_manuscript
+          from cfdpaper.publication.section import export_section_docx
+          p = Path(sys.argv[1])
+          before = json.loads((p / "section.json").read_text(encoding="utf-8"))
+          out = assemble_manuscript(p, p / "drafts.json", p.parent / "material-manuscript-resumed")
+          after = json.loads((out / "section.json").read_text(encoding="utf-8"))
+          assert len(after["resolved_values"]) == 6
+          assert before["resolved_values"] == after["resolved_values"]
+          assert before["tables"] == after["tables"]
+          docx = export_section_docx(out, out.with_suffix(".docx"), layout="near-reference")
+          with ZipFile(docx) as archive:
+              xml = archive.read("word/document.xml")
+          assert b"<m:oMath>" in xml and b"<m:f>" in xml and b"<w:tbl>" in xml
+          '@ | & $smokePython - $moved
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.12.0-distributions
+          name: cfd-paper-agent-0.13.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

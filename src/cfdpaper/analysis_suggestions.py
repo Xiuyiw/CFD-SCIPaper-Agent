@@ -161,7 +161,9 @@ class _Candidate(_Record):
 
 HOST_PROMPT = """# Propose a small, useful scientific analysis
 
-Read skills/cfd-qoi-physics/SKILL.md and skills/cfd-figure-production/SKILL.md
+Start with skills/cfd-paper-workflow/SKILL.md for the current step, then load
+only the specialist instructions needed for this task. For this analysis read
+skills/cfd-qoi-physics/SKILL.md and skills/cfd-figure-production/SKILL.md
 for analysis and visual-evidence selection; their legacy CLI applies only to that route.
 Read materials.json and the actual method/definition files under sources/. The
 summary is a reading aid, not physical semantics. Large CSV profiles contain exact
@@ -189,6 +191,14 @@ a locator and your own prose do NOT prove domain, weighting, comparability or
 causality. Inspect boundary conditions and definition consistency in the supplied
 methods before calling a comparison supported. Unknown or not-comparable selected
 calculations cannot run. Keep independent supported candidates available.
+
+Use missing_questions only for unresolved facts needed to perform the selected
+calculation or support its stated comparison (for example an unknown unit, domain
+or reference case). Nonempty candidate or calculation missing_questions block
+compilation. Put evidence needed only for a stronger interpretation, such as an
+unavailable local transport field for an otherwise defined scalar comparison, in
+interpretation_limits. Keep that limit in the writing input; do not clear a real
+definition gap or change comparison status merely to make the command succeed.
 
 The executable operators are population (equal-record count/sum/mean/population CV, ddof=0),
 partition (sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
@@ -318,14 +328,18 @@ def prepare_analysis(root: Path, output_dir: Path, *, question: str = "") -> Pat
         materials["source_files"] = included
         _write(staged / "materials.json", materials)
         (staged / "host-task.md").write_text(HOST_PROMPT, encoding="utf-8")
-        for name in ("cfd-qoi-physics", "cfd-figure-production"):
+        for name in (
+            "cfd-paper-workflow",
+            "cfd-evidence-intake",
+            "cfd-qoi-physics",
+            "cfd-figure-production",
+            "cfd-evidence-writing",
+        ):
             # Wheels include these skills; source checkouts keep them at repository root.
             skill = Path(__file__).parent / "skills" / name / "SKILL.md"
             if not skill.is_file():
                 skill = Path(__file__).resolve().parents[2] / "skills" / name / "SKILL.md"
-            destination = staged / "skills" / name / "SKILL.md"
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(skill, destination)
+            shutil.copytree(skill.parent, staged / "skills" / name)
         _write(staged / "proposal-example.json", _example())
         schema = {
             "type": "object",
@@ -371,7 +385,10 @@ def _example() -> dict:
                         "interpretation_limits": [
                             "An algebraic decomposition is not causal proof."
                         ],
-                        "missing_questions": ["Replace with concrete gaps, or [] when supported."],
+                        "missing_questions": [
+                            "Resolve the region coverage and comparison basis; "
+                            "use [] only when the selected calculation is supported."
+                        ],
                     }
                 ],
                 "metrics": [],

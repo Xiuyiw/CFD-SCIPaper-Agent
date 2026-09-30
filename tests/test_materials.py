@@ -10,6 +10,25 @@ from cfdpaper.adapters import CSVAdapter
 from cfdpaper.materials import profile_materials
 
 
+def test_python_method_source_is_profiled_as_text_without_execution(tmp_path: Path) -> None:
+    source = tmp_path / "postprocess.py"
+    content = (
+        "# Definition: hydraulic power = volume flow * total pressure drop\n"
+        "raise RuntimeError('do not execute')\n"
+    )
+    source.write_text(content, encoding="utf-8")
+
+    profile = profile_materials(tmp_path)
+
+    assert len(profile["documents"]) == 1
+    document = profile["documents"][0]
+    assert document["path"] == "postprocess.py"
+    assert document["source"]["locator"] == "line:1-line:2"
+    assert "1: # Definition:" in document["excerpt"]
+    assert profile["issues"] == []
+    assert source.read_text(encoding="utf-8") == content
+
+
 def test_table_profile_preserves_headers_units_codes_and_all_row_statistics(tmp_path: Path) -> None:
     source = tmp_path / "results.csv"
     source.write_text(
