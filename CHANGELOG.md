@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-09-30
+
+### Added
+
+- Python definition scripts enter material profiles as line-numbered source text without execution.
+- A thin `cfd-paper-workflow` entry coordinates the four existing specialist skills, from material
+  intake and analysis to writing and continuation of the current manuscript.
+- Portable analysis packages carry all five skills and their references for use outside the checkout.
+- A public recorded Methods/Results example reuses six computed result bindings and the existing
+  manuscript, native-math and Word APIs, with source-update and local-edit regression coverage.
+
+### Improved
+
+- Unknown manuscript claim IDs now explain exact local evidence IDs and cross-section aliases
+  without renaming valid IDs.
+- Analysis guidance distinguishes definition gaps that block selected calculations from missing
+  evidence that only limits interpretation; the existing execution checks remain in place.
+
+This update connects host-assisted materials-to-manuscript work. Multi-section assembly and Word
+export are existing capabilities, not new in v0.13. Known-project use supports more practical
+continuation and targeted edits; independent first-draft scientific-depth gains and unfamiliar-project
+generalization remain unestablished.
+
 ## [0.12.0] — 2026-09-30
 
 ### Added

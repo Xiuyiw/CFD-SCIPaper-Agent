@@ -2,6 +2,10 @@
 
 ## Start here
 
+- [Materials to manuscript](../examples/material-analysis/MANUSCRIPT.md): reuse calculated
+  Results in Methods/Results, export editable Word math and continue from the current candidate.
+- [v0.13.0 release notes](releases/v0.13.0.md): host workflow guidance, readable definition
+  scripts and portable specialist skills.
 - [Connected scientific writing](../examples/connected-writing/README.md): runnable example
   for mixed-unit long tables, current dependency passages, and a portable three-section DOCX.
   This is a recorded synthetic replay, not an autonomous writing demonstration.

@@ -157,6 +157,28 @@ def fixture(tmp_path):
     return write(tmp_path / "input.json", manifest), write(tmp_path / "drafts.json", drafts)
 
 
+def test_required_claim_error_explains_local_ids(tmp_path):
+    source, _ = fixture(tmp_path)
+    manifest = read(source)
+    manifest["spine"]["sections"][0]["required_claim_ids"] = ["methods.metric"]
+    write(source, manifest)
+    with pytest.raises(ValueError, match="unknown IDs methods.metric.*exact local evidence IDs"):
+        prepare_manuscript(source, tmp_path / "package")
+
+
+def test_dotted_evidence_id_is_valid_when_it_exists_locally(tmp_path):
+    source, _ = fixture(tmp_path)
+    manifest = read(source)
+    manifest["spine"]["sections"][0]["required_claim_ids"] = ["local.metric"]
+    section_path = tmp_path / "methods/input.json"
+    section = read(section_path)
+    section["evidence"][0]["id"] = "local.metric"
+    section["duties"][0]["evidence_ids"] = ["local.metric"]
+    write(section_path, section)
+    write(source, manifest)
+    assert prepare_manuscript(source, tmp_path / "package").is_dir()
+
+
 def shared_literature_fixture(tmp_path):
     source, drafts = fixture(tmp_path)
     (tmp_path / "excerpt.txt").write_text("Synthetic study: the mean is defined over equal rows.")

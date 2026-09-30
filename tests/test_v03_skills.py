@@ -35,9 +35,9 @@ def _read_skill(name: str) -> tuple[dict[str, str], str]:
     return frontmatter, match.group(2)
 
 
-def test_ships_four_skills_with_current_writing_and_figure_references() -> None:
+def test_ships_four_specialists_and_workflow_entry_with_current_references() -> None:
     assert tuple(sorted(path.name for path in SKILL_ROOT.iterdir() if path.is_dir())) == tuple(
-        sorted(EXPECTED_SKILLS)
+        sorted((*EXPECTED_SKILLS, "cfd-paper-workflow"))
     )
     references = {
         "cfd-evidence-writing": [
@@ -62,6 +62,15 @@ def test_ships_four_skills_with_current_writing_and_figure_references() -> None:
                 == references[name]
             )
         assert sorted(path.name for path in (SKILL_ROOT / name).iterdir()) == expected
+
+
+def test_workflow_entry_links_to_the_packaged_specialists() -> None:
+    frontmatter, body = _read_skill("cfd-paper-workflow")
+    assert frontmatter["name"] == "cfd-paper-workflow"
+    assert frontmatter["description"].strip()
+    links = re.findall(r"\]\((\.\./[^)]+)\)", body)
+    assert len(links) == 4
+    assert all((SKILL_ROOT / "cfd-paper-workflow" / link).is_file() for link in links)
 
 
 def test_each_skill_declares_the_required_contract_without_private_paths() -> None:

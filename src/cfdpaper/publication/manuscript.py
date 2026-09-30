@@ -147,8 +147,14 @@ def _inputs(path: Path):
         source, section = load(contract.section_id)
         if section.section_id != contract.section_id:
             raise ValueError(f"Section input identity mismatch: {contract.section_id}")
-        if not set(contract.required_claim_ids) <= {e.id for e in section.evidence}:
-            raise ValueError(f"Required claims must belong to section {contract.section_id}")
+        unknown = set(contract.required_claim_ids) - {e.id for e in section.evidence}
+        if unknown:
+            raise ValueError(
+                f"Required claims must belong to section {contract.section_id}: "
+                f"unknown IDs {', '.join(sorted(unknown))}. "
+                "Use exact local evidence IDs from the section input; "
+                "declare borrowed evidence through evidence_bindings."
+            )
         if not set(contract.required_figure_ids) <= {f.id for f in section.figures}:
             raise ValueError(f"Required figures must belong to section {contract.section_id}")
         loaded[contract.section_id] = (source, section)

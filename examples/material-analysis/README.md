@@ -19,8 +19,7 @@ Give your local host AI `analysis-materials/host-task.md`. It reads the sources 
 proposes one to three useful analyses in `proposal.json`; you choose an ID and answer
 only essential definition questions. You do not need to write the JSON yourself.
 The example/schema describes the supported population and partition calculations.
-The development branch also supports explicit spatial weighting, described below;
-this additional operation is not available in the published v0.9.0 package.
+Version 0.10.0 and later also support explicit spatial weighting, described below.
 Unknown units, statistical domains or incomparable cases must be resolved for the selected analysis.
 
 ```text
@@ -45,12 +44,14 @@ alone. The generated categorical plots are an editable starting point. The host
 still chooses useful evidence and writes the scientific interpretation; the software
 does not infer a mechanism merely because a calculation ran.
 
-The material package includes the current analysis and figure-selection Skills, so an external
-host does not depend on this repository's chat history. A sparse contrast may be better in text
+The material package includes a connected-workflow entry and its intake, analysis,
+figure and writing Skills with their references. Start with `skills/cfd-paper-workflow/SKILL.md`
+and load only the relevant specialist instructions, rather than reading the whole bundle.
+An external host does not need this repository's chat history. A sparse contrast may be better in text
 or a compact table; a mechanism comparison may need complementary quantities or custom panels.
 Selecting a presentation is not evidence that its scientific or visual quality has been approved.
 
-## Spatially weighted records (v0.10 development)
+## Spatially weighted records (v0.10.0 and later)
 
 Use `weighted_population` when exported element values have corresponding positive
 areas or volumes. For example, a calculation on absolute wall temperatures can declare:
@@ -102,6 +103,14 @@ No whitespace is inserted to indent paragraphs, and captions/tables/headings do 
 For new data, rebuild the analysis and writing package in a new output directory.
 The preserved plotting entry point can be edited locally; rerunning only that script
 updates figures, **not** an already assembled manuscript or its copied source snapshot.
+
+## Continue into a manuscript
+
+The [two-section manuscript tutorial](MANUSCRIPT.md) reuses this example's
+generated section input and all six result bindings, adds Methods with native
+Word mathematics, and exports an editable manuscript. It also demonstrates source
+updates without replacing the original candidate. For host-led work, start with
+the [connected workflow skill](../../skills/cfd-paper-workflow/SKILL.md).
 
 ## Reproduce the synthetic document offline
 

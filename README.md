@@ -5,22 +5,25 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 CFD-Paper-Agent is an open-source, author-in-the-loop workflow for turning mature CFD evidence into
-defensible paper topics, figures, and manuscript prose. Version 0.12.0 adds exact mixed-unit
-long-table selection, current cross-section context for host writing, concise bound-value display
-and configurable caption/table pagination in Word. Linked comparisons, direct NPZ analysis,
-large CSV intake and explicit regional weighting remain available.
-Whole-paper review, targeted host editing, paired source-table calculations, cross-section evidence
-links and shared literature remain available alongside editable Word output.
+defensible paper topics, figures, and manuscript prose. Its host-assisted materials-to-manuscript
+workflow connects exported tables, method notes and definition scripts with supported calculations,
+source-bound writing and editable Word output. The host AI develops the argument; the software
+profiles materials, computes declared quantities and keeps numerical evidence connected to the draft.
+Whole-paper review, targeted host editing, mixed-unit long-table selection, direct NPZ analysis,
+cross-section evidence links and shared literature remain available.
 The workflow preserves the connection between the original observations, scientific interpretation,
 and the numbers and graphics appearing in the manuscript.
 
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Start with the [connected-writing example](examples/connected-writing/README.md) and
-[v0.12.0 release notes](docs/releases/v0.12.0.md) for long-table evidence, connected sections
-and Word output. The [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
-continues to cover whole-manuscript feedback and selected editing.
+Version 0.13.0 adds a thin workflow skill, text intake for Python definition scripts
+and a portable five-skill analysis package. Start with the
+[materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md) and
+[v0.13.0 notes](docs/releases/v0.13.0.md). The
+[connected-writing example](examples/connected-writing/README.md) covers long-table evidence;
+the [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
+covers whole-manuscript feedback and selected editing.
 
 ## Capability matrix
 
@@ -34,7 +37,8 @@ continues to cover whole-manuscript feedback and selected editing.
 | Evidence writing | Available | Numeric paragraph or host-authored multi-figure subsection; CSV or explicitly mapped NPZ calculations bind to evidence tokens with units and source locations. |
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
-| Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. |
+| Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. v0.13 adds `.py` intake as source text, never execution. |
+| Materials-to-manuscript guidance | Available | Thin workflow entry coordinates four specialist skills; portable analysis packages include all five skills and their references. Reuses calculated Results inputs in the existing manuscript workspace. |
 | Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
 | Linked computed comparisons | Available | Compare two compatible calculated scalars while retaining both sources; update bound prose, tables and cross-section values. Chained comparisons and inferred comparability are not supported. |
 | Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
@@ -51,9 +55,8 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. For current writing context and long-table selection,
-use the v0.12.0 checkout or its matching wheel.
-From the checkout root, install with Word support:
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.13.0 checkout or its matching
+release wheel. From the checkout root, install with Word support:
 
 ```text
 python -m pip install ".[docs]"
@@ -63,7 +66,8 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.12.0 notes](docs/releases/v0.12.0.md) for the new version scope.
+remains available. See the [v0.13.0 notes](docs/releases/v0.13.0.md) for the current scope
+and the [v0.12.0 notes](docs/releases/v0.12.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -137,25 +141,46 @@ order; the style travels with the candidate. This route supports bracketed numer
 author–date or superscript styles, and does not create Zotero fields. Omit `citation_style` to use
 neutral metadata labels. See the tutorial for exact inputs and a source-change continuation exercise.
 
-### Existing exports to an analysis subsection
+### Existing materials to analysis and a manuscript
 
-The material-analysis route accepts a folder of exported CSV tables, method notes and
-existing raster figures, without a prewritten scientific-records envelope:
+The material-analysis route accepts a folder of exported CSV tables, method notes,
+Python definition scripts and existing raster figures, without a prewritten scientific-records
+envelope. Python scripts are read as line-numbered text; intake does not execute them:
 
 ```text
 cfdpaper inspect STUDY --materials --output profile
 cfdpaper plan STUDY --artifact analysis --output analysis-materials
 ```
 
-Give `analysis-materials/host-task.md` to your local AI. The package includes the analysis
-and figure-selection skills. The host reads the definitions, proposes useful comparisons,
-and writes the proposal; the author selects a direction and resolves essential ambiguities.
+Give `analysis-materials/host-task.md` to your local AI. The portable package includes
+`cfd-paper-workflow` and the four specialist skills for evidence intake, QoI/physics,
+figure production and evidence writing, with their references. The host starts with the
+workflow entry and loads the relevant guidance as needed. It reads the definitions, proposes
+useful comparisons and writes the proposal; the author selects a direction and resolves
+essential ambiguities. Definition gaps that prevent the selected calculation belong in
+`missing_questions`; missing evidence that only limits a stronger interpretation belongs in
+`interpretation_limits`.
 Selection recomputes the declared quantities and prepares a portable writing task, including
 the writing skill and its mechanism guidance. No API key or manually written JSON is required
 from the author when using a capable local host.
 
 Follow the [material-analysis tutorial](examples/material-analysis/README.md) for selection,
-writing and DOCX export. A compact table or prose can replace an unnecessary plot; custom
+writing and DOCX export. To connect calculated Results with Methods, run this recorded
+synthetic example from the checkout root, using a new output directory:
+
+```text
+python examples/material-analysis/prepare_manuscript.py my-material-manuscript
+```
+
+It produces `my-material-manuscript/manuscript.docx` and a portable manuscript candidate.
+The [bridge tutorial](examples/material-analysis/MANUSCRIPT.md) explains how it reuses the six
+existing result bindings and adds native editable math, using the established manuscript and
+Word APIs. For your own work, point the manuscript section entry at the generated
+`selected/section-input/writing/input.json` and preserve its surrounding source directories.
+Use exact local evidence IDs in `required_claim_ids`; use `evidence_bindings` aliases for
+cross-section evidence. Resume an existing candidate from `CONTINUE.md` and `drafts.json`.
+
+A compact table or prose can replace an unnecessary plot; custom
 figure requests remain pending until their actual artwork is supplied. Body formatting defaults
 to two-character first-line indentation and zero paragraph spacing, with explicit template overrides.
 This route supports declared population, partition and `weighted_population` calculations, not
@@ -183,7 +208,7 @@ Word export, raw-table bindings, editable tables/equations and an external-revie
 See [v0.5.0](docs/releases/v0.5.0.md) for scope and the downloadable example.
 Install the `docs` extra for DOCX (`python -m pip install -e ".[docs]"`).
 
-The four bundled skills are available under `skills/` in a checkout and
+The workflow entry and four specialist skills are available under `skills/` in a checkout and
 `importlib.resources.files("cfdpaper").joinpath("skills")` in an installed wheel.
 Give the writing skill and prepared package to your host AI; no API key is needed
 for local assembly.
@@ -268,6 +293,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.13.0 development notes](docs/releases/v0.13.0.md)
 - [v0.12.0 notes](docs/releases/v0.12.0.md)
 - [v0.11.0 notes](docs/releases/v0.11.0.md)
 - [v0.10.0 notes](docs/releases/v0.10.0.md)
