@@ -24,7 +24,7 @@ recorded here instead of being represented as already complete.
 | `v0.10.1` | Direct NPZ calculations, large CSV intake, supplied regional fractions and nonbreaking numerical Word display | Implemented; Windows/Linux Python 3.10–3.12 integration passed |
 | `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.12.0` | Exact long-table intake, current connected-section writing context, concise numeric units and configurable Word pagination | Implemented; supported-platform integration passed; see release tag |
-| `v0.13.0` | Readable definition scripts, portable five-skill host workflow and a calculated-materials-to-manuscript tutorial | Implemented; release integration in progress |
+| `v0.13.0` | Readable definition scripts, portable five-skill host workflow and a calculated-materials-to-manuscript tutorial | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
