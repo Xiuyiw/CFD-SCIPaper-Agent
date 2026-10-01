@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-10-01
+
+### Added
+
+- `write --artifact manuscript --outline` gathers selected section inputs, source/figure/literature
+  dependencies and optional existing drafts without rebuilding numerical evidence bindings.
+- First-manuscript guidance for complementary sections, regional mechanism evidence, matched
+  model controls and method reproducibility; the public material-analysis tutorial uses the bridge.
+
+### Fixed
+
+- Recognized heat-flux unit labels receive proper exponents without numerical conversion.
+- Default bibliography labels retain declared publisher metadata, including preprint designation.
+
+### Scope
+
+A complete known-project first draft and one feedback-assisted revision were rendered and
+reviewed. This supports practical whole-manuscript use, not autonomous scientific validation or
+submission readiness. See the [release notes](docs/releases/v0.14.0.md).
+
 ## [0.13.0] — 2026-09-30
 
 ### Added

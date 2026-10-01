@@ -120,6 +120,41 @@ def test_independent_units_are_never_combined(tmp_path):
     assert len(figs) == 2
 
 
+def test_heat_flux_binding_typesets_the_unit_without_changing_source(tmp_path):
+    docx = pytest.importorskip("docx")
+    path = payload(tmp_path)
+    data = json.loads(path.read_text())
+    data["table_calculations"][0]["units"] = {"value": "W/m2"}
+    data["presentation"] = "prose"
+    data["figure_plan"] = None
+    for item in data["evidence"]:
+        item["result_ref"]["field"] = "mean"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    source_before = path.read_bytes()
+    package = build_analysis_section(path, tmp_path / "output")
+    draft = {
+        "title": data["title"],
+        "paragraphs": [
+            {
+                "text": "Mean fluxes are {{value:cv-a}} and {{value:cv-b}}.",
+                "evidence_ids": ["cv-a", "cv-b"],
+                "figure_ids": [],
+            }
+        ],
+        "captions": {},
+        "image_observations": {},
+        "evidence_notes": [],
+    }
+    draft_path = tmp_path / "draft.json"
+    draft_path.write_text(json.dumps(draft), encoding="utf-8")
+    candidate = assemble_section(package, draft_path, tmp_path / "section")
+    assert "2.000 W m⁻²" in (candidate / "section.md").read_text(encoding="utf-8")
+    output = export_section_docx(candidate, tmp_path / "section.docx")
+    text = "\n".join(p.text for p in docx.Document(output).paragraphs).replace("\u00a0", " ")
+    assert "2.000 W m⁻²" in text
+    assert path.read_bytes() == source_before
+
+
 def test_unknown_metric_stops_before_rendering(tmp_path):
     path = payload(tmp_path)
     data = json.loads(path.read_text())

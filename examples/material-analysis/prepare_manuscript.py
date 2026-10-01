@@ -10,7 +10,8 @@ import json
 import runpy
 from pathlib import Path
 
-from cfdpaper.publication.manuscript import assemble_manuscript, prepare_manuscript
+from cfdpaper.publication.manuscript import assemble_manuscript
+from cfdpaper.publication.manuscript_seed import prepare_manuscript_seed
 from cfdpaper.publication.section import export_section_docx
 
 
@@ -121,26 +122,24 @@ def run(output: Path) -> Path:
             ],
         },
         "sections": [
-            {"section_id": "methods", "input": "analysis/section-input/writing/methods-input.json"},
+            {
+                "section_id": "methods",
+                "input": "analysis/section-input/writing/methods-input.json",
+                "draft": "methods-draft.json",
+            },
             {
                 "section_id": results_id,
                 "input": "analysis/section-input/writing/input.json",
+                "draft": "results-draft.json",
                 "depends_on": ["methods"],
             },
         ],
     }
-    source = save(output / "manuscript-input.json", manifest)
+    source = save(output / "outline.json", manifest)
     save(output / "methods-draft.json", methods_draft)
     save(output / "results-draft.json", results_draft)
-    drafts = save(
-        output / "drafts.json",
-        {
-            "methods": "methods-draft.json",
-            results_id: "results-draft.json",
-        },
-    )
-    package = prepare_manuscript(source, output / "workspace")
-    candidate = assemble_manuscript(package, drafts, output / "manuscript")
+    package = prepare_manuscript_seed(source, output / "workspace")
+    candidate = assemble_manuscript(package, package / "drafts.json", output / "manuscript")
     return export_section_docx(candidate, output / "manuscript.docx", layout="near-reference")
 
 

@@ -69,12 +69,12 @@ def test_methods_only_revision_keeps_results_and_original(example):
     original_path = output / "manuscript/section.json"
     original_bytes = original_path.read_bytes()
     before = read(original_path)
-    draft_path = output / "methods-draft.json"
+    draft_path = output / "workspace/sections/methods/draft.json"
     draft = read(draft_path)
     draft["paragraphs"][0]["text"] += " The two regions cover the entire stipulated wall."
     draft_path.write_text(json.dumps(draft), encoding="utf-8")
     revised = assemble_manuscript(
-        output / "workspace", output / "drafts.json", output / "methods-revised"
+        output / "workspace", output / "workspace/drafts.json", output / "methods-revised"
     )
     after = read(revised / "section.json")
     assert before["paragraphs"] != after["paragraphs"]
@@ -104,7 +104,9 @@ def test_source_update_recomputes_bindings_and_preserves_original(example):
         writer = csv.DictWriter(handle, fields)
         writer.writeheader()
         writer.writerows(rows)
-    new = assemble_manuscript(output / "workspace", output / "drafts.json", output / "updated")
+    new = assemble_manuscript(
+        output / "workspace", output / "workspace/drafts.json", output / "updated"
+    )
     before = read(old / "section.json")["resolved_values"]
     after = read(new / "section.json")["resolved_values"]
     for field, expected in (("rate", 80.0), ("mean_flux", 8.0)):

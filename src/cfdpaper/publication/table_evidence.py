@@ -30,6 +30,9 @@ def display_unit(unit: str) -> str:
     volume = re.fullmatch(r"(m|cm|mm)(?:\^?3|³)", unit)
     if volume:
         return f"{volume[1]}³"
+    heat_flux = re.fullmatch(r"(W|kW|MW)/(m|cm|mm)(?:\^?2|²)", unit)
+    if heat_flux:
+        return f"{heat_flux[1]} {heat_flux[2]}⁻²"
     match = re.fullmatch(r"\(([^()]+)\)/\((m|cm|mm)(?:\^?2|²)\)", unit)
     if match:
         return f"{match[1]} {match[2]}⁻²"

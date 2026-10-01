@@ -389,6 +389,7 @@ def write_project(
     author: Annotated[str | None, typer.Option("--author")] = None,
     section_input: Annotated[Path | None, typer.Option("--section-input")] = None,
     manuscript_input: Annotated[Path | None, typer.Option("--manuscript-input")] = None,
+    outline: Annotated[Path | None, typer.Option("--outline")] = None,
     context_for: Annotated[str | None, typer.Option("--context-for")] = None,
     package: Annotated[Path | None, typer.Option("--package")] = None,
     draft: Annotated[Path | None, typer.Option("--draft")] = None,
@@ -406,13 +407,14 @@ def write_project(
                 raise WorkflowInputError("Manuscripts remain candidates for author review.")
             if section_input is not None or review is not None:
                 raise WorkflowInputError(
-                    "Manuscript actions use --manuscript-input, --draft, or --docx."
+                    "Manuscript actions use --outline, --manuscript-input, --draft, or --docx."
                 )
             if context_for is not None:
                 if (
                     package is None
                     or output is None
                     or manuscript_input
+                    or outline
                     or docx
                     or layout
                     or pdf_preview
@@ -427,12 +429,12 @@ def write_project(
                 console.print(f"Current section writing context ready: {result}", markup=False)
                 return
             _write_manuscript_action(
-                manuscript_input, package, draft, output, docx, layout, pdf_preview
+                manuscript_input, package, draft, output, docx, layout, pdf_preview, outline=outline
             )
             return
-        if manuscript_input is not None or context_for is not None:
+        if manuscript_input is not None or context_for is not None or outline is not None:
             raise WorkflowInputError(
-                "--manuscript-input/--context-for require --artifact manuscript."
+                "--outline/--manuscript-input/--context-for require --artifact manuscript."
             )
         if artifact == "results-section":
             if approve_final or author is not None:
@@ -474,21 +476,28 @@ def _write_manuscript_action(
     docx: bool,
     layout: str | None,
     pdf_preview: bool,
+    *,
+    outline: Path | None = None,
 ) -> None:
     if (layout is not None or pdf_preview) and not docx:
         raise WorkflowInputError("--layout and --pdf-preview require --docx.")
-    if sum((manuscript_input is not None, draft is not None, docx)) != 1:
-        raise WorkflowInputError("Choose one: --manuscript-input, --draft, or --docx.")
+    if sum((outline is not None, manuscript_input is not None, draft is not None, docx)) != 1:
+        raise WorkflowInputError("Choose one: --outline, --manuscript-input, --draft, or --docx.")
     if output is None:
         raise WorkflowInputError("A fresh --output path is required; existing work is preserved.")
-    if manuscript_input is None and package is None:
+    if manuscript_input is None and outline is None and package is None:
         raise WorkflowInputError("--package is required for assembly or DOCX export.")
-    if manuscript_input is not None and package is not None:
-        raise WorkflowInputError("--package is not used with --manuscript-input.")
+    if (manuscript_input is not None or outline is not None) and package is not None:
+        raise WorkflowInputError("--package is not used with --outline or --manuscript-input.")
     from cfdpaper.publication.manuscript import assemble_manuscript, prepare_manuscript
     from cfdpaper.publication.section import export_section_docx
 
-    if manuscript_input is not None:
+    if outline is not None:
+        from cfdpaper.publication.manuscript_seed import prepare_manuscript_seed
+
+        result = prepare_manuscript_seed(outline, output)
+        label = "Manuscript workspace ready from selected inputs"
+    elif manuscript_input is not None:
         result = prepare_manuscript(manuscript_input, output)
         label = "Manuscript workspace ready for host writing"
     elif draft is not None:
@@ -604,5 +613,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.13.0.",
+        help="Roadmap command; not available in v0.14.0.",
     )(_placeholder_command(_command_name))

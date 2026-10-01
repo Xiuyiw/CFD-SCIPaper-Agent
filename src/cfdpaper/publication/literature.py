@@ -296,6 +296,9 @@ def _reference_label(record):
     pieces.extend(
         str(record.get(key, "")) for key in ("container-title", "volume", "issue", "page")
     )
+    publisher = str(record.get("publisher", "")).strip()
+    if publisher and publisher.casefold() not in {piece.strip().casefold() for piece in pieces}:
+        pieces.append(publisher)
     if record.get("DOI"):
         pieces.append(f"doi:{record['DOI']}")
     elif record.get("URL"):

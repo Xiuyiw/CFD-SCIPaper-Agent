@@ -24,6 +24,45 @@ validation. Ask the author only for missing facts that change the interpretation
 - An assembled manuscript already exists: start with its `CONTINUE.md` and
   portable `drafts.json`, not the oldest proposal or an earlier chat.
 
+## First manuscript from ordinary materials
+
+When no current manuscript exists, use the accepted research scope to build a
+provisional PaperSpine before drafting. Do not ask the author to supply the spine
+or restart topic selection when the question is already confirmed. Inspect the
+selected methods, source tables and actual figures first; a file inventory alone
+cannot determine the paper's central claim.
+
+Use the existing proposal, section `duties` and `evidence_notes` to connect each
+subquestion to its comparison, needed observation, figure/table purpose and
+receiving section. A short working outline is enough; no new registry is needed.
+For each proposed Results section, say what it resolves that the preceding one
+does not. Classify reused observations and model/mesh controls before treating
+them as additional support, using the QoI skill. Keep the central claim provisional
+until the selected analyses and images have actually been read.
+
+Draft Methods and Results from those inputs first. Write Discussion from their
+combined answer and located literature; then align the Introduction's gap and
+contribution with that answer, and write Abstract, Conclusions, title and keywords
+last. This is a useful dependency order, not a demand to rewrite existing sections.
+Refresh the current section context as described in the writing skill when a
+dependent draft becomes available. Record an unresolved interpretation in notes
+and continue sections that do not depend on it; an undefined quantity still blocks
+the comparison that uses it.
+
+Before calling the candidate complete, read the question and answer together:
+do the Results answer the stated problem, do Methods define their actual
+comparisons, and does each main figure carry evidence used in that answer?
+Required but unavailable scientific content stays an explicit gap, not placeholder
+prose. Preserve the first complete candidate before review or local revision;
+chapter count and successful assembly do not establish scientific completeness.
+
+Check Methods against the comparisons actually used: define the reference and modified
+geometries, relevant solver/model settings and the available mesh/near-wall diagnostics.
+A source paper's mesh quality or a configured report definition is not a result for the current
+case. Use existing records to fill omissions; retain a missing report as a concrete evidence gap.
+Replace repeated limitations with the positive answer supported by regional/path decomposition
+and matched controls. Keep a necessary qualification beside the first claim it changes.
+
 ## Reuse analysis output instead of remapping values
 
 After the analysis selection command, `selected/section-input/writing/input.json`

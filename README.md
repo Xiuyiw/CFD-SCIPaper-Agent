@@ -17,10 +17,11 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.13.0 adds a thin workflow skill, text intake for Python definition scripts
-and a portable five-skill analysis package. Start with the
+Version 0.14.0 adds an `--outline` bridge that gathers selected section inputs and optional drafts
+into a portable manuscript workspace, plus more specific first-manuscript science guidance.
+Start with the
 [materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md) and
-[v0.13.0 notes](docs/releases/v0.13.0.md). The
+[v0.14.0 notes](docs/releases/v0.14.0.md). The
 [connected-writing example](examples/connected-writing/README.md) covers long-table evidence;
 the [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
 covers whole-manuscript feedback and selected editing.
@@ -38,7 +39,7 @@ covers whole-manuscript feedback and selected editing.
 | Subsection DOCX and external review package | Available | Editable prose, tables and structured math; configurable figure sizing and placement; optional LibreOffice PDF preview; separate review suggestions. |
 | Guided scientific intake | Experimental | Interactive alternative to an existing `project-records.json` envelope. |
 | Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. v0.13 adds `.py` intake as source text, never execution. |
-| Materials-to-manuscript guidance | Available | Thin workflow entry coordinates four specialist skills; portable analysis packages include all five skills and their references. Reuses calculated Results inputs in the existing manuscript workspace. |
+| Materials-to-manuscript guidance | Available | Thin workflow entry coordinates four specialist skills; portable analysis packages include all five skills. `--outline` gathers selected inputs, dependencies and optional drafts without rebuilding numeric bindings. Missing prose remains pending. |
 | Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
 | Linked computed comparisons | Available | Compare two compatible calculated scalars while retaining both sources; update bound prose, tables and cross-section values. Chained comparisons and inferred comparability are not supported. |
 | Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
@@ -55,7 +56,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.13.0 checkout or its matching
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.14.0 checkout or its matching
 release wheel. From the checkout root, install with Word support:
 
 ```text
@@ -66,8 +67,8 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.13.0 notes](docs/releases/v0.13.0.md) for the current scope
-and the [v0.12.0 notes](docs/releases/v0.12.0.md) for the preceding baseline.
+remains available. See the [v0.14.0 notes](docs/releases/v0.14.0.md) for the current scope
+and the [v0.13.0 notes](docs/releases/v0.13.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -293,6 +294,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.14.0 development notes](docs/releases/v0.14.0.md)
 - [v0.13.0 development notes](docs/releases/v0.13.0.md)
 - [v0.12.0 notes](docs/releases/v0.12.0.md)
 - [v0.11.0 notes](docs/releases/v0.11.0.md)
