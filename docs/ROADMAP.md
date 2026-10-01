@@ -26,6 +26,7 @@ recorded here instead of being represented as already complete.
 | `v0.12.0` | Exact long-table intake, current connected-section writing context, concise numeric units and configurable Word pagination | Implemented; supported-platform integration passed; see release tag |
 | `v0.13.0` | Readable definition scripts, portable five-skill host workflow and a calculated-materials-to-manuscript tutorial | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.14.0` | Selected-input first-manuscript bridge, richer evidence-reading guidance and publication display fixes | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
+| `v0.15.0` | Source-text lookup, selected analysis materials, portable scientific guidance and explicit review display refresh | Implemented; paired first-draft results are mixed; see release notes and release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -65,9 +66,10 @@ Native solver platforms and submission automation are not prerequisites for this
 The next [v0.15 priorities](research/V0_15_RESEARCH_PRIORITIES.md) and approved
 [implementation plan](research/V0_15_IMPLEMENTATION_PLAN.md) put first-pass scientific synthesis,
 method-source use, substantive literature comparison and publication-scale output first.
-Implementation and paired first-draft evaluation are in progress. Source-text lookup and an
-explicit display-refresh route address observed workflow obstacles; their software tests do not
-establish improved scientific writing. Deferred core quality work is not excluded by scope control.
+Implementation and paired first-draft evaluation are complete. Source-text lookup and an
+explicit display-refresh route address observed workflow obstacles. The paired trial found
+local gains and persistent Methods/literature gaps, not uniform scientific superiority; see
+the [v0.15 notes](releases/v0.15.0.md). Deferred core quality work is not excluded by scope control.
 
 The [v0.14 proposal](research/V0_14_FIRST_MANUSCRIPT_PLAN.md) focuses on a first complete candidate
 from ordinary research materials: useful multi-evidence analysis, less manual manuscript mapping,

@@ -22,6 +22,11 @@ background or a boundary, not substantive contribution evidence. Seek a closer c
 when that gap matters to the paper's argument. Do not force numerical agreement across different
 definitions. Use the resulting comparison in Introduction or Discussion rather than publishing
 the search log or a checklist.
+If the closest study compares the same design family, read its actual ranking or
+response before using it only as background. Discuss a relevant disagreement with the
+present finding and the conditions that differ. A changed ranking with several changed
+conditions does not identify which condition caused it; that unresolved relation can
+still define a useful contribution without asserting a causal reversal.
 
 ## Establish what a source supports
 
@@ -93,6 +98,9 @@ Use the citation syntax supported by the current task package, retaining shared 
 and the claim-specific evidence links. Do not hard-code display numbers from an older draft.
 Check that the final cited sentence still matches the excerpt, role and support status after editing.
 Keep unresolved source requests in evidence notes rather than turning them into manuscript text.
+Keep source-access and support-status annotations out of the rendered bibliography;
+its entries contain bibliographic information, while the existing evidence notes retain
+the passage and assessment needed for scientific review.
 Protect author-edited citation fields; visible bibliography counts alone do not prove identity survival.
 If a source or scientific definition changes, re-read the affected claims and neighboring argument.
 Numeric replacement or reference renumbering does not automatically update their scientific meaning.

@@ -24,6 +24,24 @@ def test_unknown_source_font_is_not_inferred():
     assert result["scale"] is None
 
 
+def test_export_width_rounding_does_not_reject_visually_equal_font():
+    result = figure_placement(
+        pixels=(2000, 1000),
+        caption="Heat paths.",
+        sizing=FigureSizing(source_width_mm=160.02, target_width_mm=160, minimum_source_font_pt=8),
+        style=PublicationStyle(),
+    )
+    assert result["minimum_font_pt"] == pytest.approx(8 * 160 / 160.02)
+    assert result["width_mm"] == 160
+    with pytest.raises(ValueError, match="7.99 pt, below 8 pt"):
+        figure_placement(
+            pixels=(2000, 1000),
+            caption="Heat paths.",
+            sizing=FigureSizing(source_width_mm=160.3, minimum_source_font_pt=8),
+            style=PublicationStyle(),
+        )
+
+
 def test_high_dpi_does_not_rescue_small_font():
     with pytest.raises(ValueError, match="enlarge source text"):
         figure_placement(

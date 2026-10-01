@@ -15,6 +15,11 @@ checklist. Locate the records a reader would need to reconstruct each comparison
 - Model and numerical choices: read the applicable setup, model constants, mesh and
   boundary records. Match solver versions and settings to the actual cases and stage
   of work; a postprocessing record does not establish every run's solver version.
+  Reconstruct the solution stages from execution records as well as final settings:
+  frozen-field, energy-only and restored coupled stages can have the same final setup
+  but different reproducible procedures. Describe the relevant sequence compactly;
+  distinguish stage increments from accumulated iterations. Bind any software version
+  to the cases actually documented, rather than extrapolating one control run to all cases.
 - Reported quantities: locate both the operator definition and its actual output or
   history, including domain, weighting, direction, reference and sampling. A configured
   report or reference value is not a measured result. An absent user override does not
@@ -31,6 +36,12 @@ it affects in `evidence_notes`; do not request the entire project again. Conflic
 definitions need resolution, not selection of the convenient one. Do not load or
 rerun a native solver solely to fill a prose template. Report only documented
 methods, using a compact table where it makes case differences easier to reproduce.
+For each main comparison, close the reader's path from case identity through the
+solution procedure to the reported operator. Include the available numerical inlet
+inputs and stopping criteria when needed to reproduce it, not only their generic names.
+Equations must match the model described in prose; a partial set should not be labeled
+as the complete governing system. Keep reconstruction-specific extraction details
+where they distinguish a diagnostic from a native solver report.
 
 Assess model applicability at the scope of the claim. A Reynolds number based on an inlet or
 another reference length does not determine every local flow regime in a branching, impinging
