@@ -129,6 +129,10 @@ jobs:
           & $smokePython -c "import zipfile, pathlib, json, xml.etree.ElementTree as E; p=pathlib.Path(r'$sectionOutput.docx'); z=zipfile.ZipFile(p); assert sum(n.startswith('word/media/') for n in z.namelist()) == 2; root=E.fromstring(z.read('word/document.xml')); ns={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main','m':'http://schemas.openxmlformats.org/officeDocument/2006/math'}; assert root.findall('.//w:tbl',ns); assert root.findall('.//m:oMath',ns); assert json.loads(p.with_suffix('.layout.json').read_text(encoding='utf-8')); source=pathlib.Path(r'$sectionSource'); assert len(list(source.glob('*.tiff'))) == 2; assert len(list(source.glob('*.svg'))) == 2"
           $analysisOutput = Join-Path $env:RUNNER_TEMP "material-analysis-example"
           & $smokePython (Join-Path $env:GITHUB_WORKSPACE "examples\material-analysis\run_example.py") $analysisOutput
+          $materialSource = Join-Path $env:GITHUB_WORKSPACE "examples\material-analysis\inputs"
+          & $cfdpaper inspect $materialSource --materials --find "area" --material-path method.md --output "$analysisOutput-matches"
+          & $cfdpaper plan $materialSource --artifact analysis --material-path regions.csv --material-path method.md --output "$analysisOutput-selected"
+          & $smokePython -c "import json,pathlib; p=pathlib.Path(r'$analysisOutput-matches'); m=json.loads((p/'material-matches.json').read_text()); assert m['matches']; p=pathlib.Path(r'$analysisOutput-selected'); m=json.loads((p/'materials.json').read_text()); assert set(m['source_files'])=={'sources/regions.csv','sources/method.md'}"
           & $smokePython -c "from pathlib import Path; from docx import Document; p=Path(r'$analysisOutput'); d=Document(p/'section.docx'); assert len(d.tables)==1; assert len(d.inline_shapes)==0; assert (p/'section-input/writing/skills/cfd-evidence-writing/references/mechanism-subsections.md').is_file()"
           $manuscriptSource = Join-Path $env:RUNNER_TEMP "manuscript-source"
           $manuscriptPackage = Join-Path $env:RUNNER_TEMP "manuscript-package"

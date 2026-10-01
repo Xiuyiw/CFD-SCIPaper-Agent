@@ -421,3 +421,174 @@ def test_moved_task_ordinary_assembly_keeps_unrelated_drafts(review_return, mapp
     )
     with pytest.raises(FileExistsError):
         prepare_manuscript_revision(review_return, tmp_path / "actions.json", moved)
+
+
+def test_explicit_display_refresh_keeps_reviewed_targets_and_author_sources(
+    review_return, mapping, tmp_path, monkeypatch
+):
+    from cfdpaper.publication import manuscript, table_evidence
+
+    old_display = table_evidence.display_unit
+
+    def changed_display(unit):
+        return "N m⁻²" if unit == "Pa" else old_display(unit)
+
+    monkeypatch.setattr(table_evidence, "display_unit", changed_display)
+    monkeypatch.setattr(manuscript, "display_unit", changed_display)
+    before = files(review_return)
+    actions = tmp_path / "actions.json"
+    write(actions, mapping)
+    with pytest.raises(ValueError, match="Reassemble"):
+        prepare_manuscript_revision(review_return, actions, tmp_path / "default")
+    task = tmp_path / "refreshed"
+    result = prepare_manuscript_revision(review_return, actions, task, refresh_display=True)
+    assert result["display_refreshed"] is True
+    assert files(review_return) == before
+    assert files(task / "reference") == before
+    target = result["actions"][0]["resolved_targets"][0]
+    assert target["reviewed_text"] == mapping["actions"][0]["targets"][0]["quote"]
+    assert " Pa" in target["reviewed_text"]
+    assert "N m⁻²" in target["current_text"]
+    assert target["draft_pointer"] == "/paragraphs/0/text"
+    assert "Current generated target text" in (task / "TASK.md").read_text(encoding="utf-8")
+    snapshot = review_return / "snapshot/manuscript"
+    for path in read(snapshot / "drafts.json").values():
+        assert (task / "working" / path).read_bytes() == (snapshot / path).read_bytes()
+    assert not (task / "working/manuscript.pdf").exists()
+    moved = tmp_path / "moved"
+    shutil.move(task, moved)
+    working = moved / "working"
+    path = working / "sections/hydraulics/draft.json"
+    draft = read(path)
+    draft["paragraphs"][0]["text"] += " Author clarification after refresh."
+    write(path, draft)
+    candidate = assemble_manuscript(working, working / "drafts.json", moved / "candidate")
+    assert "Author clarification after refresh." in (candidate / "manuscript.md").read_text(
+        encoding="utf-8"
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation", ["source", "draft", "unit", "figure", "title", "literature", "bibliography"]
+)
+def test_display_refresh_rejects_changed_authoring_material(
+    review_return, mapping, tmp_path, mutation
+):
+    returned = tmp_path / "returned"
+    shutil.copytree(review_return, returned)
+    snapshot = returned / "snapshot/manuscript"
+    if mutation == "source":
+        path = next((snapshot / "sections/hydraulics/sources").glob("*.csv"))
+        path.write_bytes(path.read_bytes() + b"\n")
+    elif mutation == "draft":
+        path = snapshot / "sections/hydraulics/draft.json"
+        data = read(path)
+        data["paragraphs"][0]["text"] += " Later author edit."
+        write(path, data)
+    elif mutation == "unit":
+        path = snapshot / "sections/hydraulics/input.json"
+        data = read(path)
+        data["table_calculations"][0]["units"]["value"] = "kPa"
+        write(path, data)
+    elif mutation == "figure":
+        path = next((snapshot / "sections/hydraulics/figures").glob("*.png"))
+        path.write_bytes(path.read_bytes() + b"changed")
+    elif mutation == "title":
+        path = snapshot / "manuscript-input.json"
+        data = read(path)
+        data["title"] += " changed"
+        write(path, data)
+    elif mutation == "literature":
+        path = next((snapshot / "literature").rglob("*.md"))
+        path.write_bytes(path.read_bytes() + b"Changed source text.\n")
+    else:
+        path = snapshot / "literature/bibliography.json"
+        data = read(path)
+        data[0]["title"] += " changed"
+        write(path, data)
+    before = files(returned)
+    actions = tmp_path / "actions.json"
+    write(actions, mapping)
+    with pytest.raises(ValueError, match="unchanged authoring material"):
+        prepare_manuscript_revision(returned, actions, tmp_path / "task", refresh_display=True)
+    assert not (tmp_path / "task").exists()
+    assert files(returned) == before
+
+
+def test_refresh_rejects_changed_raw_computation_with_identical_sources(
+    review_return, mapping, tmp_path, monkeypatch
+):
+    from cfdpaper.publication import manuscript, table_evidence
+
+    original = table_evidence.resolve_table_result
+
+    def changed_result(*args, **kwargs):
+        result = original(*args, **kwargs)
+        result["raw_value"] += 1
+        return result
+
+    monkeypatch.setattr(table_evidence, "resolve_table_result", changed_result)
+    monkeypatch.setattr(manuscript, "resolve_table_result", changed_result)
+    actions = tmp_path / "actions.json"
+    write(actions, mapping)
+    with pytest.raises(ValueError, match="unchanged authoring material"):
+        prepare_manuscript_revision(review_return, actions, tmp_path / "task", refresh_display=True)
+    assert not (tmp_path / "task").exists()
+
+
+def test_refreshed_object_target_keeps_exact_local_and_global_identity(
+    review_return, mapping, tmp_path
+):
+    objects = read(review_return / "snapshot/locators.json")["objects"]
+    obj = next(item for item in objects if item["kind"] == "table")
+    target = {key: obj[key] for key in ("section_id", "kind", "global_number", "local_id")}
+    mapping["actions"][0]["targets"] = [target]
+    actions = tmp_path / "actions.json"
+    write(actions, mapping)
+    result = prepare_manuscript_revision(
+        review_return, actions, tmp_path / "task", refresh_display=True
+    )
+    resolved = result["actions"][0]["resolved_targets"][0]
+    assert all(resolved[key] == value for key, value in target.items())
+    assert resolved["current_text"] == resolved["quote"]
+    assert resolved["reviewed_object"]
+
+
+def test_display_refresh_still_rejects_stale_action_quote(review_return, mapping, tmp_path):
+    mapping["actions"][0]["targets"][0]["quote"] = "A different paragraph."
+    actions = tmp_path / "actions.json"
+    write(actions, mapping)
+    with pytest.raises(ValueError, match="stale or ambiguous paragraph quote"):
+        prepare_manuscript_revision(review_return, actions, tmp_path / "task", refresh_display=True)
+    assert not (tmp_path / "task").exists()
+
+
+def test_refresh_shared_bibliography_display_preserves_metadata_and_exact_target(
+    review_return, mapping, tmp_path, monkeypatch
+):
+    from cfdpaper.publication import literature
+
+    original = literature._reference_label
+    monkeypatch.setattr(
+        literature, "_reference_label", lambda record: original(record) + " [format]"
+    )
+    obj = next(
+        item
+        for item in read(review_return / "snapshot/locators.json")["objects"]
+        if item["kind"] == "reference"
+    )
+    mapping["actions"][0]["targets"] = [
+        {key: obj[key] for key in ("section_id", "kind", "global_number", "local_id")}
+    ]
+    actions = tmp_path / "actions.json"
+    write(actions, mapping)
+    result = prepare_manuscript_revision(
+        review_return, actions, tmp_path / "task", refresh_display=True
+    )
+    target = result["actions"][0]["resolved_targets"][0]
+    assert target["current_text"] == target["reviewed_text"] + " [format]"
+    assert target["current_object"]["source"] == target["reviewed_object"]["source"]
+    assert target["local_id"] == obj["local_id"]
+    assert files(tmp_path / "task/working/literature") == files(
+        review_return / "snapshot/manuscript/literature"
+    )

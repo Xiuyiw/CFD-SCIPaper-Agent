@@ -58,6 +58,16 @@ def test_missing_drafts_are_explicit_and_sources_portable(tmp_path):
     assert payload["missing_dependency_drafts"] == ["methods"]
     moved = tmp_path / "relocated"
     shutil.move(output, moved)
+    for name in (
+        "cfd-paper-workflow",
+        "cfd-qoi-physics",
+        "cfd-evidence-intake",
+        "cfd-figure-production",
+        "cfd-evidence-writing",
+    ):
+        assert (moved / "skills" / name / "SKILL.md").is_file()
+        assert (package / "skills" / name / "SKILL.md").is_file()
+    assert (moved / "skills/cfd-evidence-writing/references/methods-sections.md").is_file()
     for entry in payload["sections"].values():
         path = moved / entry["input"]
         source = read(path)

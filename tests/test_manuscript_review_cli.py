@@ -84,6 +84,25 @@ def test_review_help_explains_report_option():
     help_text = Text.from_ansi(result.stdout).plain
     assert "complete returned report" in help_text
     assert "--actions" in help_text
+    assert "--refresh-display" in help_text
+
+
+def test_refresh_display_requires_actions(tmp_path):
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            str(tmp_path),
+            "--package",
+            str(tmp_path),
+            "--output",
+            str(tmp_path / "output"),
+            "--refresh-display",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "requires --actions" in result.output
+    assert not (tmp_path / "output").exists()
 
 
 def test_review_actions_cli_rejects_simultaneous_report_and_actions(tmp_path):

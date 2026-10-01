@@ -34,15 +34,22 @@ not from the first available scalar output or the renderer's default chart.
 - Keep full spatial/operating context when needed to understand a local change; do not cherry-pick
   a region because its contrast is visually attractive. Use the relevant P04 lesson, not its visual
   template: contributions, sampled distributions and complementary diagnostics serve different roles.
+- For a geometry or Methods figure, check that the main reference-to-modified comparison can
+  actually be understood from the shown geometry, dimensions and legend. A schematic of a
+  secondary variant does not define an omitted baseline. Use available geometry records; if a
+  necessary definition is missing, retain that specific gap rather than drawing a plausible shape.
 - If the available renderer cannot express the proposed relationship, identify that specific product
   gap. A default plot is a preliminary visualization, not a publication-quality figure. For an already
   accepted or manually edited figure, propose a semantic redesign to the author before changing it.
 
-At final embedded size inspect both scientific readability and typography: can the reader see the
-main relationship without relying on the prose; are labels/units/legend readable, marker weights
-consistent, whitespace proportionate, and neighboring panels aligned? Successful export and absence
-of clipping are necessary checks, not sufficient evidence of figure quality. Keep this assessment
-in the existing figure contract/review notes; do not create another approval registry.
+At final embedded size, identify the sign, small difference or regional feature that decides the
+claim and check whether a reader can read it, not merely see its marker. When a valid shared scale
+hides that feature, use a restrained value label, compact table or clearly identified local-scale
+panel as appropriate; do not move data, invent error bars or change an accepted encoding without
+agreement. Higher DPI does not enlarge embedded text or separate near-zero values. Also inspect
+units, legend, marker weights, whitespace and panel alignment on the actual manuscript page.
+Keep the result in existing figure contract/review notes; successful export and no clipping alone
+do not establish scientific readability.
 
 ## Do not trigger
 

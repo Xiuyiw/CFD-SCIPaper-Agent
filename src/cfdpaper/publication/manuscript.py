@@ -352,6 +352,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
     _fresh(output_dir)
     data, loaded, library, bindings, _ = _inputs(input_path)
     with _stage(output_dir) as staged:
+        _copy_workflow_skills(staged)
         _copy_citation_style(data, input_path.parent, staged)
         if library is not None:
             copy_literature(_relative(input_path.parent, data.literature), staged / "literature")
@@ -394,7 +395,8 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
         )
         (staged / "TASK.md").write_text(
             "# Prepare the manuscript with the host AI\n\n"
-            "Read manuscript-input.json for the PaperSpine publication order. Draft Methods "
+            "Read skills/cfd-paper-workflow/SKILL.md for first-manuscript evidence selection, "
+            "and manuscript-input.json for the PaperSpine publication order. Draft Methods "
             "and Results before Discussion, then revise Introduction against the answers; "
             "write Abstract and Conclusions from those current sections last. Read every section's "
             "TASK.md, packaged Skill and manuscript-context.json before drafting. Produce "
@@ -418,6 +420,21 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
             encoding="utf-8",
         )
     return output_dir
+
+
+def _copy_workflow_skills(destination: Path) -> None:
+    """Keep first-writing guidance usable after moving a manuscript or context packet."""
+    root = Path(__file__).resolve().parents[1] / "skills"
+    if not root.is_dir():
+        root = Path(__file__).resolve().parents[3] / "skills"
+    for name in (
+        "cfd-paper-workflow",
+        "cfd-evidence-intake",
+        "cfd-qoi-physics",
+        "cfd-figure-production",
+        "cfd-evidence-writing",
+    ):
+        shutil.copytree(root / name, destination / "skills" / name)
 
 
 def prepare_writing_context(
@@ -459,6 +476,7 @@ def prepare_writing_context(
         "from the copied sources. Reconsider conflicting wording rather than copying it as fact.",
     }
     with _stage(output_dir) as staged:
+        _copy_workflow_skills(staged)
         if library is not None:
             copy_literature(_relative(package_dir, data.literature), staged / "literature")
         for contract in data.spine.sections:
@@ -505,7 +523,10 @@ def prepare_writing_context(
         _write(staged / "context.json", context)
         (staged / "TASK.md").write_text(
             f"# Write {section_id} within the current manuscript\n\n"
-            "Read context.json and the target section's TASK.md. Open the relevant figures "
+            "Read context.json, skills/cfd-paper-workflow/SKILL.md "
+            "and the target section's TASK.md. "
+            "Follow the workflow's evidence-selection reading before choosing numeric anchors. "
+            "Open the relevant figures "
             "and source definitions in its sections/ packages. Literature sources resolve "
             "from literature/literature.json. Use dependency passages to connect the argument, "
             "not to repeat their numbers or assume their interpretation is proven. "

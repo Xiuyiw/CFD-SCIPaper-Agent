@@ -153,6 +153,19 @@ cfdpaper inspect STUDY --materials --output profile
 cfdpaper plan STUDY --artifact analysis --output analysis-materials
 ```
 
+If a definition is beyond the initial preview, search its actual source text:
+
+```text
+cfdpaper inspect STUDY --materials --find "wall temperature" --find "area average" --output matches
+cfdpaper plan STUDY --artifact analysis --material-path exports/comparison.csv --material-path methods.md --output focused-materials
+```
+
+Search results contain file/line locations and nearby text. Repeat `--material-path` to select
+known files for profiling, search or analysis preparation; this avoids copying a new study
+directory when default discovery omits a relevant export. Selection replaces discovery, so include
+the required definition files as well as the tables. Check skipped/truncated entries: no match
+does not establish that a setting or result is absent. Source scripts remain text, never executed.
+
 Give `analysis-materials/host-task.md` to your local AI. The portable package includes
 `cfd-paper-workflow` and the four specialist skills for evidence intake, QoI/physics,
 figure production and evidence writing, with their references. The host starts with the

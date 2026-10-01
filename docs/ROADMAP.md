@@ -62,6 +62,13 @@ Native solver platforms and submission automation are not prerequisites for this
 
 ## Approved direction — v0.14 first-manuscript workflow
 
+The next [v0.15 priorities](research/V0_15_RESEARCH_PRIORITIES.md) and approved
+[implementation plan](research/V0_15_IMPLEMENTATION_PLAN.md) put first-pass scientific synthesis,
+method-source use, substantive literature comparison and publication-scale output first.
+Implementation and paired first-draft evaluation are in progress. Source-text lookup and an
+explicit display-refresh route address observed workflow obstacles; their software tests do not
+establish improved scientific writing. Deferred core quality work is not excluded by scope control.
+
 The [v0.14 proposal](research/V0_14_FIRST_MANUSCRIPT_PLAN.md) focuses on a first complete candidate
 from ordinary research materials: useful multi-evidence analysis, less manual manuscript mapping,
 and actual figures, literature and document layout. The direction is approved; the
