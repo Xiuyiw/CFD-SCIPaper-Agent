@@ -1,9 +1,32 @@
 # Literature-supported Introduction and Discussion
 
-Use with the current paper spine, section duties, supplied literature records and readable sources.
-This is host writing guidance, not an autonomous search service or a new approval workflow.
-Reuse shared literature identities across sections; do not create separate identities merely
-because the same work has a different role in Introduction and Discussion.
+Use with the current paper spine, section duties, literature records and readable sources.
+The host may retrieve and synthesize literature needed by the authorized writing task using
+available search and full-text tools; the CLI does not perform or certify that scientific work.
+Reuse shared literature identities across sections, even when a source's role changes.
+
+## Find the comparison that the argument needs
+
+Start with the relation still unresolved by the supplied sources: for example, where a transport
+change occurs, how a diagnostic separates redistribution from intensity, or whether a design
+effect depends on an operating condition. Search that relation and its closest physical setting
+with the existing literature tools. Follow relevant primary studies and accessible full text;
+do not expand to a generic field survey or a target citation count. Stop when the located work
+supports a useful comparison, or record the specific missing access or evidence.
+
+For a central contribution, make a compact comparison in the existing working notes: the current
+finding; the closest source's located finding; comparable quantities and decisive condition or
+method differences; the additional understanding supplied by the present evidence. If the only
+answer is that the studies differ or cannot transfer validation, the source still serves as
+background or a boundary, not substantive contribution evidence. Seek a closer comparison only
+when that gap matters to the paper's argument. Do not force numerical agreement across different
+definitions. Use the resulting comparison in Introduction or Discussion rather than publishing
+the search log or a checklist.
+If the closest study compares the same design family, read its actual ranking or
+response before using it only as background. Discuss a relevant disagreement with the
+present finding and the conditions that differ. A changed ranking with several changed
+conditions does not identify which condition caused it; that unresolved relation can
+still define a useful contribution without asserting a causal reversal.
 
 ## Establish what a source supports
 
@@ -57,12 +80,11 @@ A mechanism reported elsewhere is a candidate here until the present evidence su
 Explain material differences rather than deleting conflicting diagnostics or treating different
 definitions as contradictions. An algebraic decomposition alone is not new causal evidence.
 
-Give a literature comparison a specific job in the current argument: identify the relevant
-finding in this study, the source's located finding and the matching or differing condition that
-makes the comparison informative. A source used to motivate the Introduction gap is not thereby
-evidence for the Results mechanism. Recheck its passage for the new claim; when only metadata or
-an abstract is available, keep the claim within that material and request the full passage only
-if it changes the conclusion. Missing recent coverage cannot support an absolute novelty claim.
+A source used to motivate the Introduction gap is not thereby evidence for the Results mechanism.
+Recheck its passage for the new claim. When only an abstract is accessible, use it only for what
+it actually reports; obtain the relevant full-text passage before making a methods or quantitative
+comparison that the abstract cannot support. Keep access limits in working notes unless they
+change the reader-facing claim. Missing coverage cannot support an absolute novelty claim.
 
 When several results support one explanation, state the distinct role of each. When plausible
 alternatives remain, identify the missing discriminating evidence without implying it was acquired.
@@ -76,6 +98,9 @@ Use the citation syntax supported by the current task package, retaining shared 
 and the claim-specific evidence links. Do not hard-code display numbers from an older draft.
 Check that the final cited sentence still matches the excerpt, role and support status after editing.
 Keep unresolved source requests in evidence notes rather than turning them into manuscript text.
+Keep source-access and support-status annotations out of the rendered bibliography;
+its entries contain bibliographic information, while the existing evidence notes retain
+the passage and assessment needed for scientific review.
 Protect author-edited citation fields; visible bibliography counts alone do not prove identity survival.
 If a source or scientific definition changes, re-read the affected claims and neighboring argument.
 Numeric replacement or reference renumbering does not automatically update their scientific meaning.

@@ -15,9 +15,11 @@ Introduction/Discussion and evidence-bounded Abstract/Conclusions; figures are n
 
 ## Do not trigger
 
-Do not claim autonomous full-paper generation, independent literature synthesis, invented numbers
-or unsupported mechanisms. The legacy paragraph path must not introduce new case comparisons or rewrite a failed
-or stale figure into a plausible narrative. Section comparisons must stay within supplied evidence.
+Do not present host-authored reasoning or literature synthesis as an automatic CLI capability,
+invent numbers or assert unsupported mechanisms. The host may retrieve and compare relevant
+literature as described in the literature reference. The legacy paragraph path must not introduce
+new case comparisons or rewrite a failed or stale figure into a plausible narrative. Section
+comparisons must stay within supplied evidence.
 
 ## Inputs
 

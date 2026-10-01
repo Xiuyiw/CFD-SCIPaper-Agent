@@ -28,6 +28,22 @@ below when an initialized project already has declared scientific records and ob
    Python postprocessing/setup files are included as readable source with line locations, not run.
    Read their definitions without importing them; a check present in code is not evidence it passed.
 
+   When a setting or definition is missing from the preview, locate it in the actual text:
+
+   ```text
+   cfdpaper inspect PROJECT_ROOT --materials --find "SEARCH_TERM" --output MATCHES_DIR
+   ```
+
+   Repeat `--find` for alternative literal terms. `--material-path relative/file.json`
+   selects an exact file (repeatable), including files omitted from default discovery;
+   it also works with ordinary profiling and `plan --artifact analysis` preparation.
+   Selection replaces discovery: include the relevant tables and their method/definition files.
+   This avoids manual source copying when a large project exceeds default discovery limits.
+   `--match-limit` controls returned matches.
+   Read the located lines in their case/stage context. Search output reports skipped files,
+   truncation and the files actually searched; no match is not proof the project lacks a fact.
+   Use names found in the native definitions rather than relying on one solver's vocabulary.
+
    For related sections, locate the current paper question, Methods definitions and dependency
    drafts before proposing another analysis. Start with the unresolved relationship, then select
    the smallest complementary evidence set: for example, a spatial pattern plus its integrated

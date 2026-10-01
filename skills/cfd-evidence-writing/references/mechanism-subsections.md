@@ -69,6 +69,11 @@ argument rather than replaying every row.
   balance. Missing data are not zero. Threshold sensitivity is not measurement uncertainty.
 - Use consistent dimensions, reference scales and control-volume scope. Check mesh/time-step
   dependence, convergence and available validation before implying resolved accuracy.
+- Tie scale words such as "order-of-magnitude" to the actual ratio and named domain.
+  A large change in one layer does not describe the total, and one reference case's
+  exact values do not represent every configuration. Preserve these scopes when
+  compressing the finding into Abstract or Conclusions. Heat rejection and wetted area
+  alone do not establish flow access, mixing or a local transfer coefficient.
 - Preserve supplied values through `{{value:evidence_id}}`; use `{{figure:figure_id}}` and
   `{{cite:evidence_id}}` for figure and supplied literature references. Cite tokens require
   literature evidence. Declare each paragraph's referenced IDs, as described in `TASK.md`.

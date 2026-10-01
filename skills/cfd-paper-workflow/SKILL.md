@@ -32,13 +32,23 @@ or restart topic selection when the question is already confirmed. Inspect the
 selected methods, source tables and actual figures first; a file inventory alone
 cannot determine the paper's central claim.
 
-Use the existing proposal, section `duties` and `evidence_notes` to connect each
-subquestion to its comparison, needed observation, figure/table purpose and
-receiving section. A short working outline is enough; no new registry is needed.
-For each proposed Results section, say what it resolves that the preceding one
-does not. Classify reused observations and model/mesh controls before treating
-them as additional support, using the QoI skill. Keep the central claim provisional
-until the selected analyses and images have actually been read.
+Before selecting numeric anchors, read the complete available column/key lists and
+the case, region, layer and model categories relevant to the question. Then open the
+definitions and source records that could distinguish the plausible explanations.
+A preview or a convenient summary table may omit the decisive comparison. For
+example, a changing total may need its regional contributions, while an unchanged
+ranking may hide a model-dependent effect magnitude. Do not compute every available
+metric or assume a suggestive field name supplies its physical definition.
+
+Use the existing proposal, section `duties` and `evidence_notes` for a short working
+outline: subquestion; explanation to test; distinguishing observation and located
+source; reason for selecting it; receiving section or figure/table. Include a
+relevant unused source only when reading it could change the argument. Prefer
+evidence that resolves a live alternative over another expression of the same
+contrast. Classify model/mesh controls and repeated observations with the QoI skill.
+For each Results section, say what it resolves that the preceding one does not.
+No new registry is needed; keep the central claim provisional until the selected
+records and images have actually been read.
 
 Draft Methods and Results from those inputs first. Write Discussion from their
 combined answer and located literature; then align the Introduction's gap and
@@ -56,12 +66,12 @@ Required but unavailable scientific content stays an explicit gap, not placehold
 prose. Preserve the first complete candidate before review or local revision;
 chapter count and successful assembly do not establish scientific completeness.
 
-Check Methods against the comparisons actually used: define the reference and modified
-geometries, relevant solver/model settings and the available mesh/near-wall diagnostics.
-A source paper's mesh quality or a configured report definition is not a result for the current
-case. Use existing records to fill omissions; retain a missing report as a concrete evidence gap.
-Replace repeated limitations with the positive answer supported by regional/path decomposition
-and matched controls. Keep a necessary qualification beside the first claim it changes.
+Use the writing skill's Methods reference to trace each main comparison back to its
+actual geometry, settings and diagnostic records, and its literature reference to
+locate the closest relevant findings when the supplied sources cannot establish the
+contribution. Resolve omissions from available records before asking the author.
+Keep a necessary qualification beside the first claim it changes, and use the space
+saved from repeated limitations to explain the positive answer from the selected evidence.
 
 ## Reuse analysis output instead of remapping values
 

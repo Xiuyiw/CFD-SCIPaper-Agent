@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-10-01
+
+### Added
+
+- Literal source-text search with file/line context through `inspect --materials --find`.
+- Explicit `--material-path` selection for material inspection and analysis preparation.
+- Opt-in `review --actions --refresh-display` to continue earlier reviews after display-only
+  changes, retaining the original report, drafts, source values and old/new targets.
+- Complete portable workflow skills in manuscript preparation and selected-section task context.
+
+### Improved
+
+- Scientific writing guidance for discriminating evidence, actual case/stage/report definitions,
+  nearest-study result comparisons and the scope of quantitative claims.
+- Publication-size font checks tolerate hundredth-point metadata rounding while retaining the
+  effective size and rejecting genuinely undersized labels.
+
+### Evaluation
+
+A paired known-project first-draft trial found mixed scientific results, not uniform superiority.
+Both drafts used regional and model-control evidence; method details and literature comparison
+still needed improvement. Real Word pages were reviewed separately from software tests.
+See the [release notes](docs/releases/v0.15.0.md) for the scope and remaining research gaps.
+
 ## [0.14.0] — 2026-10-01
 
 ### Added

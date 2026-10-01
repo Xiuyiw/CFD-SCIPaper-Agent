@@ -109,6 +109,20 @@ def inspect_project(
         bool, typer.Option("--materials", help="Profile exported study materials")
     ] = False,
     output: Annotated[Path | None, typer.Option("--output")] = None,
+    find: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--find", help="Locate literal terms in material text; repeat for alternatives"
+        ),
+    ] = None,
+    material_paths: Annotated[
+        list[Path] | None,
+        typer.Option(
+            "--material-path",
+            help="Select an exact material file relative to ROOT; repeat as needed",
+        ),
+    ] = None,
+    match_limit: Annotated[int, typer.Option("--match-limit", min=1, max=1000)] = 50,
 ) -> None:
     """Discover project files and incrementally refresh the offline index."""
 
@@ -119,13 +133,21 @@ def inspect_project(
         from cfdpaper.publication.section import _stage, _write
 
         try:
-            summary = profile_materials(root)
+            if find:
+                from cfdpaper.material_search import search_materials
+
+                summary = search_materials(root, find, paths=material_paths, limit=match_limit)
+            else:
+                summary = profile_materials(root, paths=material_paths)
             with _stage(output) as staged:
-                _write(staged / "materials.json", summary)
+                name = "material-matches.json" if find else "materials.json"
+                _write(staged / name, summary)
         except (ValueError, OSError, RuntimeError) as error:
             _workflow_error(error)
-        console.print(f"Material profile: {output / 'materials.json'}", markup=False)
+        console.print(f"Material {'matches' if find else 'profile'}: {output / name}", markup=False)
         return
+    if find or material_paths or match_limit != 50:
+        raise typer.BadParameter("--find, --material-path and --match-limit require --materials")
     if output is not None:
         raise typer.BadParameter("--output requires --materials")
     try:
@@ -163,6 +185,10 @@ def plan_project(
     regenerate: Annotated[bool, typer.Option("--regenerate")] = False,
     artifact: Annotated[str, typer.Option("--artifact", help="topic or analysis")] = "topic",
     question: Annotated[str, typer.Option("--question")] = "",
+    material_paths: Annotated[
+        list[Path] | None,
+        typer.Option("--material-path", help="Selected root-relative analysis file; repeatable."),
+    ] = None,
     package: Annotated[Path | None, typer.Option("--package")] = None,
     proposal: Annotated[Path | None, typer.Option("--proposal")] = None,
     select: Annotated[str | None, typer.Option("--select")] = None,
@@ -173,11 +199,11 @@ def plan_project(
     if artifact == "analysis":
         if candidates or approve_topic or author or provider != "offline" or regenerate:
             raise typer.BadParameter("Analysis selection is separate from topic/provider options")
-        _analysis_plan_action(root, question, package, proposal, select, output)
+        _analysis_plan_action(root, question, package, proposal, select, output, material_paths)
         return
     if artifact != "topic":
         raise typer.BadParameter("--artifact must be topic or analysis")
-    if question or package or proposal or select or output:
+    if question or package or proposal or select or output or material_paths:
         raise typer.BadParameter("Analysis options require --artifact analysis")
     try:
         execution = run_plan(
@@ -231,7 +257,7 @@ def plan_project(
     console.print(f"report {execution.report_path}", markup=False, soft_wrap=True)
 
 
-def _analysis_plan_action(root, question, package, proposal, select, output):
+def _analysis_plan_action(root, question, package, proposal, select, output, material_paths=None):
     from cfdpaper.analysis_suggestions import compile_analysis, prepare_analysis
     from cfdpaper.publication.analysis_section import build_analysis_section
     from cfdpaper.publication.section import _stage
@@ -241,8 +267,10 @@ def _analysis_plan_action(root, question, package, proposal, select, output):
     selecting = any(v is not None for v in (package, proposal, select))
     if selecting and not all(v is not None for v in (package, proposal, select)):
         raise typer.BadParameter("Selection requires --package, --proposal and --select")
-    if selecting and question:
-        raise typer.BadParameter("--question belongs to preparation, not selection")
+    if selecting and (question or material_paths):
+        raise typer.BadParameter(
+            "--question and --material-path belong to preparation, not selection"
+        )
     try:
         if selecting:
             with _stage(output) as staged:
@@ -254,7 +282,7 @@ def _analysis_plan_action(root, question, package, proposal, select, output):
                 "Read TASK.md; draft with the host AI, then use write --artifact results-section."
             )
         else:
-            result = prepare_analysis(root, output, question=question)
+            result = prepare_analysis(root, output, question=question, paths=material_paths)
             console.print(f"Analysis materials: {result}", markup=False)
             console.print("Read host-task.md with the host AI and choose an analysis.")
     except (ValueError, OSError, RuntimeError) as error:
@@ -568,6 +596,13 @@ def review_manuscript(
     output: Annotated[Path, typer.Option("--output")],
     report: Annotated[Path | None, typer.Option("--report")] = None,
     actions: Annotated[Path | None, typer.Option("--actions")] = None,
+    refresh_display: Annotated[
+        bool,
+        typer.Option(
+            "--refresh-display",
+            help="Explicitly rebuild reading views from unchanged reviewed inputs",
+        ),
+    ] = False,
 ) -> None:
     """Prepare a review, retain a complete returned report, or focus selected editing tasks."""
     from cfdpaper.publication.manuscript_review import (
@@ -576,12 +611,16 @@ def review_manuscript(
     )
 
     try:
+        if refresh_display and actions is None:
+            raise ValueError("--refresh-display requires --actions")
         if report is not None and actions is not None:
             raise ValueError("Use either --report or --actions, not both")
         if actions is not None:
             from cfdpaper.publication.manuscript_revision import prepare_manuscript_revision
 
-            result = prepare_manuscript_revision(package, actions, output)
+            result = prepare_manuscript_revision(
+                package, actions, output, refresh_display=refresh_display
+            )
             label = "Selected editing task ready; manuscript unchanged"
         elif report is None:
             result = prepare_manuscript_review(package, output)
@@ -613,5 +652,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.14.0.",
+        help="Roadmap command; not available in v0.15.0.",
     )(_placeholder_command(_command_name))

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from cfdpaper.publication.elements import MathNode, math_text
 from cfdpaper.publication.manuscript import assert_manuscript_current
+from cfdpaper.publication.manuscript_refresh import refresh_manuscript_display
 from cfdpaper.publication.manuscript_review import (
     _copy_file,
     _copy_tree,
@@ -182,8 +183,14 @@ def _task(result: dict) -> str:
         "numbers. Leave unrelated drafts untouched. Related sections are explicit requests "
         "to reconsider connected prose, not blanket instructions to rewrite them.",
         "",
-        "No prose or numerical edits have been applied. The working/ reading views still "
-        "describe the reviewed manuscript; edit authoring JSON, not generated manuscript.md "
+        "No author prose or raw numerical edits have been applied. "
+        + (
+            "The working/ reading views were explicitly refreshed from unchanged authoring "
+            "material; compare current target text below with the historical quotation. "
+            if result.get("display_refreshed")
+            else "The working/ reading views still describe the reviewed manuscript. "
+        )
+        + "Edit authoring JSON, not generated manuscript.md "
         "or section.json. Previews in reference/ are historical reading aids, never revised "
         "output. If a later author candidate exists, reconcile it against this reviewed "
         "snapshot first; this task does not merge into that candidate.",
@@ -209,7 +216,14 @@ def _task(result: dict) -> str:
                 lines += [f"Object definitions: {target['input_path']}", ""]
             if target.get("quote"):
                 lines += ["Exact reviewed manuscript quotation:", ""]
-                lines += ["> " + line for line in target["quote"].splitlines()]
+                lines += [
+                    "> " + line
+                    for line in target.get("reviewed_text", target["quote"]).splitlines()
+                ]
+                lines.append("")
+            if "current_text" in target:
+                lines += ["Current generated target text (same authoring location):", ""]
+                lines += ["> " + line for line in target["current_text"].splitlines()]
                 lines.append("")
         for sid, reason in action.get("related_sections", {}).items():
             lines += [f"Related section {sid}: {reason}", f"Draft: {result['drafts'][sid]}", ""]
@@ -260,7 +274,7 @@ def _task(result: dict) -> str:
 
 
 def prepare_manuscript_revision(
-    review_return_dir: Path, actions_path: Path, output_dir: Path
+    review_return_dir: Path, actions_path: Path, output_dir: Path, *, refresh_display: bool = False
 ) -> dict:
     """Resolve selected advice into a portable workspace; never alter author prose."""
     review_return_dir, actions_path, output_dir = map(
@@ -332,7 +346,8 @@ def prepare_manuscript_revision(
             # Output-only links must be computed, not inherited from a supplied action.
             item.pop("evidence_uses", None)
         resolved.append(item)
-    assert_manuscript_current(manuscript)
+    if not refresh_display:
+        assert_manuscript_current(manuscript)
     result = {
         "kind": "manuscript-revision-task",
         "package_id": mapping["package_id"],
@@ -349,7 +364,29 @@ def prepare_manuscript_revision(
     with _stage(output_dir) as staged:
         _copy_tree(review_return_dir, staged / "reference")
         _copy_file(actions_path, staged / "selected-actions.json")
-        _copy_tree(manuscript, staged / "working")
+        if refresh_display:
+            working = refresh_manuscript_display(manuscript, staged / "working")
+            current = _read(working / "section.json")
+            current_locators = _locators(working, current, _read(working / "numbering.json"))
+            paragraphs = {
+                (p["section_id"], p["paragraph"]): p["text"] for p in current_locators["paragraphs"]
+            }
+            for action in resolved:
+                for target in action["resolved_targets"]:
+                    if target["kind"] == "paragraph":
+                        target["current_text"] = paragraphs[
+                            target["section_id"], target["paragraph"]
+                        ]
+                    else:
+                        refreshed = _target(target, current_locators, drafts, current)
+                        target["current_object"] = refreshed["reviewed_object"]
+                        target["current_text"] = refreshed["quote"]
+                        if target["kind"] == "reference":
+                            target["reviewed_text"] = target["reviewed_object"]["text"]
+                            target["current_text"] = target["current_object"]["text"]
+            result["display_refreshed"] = True
+        else:
+            _copy_tree(manuscript, staged / "working")
         skill = Path(__file__).resolve().parents[1] / "skills/cfd-evidence-writing"
         if not skill.is_dir():
             skill = Path(__file__).resolve().parents[3] / "skills/cfd-evidence-writing"

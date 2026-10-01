@@ -5,24 +5,43 @@ Read `manuscript-context.json`, `input.json`, the supplied source materials and
 do not turn this section into a results-mechanism discussion. The shared spine
 identifies what the reader needs before interpreting each results section.
 
-Explain the physical problem and comparison basis, domain and relevant geometry,
-governing models and assumptions, material properties, boundary and initial
-conditions, discretization and solver settings, and the supplied verification or
-validation evidence. Include only items that are actually documented. A missing
-model choice, mesh assessment or validation dataset is a specific evidence note,
-not an invitation to invent a standard setting or imply validation occurred.
+Build Methods backward from the actual main comparisons, not from a generic solver
+checklist. Locate the records a reader would need to reconstruct each comparison:
 
-Distinguish a missing task attachment from a missing project result. If the supplied project
-index points to relevant settings, convergence or mesh reports, read those small records before
-asking the author to provide them again. Match each record to its geometry, operating point,
-model and actual quantity; a test on one mesh direction or one case is not validation of all
-local diagnostics. Do not load or rerun a native solver solely to fill a prose template.
+- Geometry and operating changes: identify the reference and modified definitions,
+  dimensions, materials, forcing, and conditions held fixed. Match any schematic to
+  these definitions; a source paper describes the present geometry only where the
+  project records establish that correspondence.
+- Model and numerical choices: read the applicable setup, model constants, mesh and
+  boundary records. Match solver versions and settings to the actual cases and stage
+  of work; a postprocessing record does not establish every run's solver version.
+  Reconstruct the solution stages from execution records as well as final settings:
+  frozen-field, energy-only and restored coupled stages can have the same final setup
+  but different reproducible procedures. Describe the relevant sequence compactly;
+  distinguish stage increments from accumulated iterations. Bind any software version
+  to the cases actually documented, rather than extrapolating one control run to all cases.
+- Reported quantities: locate both the operator definition and its actual output or
+  history, including domain, weighting, direction, reference and sampling. A configured
+  report or reference value is not a measured result. An absent user override does not
+  establish a model constant's numerical default.
+- Credibility checks: identify which cases and quantities the available convergence,
+  mesh/near-wall and validation records examine. Their scope must cover the claim
+  they support; conservation alone does not establish local spatial accuracy.
 
-For an unclear method, first identify whether its record was merely omitted, its definition
-conflicts with another record, or the evidence has not been established. A settings file can
-establish what was configured; a final history can establish what was monitored in that run;
-neither alone establishes the accuracy of every reported quantity. Follow the review reference's
-evidence-gap guidance rather than asking the author to supply the entire project again.
+For an omission, first distinguish a packaged but unread record, an existing record
+locatable in the authorized project, and evidence not yet established. Read or copy
+the relevant small records in the first two categories before asking the author.
+If the source cannot be accessed, name the exact report or field and the comparison
+it affects in `evidence_notes`; do not request the entire project again. Conflicting
+definitions need resolution, not selection of the convenient one. Do not load or
+rerun a native solver solely to fill a prose template. Report only documented
+methods, using a compact table where it makes case differences easier to reproduce.
+For each main comparison, close the reader's path from case identity through the
+solution procedure to the reported operator. Include the available numerical inlet
+inputs and stopping criteria when needed to reproduce it, not only their generic names.
+Equations must match the model described in prose; a partial set should not be labeled
+as the complete governing system. Keep reconstruction-specific extraction details
+where they distinguish a diagnostic from a native solver report.
 
 Assess model applicability at the scope of the claim. A Reynolds number based on an inlet or
 another reference length does not determine every local flow regime in a branching, impinging

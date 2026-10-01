@@ -173,6 +173,12 @@ not physical units or domain. Read the native source only with explicit method-b
 array mappings; never infer weights, mesh connectivity or conversions from key names.
 Only source_files/package_path entries are included; an issue may report an uncopied
 source. Read the full source when its excerpt is truncated.
+Before choosing anchors, follow the workflow Skill's first-manuscript evidence-selection
+read: inspect complete columns and region/model/case categories, then locate observations
+that distinguish the competing explanations relevant to the author's question. Do not
+restrict the proposal to the first convenient summary. To find settings beyond a preview,
+use `cfdpaper inspect ROOT --materials --find TERM --output MATCHES`; repeat --find
+for alternatives or --material-path for exact files. Hits locate text, not physical meaning.
 Actually view relevant images if your host can; otherwise
 say they were not viewed. Do not claim quantitative image measurements from sight.
 
@@ -300,12 +306,14 @@ def _source(root: Path, relative: str, *, packaged: bool) -> Path:
     return resolved
 
 
-def prepare_analysis(root: Path, output_dir: Path, *, question: str = "") -> Path:
+def prepare_analysis(
+    root: Path, output_dir: Path, *, question: str = "", paths: list[Path] | None = None
+) -> Path:
     """Copy complete sources and bounded profiles into a fresh portable package."""
     from cfdpaper.materials import profile_materials
 
     root, output_dir = Path(root).resolve(), Path(output_dir)
-    materials = profile_materials(root)
+    materials = profile_materials(root, paths=paths)
     included = []
     with _stage(output_dir) as staged:
         for category in ("tables", "documents", "figures", "arrays"):

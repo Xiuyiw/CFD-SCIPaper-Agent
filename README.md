@@ -17,11 +17,13 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.14.0 adds an `--outline` bridge that gathers selected section inputs and optional drafts
-into a portable manuscript workspace, plus more specific first-manuscript science guidance.
+Version 0.15.0 adds source-text search with exact locations, explicit material selection for
+analysis, and an opt-in display refresh for continuing earlier manuscript reviews. Portable
+writing guidance now emphasizes case-specific solution stages, discriminating mechanism evidence
+and substantive comparisons with the closest literature.
 Start with the
 [materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md) and
-[v0.14.0 notes](docs/releases/v0.14.0.md). The
+[v0.15.0 notes](docs/releases/v0.15.0.md). The
 [connected-writing example](examples/connected-writing/README.md) covers long-table evidence;
 the [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
 covers whole-manuscript feedback and selected editing.
@@ -56,7 +58,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.14.0 checkout or its matching
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.15.0 checkout or its matching
 release wheel. From the checkout root, install with Word support:
 
 ```text
@@ -67,8 +69,8 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.14.0 notes](docs/releases/v0.14.0.md) for the current scope
-and the [v0.13.0 notes](docs/releases/v0.13.0.md) for the preceding baseline.
+remains available. See the [v0.15.0 notes](docs/releases/v0.15.0.md) for the current scope
+and the [v0.14.0 notes](docs/releases/v0.14.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -152,6 +154,19 @@ envelope. Python scripts are read as line-numbered text; intake does not execute
 cfdpaper inspect STUDY --materials --output profile
 cfdpaper plan STUDY --artifact analysis --output analysis-materials
 ```
+
+If a definition is beyond the initial preview, search its actual source text:
+
+```text
+cfdpaper inspect STUDY --materials --find "wall temperature" --find "area average" --output matches
+cfdpaper plan STUDY --artifact analysis --material-path exports/comparison.csv --material-path methods.md --output focused-materials
+```
+
+Search results contain file/line locations and nearby text. Repeat `--material-path` to select
+known files for profiling, search or analysis preparation; this avoids copying a new study
+directory when default discovery omits a relevant export. Selection replaces discovery, so include
+the required definition files as well as the tables. Check skipped/truncated entries: no match
+does not establish that a setting or result is absent. Source scripts remain text, never executed.
 
 Give `analysis-materials/host-task.md` to your local AI. The portable package includes
 `cfd-paper-workflow` and the four specialist skills for evidence intake, QoI/physics,
@@ -294,7 +309,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
-- [v0.14.0 development notes](docs/releases/v0.14.0.md)
+- [v0.15.0 development notes](docs/releases/v0.15.0.md)
 - [v0.13.0 development notes](docs/releases/v0.13.0.md)
 - [v0.12.0 notes](docs/releases/v0.12.0.md)
 - [v0.11.0 notes](docs/releases/v0.11.0.md)

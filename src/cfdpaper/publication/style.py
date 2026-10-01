@@ -73,7 +73,10 @@ def figure_placement(*, pixels, caption, sizing: FigureSizing, style: Publicatio
     width = min(width, available_height * px_width / px_height)
     scale = width / sizing.source_width_mm if sizing.source_width_mm else None
     font = sizing.minimum_source_font_pt * scale if sizing.minimum_source_font_pt else None
-    if font is not None and font + 1e-6 < style.minimum_figure_font_pt:
+    # Image metadata can round a nominal width (e.g. 160 mm to 160.02 mm).
+    # Compare at the displayed hundredth-point precision; retain the exact scale
+    # in the report and still reject genuine downscaling below the readable size.
+    if font is not None and round(font, 2) < round(style.minimum_figure_font_pt, 2):
         raise ValueError(
             f"Embedded figure text would be {font:.2f} pt, below "
             f"{style.minimum_figure_font_pt:g} pt; enlarge source text "

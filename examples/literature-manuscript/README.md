@@ -177,6 +177,20 @@ version, not an automatic merge into later author edits. Inspect CHANGES and the
 argument, preserve unrelated drafts, and generate a fresh Word/PDF. The task itself neither edits
 prose nor certifies that a recommendation was correctly implemented.
 
+If a software update changes only generated display text (such as formatted units or a
+bibliography entry), the default actions path may reject the older reading view. Explicitly
+request a fresh working view while retaining the reviewed reference:
+
+```text
+cfdpaper review my-source --package review-return --actions actions.json --refresh-display --output editing-task-refreshed
+```
+
+This resolves the original quotes against the old report, rebuilds a new working copy and
+shows reviewed/current target text in the task. Raw calculated values, units, author drafts,
+sources, reference metadata and figures must remain unchanged. It cannot merge later author
+edits or reconcile scientific data changes; those require a separately reassembled manuscript
+and review-target reconciliation. No scientific recommendation is applied by refreshing.
+
 For a scientific interpretation or definition change, an accepted action may also set
 `"trace_evidence": true`. The task lists paragraphs, tables and equations sharing explicitly
 bound owner evidence, including Abstract and Conclusions. These are rereading locations,
