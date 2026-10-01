@@ -1,8 +1,18 @@
 # Limitations
 
-CFD-Paper-Agent v0.12.0 is not a CFD solver and does not validate a model merely because result files
+CFD-Paper-Agent is not a CFD solver and does not validate a model merely because result files
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
+
+Version 0.14.0 collects selected section inputs and optional drafts through `--outline`, preserving
+their declared dependencies and numerical bindings. It does not discover the scientific argument
+or author missing prose. A complete known-project trial and one feedback-assisted revision were
+readable and numerically linked; method-reporting and scientific-evidence gaps remained. This is
+not a matched-budget demonstration of better first-draft reasoning or unfamiliar-domain validity.
+
+Version 0.13.0 connects material intake and manuscript continuation through a host workflow skill,
+portable specialist guidance and reuse of calculated section inputs. Python method scripts are
+read as text, not executed. This does not establish automatic first-paper scientific reasoning.
 
 Version 0.12.0 adds exact long-table selectors and declared unit-column checks, current related
 passages for host writing, concise same-unit numeric display and optional Word pagination controls.

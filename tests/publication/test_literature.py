@@ -84,6 +84,17 @@ def test_doi_normalization_alias_and_preserved_metadata(tmp_path):
     assert support()["excerpt"] not in evidence[0]["text"]
 
 
+def test_reference_label_retains_declared_preprint_publisher(tmp_path):
+    path = fixture(
+        tmp_path,
+        [record(type="article", publisher="arXiv preprint", DOI="10.1234/example")],
+    )
+    original = (tmp_path / "refs.json").read_bytes()
+    evidence = literature_evidence(load_literature(path), "intro")
+    assert "arXiv preprint" in evidence[0]["text"]
+    assert (tmp_path / "refs.json").read_bytes() == original
+
+
 def test_complete_fallback_deduplicates_case_and_spacing(tmp_path):
     path = fixture(
         tmp_path,

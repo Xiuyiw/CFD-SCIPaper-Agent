@@ -59,15 +59,26 @@ The [first-batch specification](research/V0_9_FIRST_BATCH_SPEC.md) defines real-
 preparation and whole-paper review delivery without expanding the solver or submission scope.
 Native solver platforms and submission automation are not prerequisites for this writing route.
 
-## Current increment — v0.12.0 connected scientific writing
+## Approved direction — v0.14 first-manuscript workflow
 
-The current development increment follows the [v0.13 integrated-workflow plan](research/V0_13_INTEGRATED_WORKFLOW_PLAN.md).
-It prioritizes an actual host-driven journey from an ordinary results directory through scientific
-analysis, figures, a connected manuscript and targeted author edits. Ordinary-material intake,
-portable skill routing, a reusable manuscript bridge and bounded local/whole-manuscript continuation
-have been exercised. A focused revision-pair reading and a known-project reacting-species trial
-are complete; integration and delivery checks remain, and v0.13 is not released. This is evidence
-of workflow usability, not matched-budget first-draft superiority or unfamiliar-domain validation.
+The [v0.14 proposal](research/V0_14_FIRST_MANUSCRIPT_PLAN.md) focuses on a first complete candidate
+from ordinary research materials: useful multi-evidence analysis, less manual manuscript mapping,
+and actual figures, literature and document layout. The direction is approved; the
+[implementation plan](research/V0_14_IMPLEMENTATION_PLAN.md) defines seven bounded tasks and their
+ownership. The first-manuscript skill guidance and selected-input `--outline` bridge are implemented
+on the development branch with focused tests. A known cooling-project trial has produced a
+complete, rendered nine-page first draft with five figures. One concentrated fresh-context review
+found useful organization and correct principal comparisons, but incomplete method reporting,
+underused mechanism evidence and overstrong interpretation of small differences. One bounded,
+host-authored revision and fresh-process relocation replay are complete. The revised candidate
+uses the existing layer/path evidence more fully; this is not proof of autonomous scientific
+reasoning or submission quality. Supported-platform integration and release remain ahead. Native solver
+adapters and model API backends are not parallel goals of this increment. Version 0.14 is not released.
+
+Version 0.13.0 is released. The [v0.13 integrated-workflow plan](research/V0_13_INTEGRATED_WORKFLOW_PLAN.md)
+records material intake, portable skills, calculated-input reuse and bounded continuation trials.
+Supported-platform CI and installation checks passed. These demonstrate workflow usability, not
+matched-budget first-draft superiority or unfamiliar-domain validation; those goals remain open.
 
 The [v0.12.0 development plan](research/V0_12_DEVELOPMENT_PLAN.md) targets stronger scientific
 arguments across connected sections, exact mixed-unit long-table intake, concise bound-value

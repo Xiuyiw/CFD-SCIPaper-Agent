@@ -86,12 +86,38 @@ a selection pool, not a request to narrate every value. Inspect `table-results.j
 numeric claims should replace `result_ref`. Keep zero-mean CV undefined rather than reporting zero.
 Changing copied source values requires recalculation and fresh downstream figure/writing output.
 
+Before combining analyses into a manuscript, distinguish physical cases from repeated displays
+of a baseline and from model/mesh realizations of the same prescribed case. Use the existing
+case definitions and proposal notes, not a new case registry. State which controls are matched;
+a model comparison should compare design effects against each model's own matched reference.
+Stable ordering and stable effect magnitude are separate questions. A local mesh perturbation
+only tests the quantities and region actually examined, not every downstream diagnostic.
+
+For a two-factor comparison, inspect all available matched pairs before making an overall
+ranking. With responses y(A,1), y(B,1), y(A,2), y(B,2), the change in design effect
+[y(B,2)-y(A,2)]-[y(B,1)-y(A,1)] equals the change in condition effect
+[y(B,2)-y(B,1)]-[y(A,2)-y(A,1)]. These are one contrast, not independent confirmations.
+The contrast tests conditional response, not the separate causal contributions of factors
+that still change together. Use only defined, available calculations or an explicitly located
+source diagnostic; this identity does not add a new supported engine operator.
+Likewise, direct integration and a balance residual from one solution may cross-check
+postprocessing but are not independent physical validation. Record their distinct role where
+it matters to the proposed inference, rather than counting files or derived metrics.
+
 For each additional diagnostic, identify what it can distinguish that the current evidence cannot.
 A fixed-section flux and an axial profile may separate intensity change from displacement; a
 concentration and an integrated source may expose transport or normalization differences. First
 check their domains, denominators and imposed conditions. If the distinction needs an unavailable
 field or controlled comparison, keep the candidate explanation bounded and name that missing
 observation; do not add algebraically equivalent metrics to simulate independent support.
+
+When a domain total changes, read available regional or layer contributions before assigning
+that change to the whole field: a reduced total can coexist with an increased contribution in
+one region. Link an output change to an available temperature-drop or transport-path decomposition
+when it distinguishes where the response arises. Test the mechanism-bearing quantity in existing
+model controls, not only the headline peak or ranking. Small sign reversals remain observations of
+the discrete solutions until relevant error evidence supports a design margin; unrelated mesh
+perturbations are context, not transferable error bars.
 
 When the question compares two calculated scalars, use candidate `result_comparisons`, not a
 hand-transcribed intermediate CSV. Each entry declares id, reference and comparison

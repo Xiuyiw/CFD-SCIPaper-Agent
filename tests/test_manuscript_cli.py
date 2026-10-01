@@ -19,12 +19,56 @@ runner = CliRunner()
         (["--approve-final", "--author", "Author"], "author review"),
         (["--section-input", "input.json"], "--manuscript-input"),
         (["--pdf-preview"], "--docx"),
+        (["--outline", "outline.json"], "--output"),
+        (["--outline", "outline.json", "--draft", "drafts.json"], "Choose one"),
+        (["--outline", "outline.json", "--manuscript-input", "input.json"], "Choose one"),
+        (["--outline", "outline.json", "--package", "old", "--output", "new"], "--package"),
+        (["--outline", "outline.json", "--context-for", "results"], "--context-for"),
     ],
 )
 def test_manuscript_action_errors(tmp_path, options, detail):
     result = runner.invoke(app, ["write", str(tmp_path), "--artifact", "manuscript", *options])
     assert result.exit_code != 0
     assert detail in result.stdout + result.stderr
+
+
+def test_outline_requires_manuscript_artifact(tmp_path):
+    result = runner.invoke(app, ["write", str(tmp_path), "--outline", "outline.json"])
+    assert result.exit_code != 0
+    assert "require --artifact manuscript" in result.stdout + result.stderr
+
+
+def test_outline_prepares_existing_inputs_and_drafts(tmp_path):
+    script = (
+        Path(__file__).resolve().parents[1] / "examples/manuscript-workspace/prepare_example.py"
+    )
+    source, package, assembled = (tmp_path / name for name in ("source", "package", "assembled"))
+    runpy.run_path(str(script))["prepare"](source)
+    manifest = json.loads((source / "manuscript-input.json").read_text(encoding="utf-8"))
+    drafts = json.loads((source / "drafts.json").read_text(encoding="utf-8"))
+    for entry in manifest["sections"]:
+        entry["input"] = str(source / entry["input"])
+        entry["draft"] = str(source / drafts[entry["section_id"]])
+    outline = tmp_path / "outline.json"
+    outline.write_text(json.dumps(manifest), encoding="utf-8")
+    base = ["write", str(tmp_path), "--artifact", "manuscript"]
+    result = runner.invoke(app, base + ["--outline", str(outline), "--output", str(package)])
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert "workspace ready" in result.stdout
+    result = runner.invoke(
+        app,
+        base
+        + [
+            "--package",
+            str(package),
+            "--draft",
+            str(package / "drafts.json"),
+            "--output",
+            str(assembled),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert (assembled / "section.json").is_file()
 
 
 @pytest.mark.parametrize("shared_literature", [False, True])
