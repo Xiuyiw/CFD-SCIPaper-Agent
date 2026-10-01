@@ -25,6 +25,7 @@ recorded here instead of being represented as already complete.
 | `v0.11.0` | Linked computed comparisons, scalar/pair proposal entry, targeted change context and figure-to-Word sizing | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.12.0` | Exact long-table intake, current connected-section writing context, concise numeric units and configurable Word pagination | Implemented; supported-platform integration passed; see release tag |
 | `v0.13.0` | Readable definition scripts, portable five-skill host workflow and a calculated-materials-to-manuscript tutorial | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
+| `v0.14.0` | Selected-input first-manuscript bridge, richer evidence-reading guidance and publication display fixes | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -66,14 +67,16 @@ from ordinary research materials: useful multi-evidence analysis, less manual ma
 and actual figures, literature and document layout. The direction is approved; the
 [implementation plan](research/V0_14_IMPLEMENTATION_PLAN.md) defines seven bounded tasks and their
 ownership. The first-manuscript skill guidance and selected-input `--outline` bridge are implemented
-on the development branch with focused tests. A known cooling-project trial has produced a
+on main with supported-platform tests. A known cooling-project trial has produced a
 complete, rendered nine-page first draft with five figures. One concentrated fresh-context review
 found useful organization and correct principal comparisons, but incomplete method reporting,
 underused mechanism evidence and overstrong interpretation of small differences. One bounded,
 host-authored revision and fresh-process relocation replay are complete. The revised candidate
 uses the existing layer/path evidence more fully; this is not proof of autonomous scientific
-reasoning or submission quality. Supported-platform integration and release remain ahead. Native solver
-adapters and model API backends are not parallel goals of this increment. Version 0.14 is not released.
+reasoning or submission quality. All six supported-platform test jobs and the installed-package
+smoke job passed before integration. Formal distributions are taken from successful main CI;
+see the [release notes](releases/v0.14.0.md) and release tag. Native solver adapters and model API
+backends are not parallel goals of this increment.
 
 Version 0.13.0 is released. The [v0.13 integrated-workflow plan](research/V0_13_INTEGRATED_WORKFLOW_PLAN.md)
 records material intake, portable skills, calculated-input reuse and bounded continuation trials.
