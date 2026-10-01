@@ -1,6 +1,7 @@
 """Material lookup exposes real source passages without interpreting or executing them."""
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -71,7 +72,8 @@ def test_invalid_requests(tmp_path, terms, limit):
         search_materials(tmp_path, terms, limit=limit)
 
 
-def test_cli_finds_method_text_and_exposes_selection(tmp_path):
+def test_cli_finds_method_text_and_exposes_selection(tmp_path, monkeypatch):
+    monkeypatch.setenv("FORCE_COLOR", "1")
     source = tmp_path / "sources"
     source.mkdir()
     (source / "setting.txt").write_text("\n" * 140 + "actual setting = 1", encoding="utf-8")
@@ -95,7 +97,8 @@ def test_cli_finds_method_text_and_exposes_selection(tmp_path):
     assert record["matches"][0]["locator"] == "L141"
     invalid = CliRunner().invoke(app, ["inspect", str(source), "--find", "actual"])
     assert invalid.exit_code != 0
-    assert "require" in invalid.output and "--materials" in invalid.output
+    message = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", invalid.output)
+    assert "require" in message and "--materials" in message
 
 
 def test_selected_materials_reach_analysis_package_without_manual_copy(tmp_path):
