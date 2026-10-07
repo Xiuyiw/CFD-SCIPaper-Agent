@@ -1,6 +1,5 @@
 import math
 import os
-import time
 from pathlib import Path
 
 import pytest
@@ -33,8 +32,6 @@ def test_process_file_lock_rejects_non_finite_or_non_positive_wait_parameters(
     poll_seconds: float,
     message: str,
 ) -> None:
-    started = time.monotonic()
-
     with pytest.raises(ValueError) as captured:
         with process_file_lock(
             tmp_path / "resource.lock",
@@ -43,8 +40,8 @@ def test_process_file_lock_rejects_non_finite_or_non_positive_wait_parameters(
         ):
             pass
 
-    assert time.monotonic() - started < 1
     assert str(captured.value) == message
+    assert not (tmp_path / "resource.lock").exists()
 
 
 def test_process_file_lock_retries_open_and_leaves_persistent_empty_file(
@@ -71,18 +68,22 @@ def test_process_file_lock_retries_open_and_leaves_persistent_empty_file(
     assert lock_path.stat().st_size == 0
 
 
-def test_process_file_lock_acquisition_timeout_is_bounded(tmp_path: Path) -> None:
+def test_process_file_lock_acquisition_timeout_is_bounded(
+    tmp_path: Path, controlled_lock_clock
+) -> None:
     lock_path = tmp_path / "resource.lock"
 
     def permanently_denied_lock(descriptor: int) -> None:
         raise PermissionError("simulated permanent lock denial")
 
-    started = time.monotonic()
     with pytest.raises(ProcessFileLockTimeoutError, match="timed out"):
         with process_file_lock(lock_path, timeout_seconds=0.05, try_lock=permanently_denied_lock):
             pytest.fail("lock body must not run")
 
-    assert time.monotonic() - started < 1
+    clock = controlled_lock_clock
+    assert clock.sleeps
+    assert sum(clock.sleeps) <= 0.05
+    assert 0.05 <= clock.now <= 0.05 + 3 * clock.tick
 
 
 def test_process_file_lock_reports_close_failure_after_successful_body(tmp_path: Path) -> None:

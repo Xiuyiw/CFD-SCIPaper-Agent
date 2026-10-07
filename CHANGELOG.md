@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Make lock-timeout tests deterministic instead of depending on subsecond wall-clock scheduling
+  on shared CI runners. Runtime behavior and released packages are unchanged.
+
 ## [0.16.0] — 2026-10-07
 
 ### Added
