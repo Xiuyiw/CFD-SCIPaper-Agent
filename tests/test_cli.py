@@ -80,15 +80,15 @@ def test_remaining_roadmap_commands_are_explicitly_unimplemented() -> None:
         assert "not implemented" in result.stdout
 
 
-def test_top_level_help_labels_unavailable_commands_as_roadmap() -> None:
+def test_top_level_help_labels_unavailable_commands_as_roadmap(release_version) -> None:
     result = runner.invoke(app, ["--help"], terminal_width=120)
 
     assert result.exit_code == 0, result.stdout
     normalized = " ".join(_plain_cli_text(result.stdout).split())
     for command in ("revise", "export"):
-        assert f"{command} Roadmap command; not available in v0.15.0." in normalized
+        assert f"{command} Roadmap command; not available in v{release_version}." in normalized
     for command in ("qualify", "analyze", "figure", "write", "review"):
-        assert f"{command} Roadmap command; not available in v0.15.0." not in normalized
+        assert f"{command} Roadmap command; not available in v{release_version}." not in normalized
 
 
 def prepared_cli_project(tmp_path: Path) -> ProjectStore:
