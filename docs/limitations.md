@@ -4,6 +4,18 @@ CFD-Paper-Agent is not a CFD solver and does not validate a model merely because
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
+Version 0.15.0 adds located source-text search, explicitly selected analysis materials and
+display-only continuation of an existing review. Its paired known-project first drafts showed
+mixed results: useful local argument improvements, but persistent method-reporting and literature
+comparison gaps. A feedback-assisted revision is not first-pass performance.
+
+Version 0.16.0 carries located case/stage/operator facts and readable JSON parameter views into
+section tasks, reviews and continued editing. A host still selects and interprets facts; exact
+line matches and JSON Pointers do not establish scientific support or case applicability. A known
+flow-project first-draft comparison again found mixed results and motivated the parameter view.
+Source relationships and authoring continuity are implemented; stable first-paper quality gains
+and unfamiliar-domain validation remain unproven.
+
 Version 0.14.0 collects selected section inputs and optional drafts through `--outline`, preserving
 their declared dependencies and numerical bindings. It does not discover the scientific argument
 or author missing prose. A complete known-project trial and one feedback-assisted revision were

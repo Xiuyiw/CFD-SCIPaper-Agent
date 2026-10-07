@@ -3,6 +3,9 @@
 Write these sections after reading the current Results and Discussion, the paper spine, and the
 Introduction's stated question and contribution. Use current evidence, not an earlier outline's promises.
 This guidance applies to host-authored prose; it does not generate or approve a complete paper.
+Consume the current scientific context alongside the body sections before the first
+summary draft. Its located case—stage—operator facts keep a local diagnostic, a total
+and an applicable control distinct even when the summary omits technical detail.
 
 ## Fix the evidence boundary before drafting
 
@@ -11,6 +14,8 @@ This guidance applies to host-authored prose; it does not generate or approve a 
   Do not force a number into every sentence or require a quota of findings.
 - Preserve each quantity's case scope, units, denominator and meaning. A normalized indicator is not
   automatically an efficiency, conserved fraction, stability limit or optimum.
+  A large layer response cannot become a total-system scale claim, and a small
+  difference cannot become a robust benefit when the applicable sensitivity does not resolve it.
 - Read the current source-bound values. A historical draft labeled final or locked can contain
   superseded values; do not restore it because its wording is more polished.
 - Do not introduce new calculations, datasets, cases, mechanisms or literature claims here.
@@ -63,7 +68,9 @@ the question, terminology, comparison scope, numerical direction and claimed con
 If the evidence narrowed the study, revise the framing rather than inflating the conclusion to match
 an old promise. If no body passage supports a summary claim, remove or defer that claim.
 Use supported value tokens when available; separately read free-text quantities and qualitative
-claims. Token binding and global numbering cannot detect every stale interpretation.
+claims. Token binding and global numbering cannot detect every stale interpretation;
+checking effect magnitude, applicable controls and scientific scope in compressed prose
+is a host writing responsibility, not automatic semantic certification.
 
 In manuscript tasks, `evidence_bindings` maps a local evidence ID to its owning section/evidence
 in `manuscript-context.json`. Use that local ID in value tokens and paragraph evidence lists;

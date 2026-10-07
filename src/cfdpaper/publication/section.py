@@ -802,13 +802,32 @@ def assemble_section(
 
 
 def reference_source_suffix(record):
-    """Show a source once when a bibliography label already contains its DOI."""
+    """Omit only a duplicate display source; retain the record's citation identity."""
     source = record["source"].strip()
     text = record["text"].strip().casefold()
     if "formatted_runs" in record or source.casefold() == text:
         return ""
-    if source.lower().startswith("doi:") and source.casefold() in text:
-        return ""
+    doi_pattern = r"(?:doi\s*:\s*|https?://(?:dx\.)?doi\.org/)?(10\.\d{4,9}/[^\s<>\"“”]+)"
+
+    def display_doi(value):
+        value = value.casefold().rstrip(".,;:!?'’")
+        # Parentheses can be part of a DOI. Remove only unmatched closing wrappers.
+        while value and value[-1] in ")]}":
+            opening = {")": "(", "]": "[", "}": "{"}[value[-1]]
+            if value.count(value[-1]) <= value.count(opening):
+                break
+            value = value[:-1].rstrip(".,;:!?'’")
+        return value
+
+    source_match = re.fullmatch(doi_pattern, source, flags=re.IGNORECASE)
+    if source_match:
+        source_doi = display_doi(source_match[1])
+        text_dois = {
+            display_doi(match[1])
+            for match in re.finditer(r"(?<![\w/])" + doi_pattern, text, flags=re.IGNORECASE)
+        }
+        if source_doi in text_dois:
+            return ""
     return f" — {source}"
 
 

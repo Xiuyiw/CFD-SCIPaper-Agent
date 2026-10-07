@@ -25,6 +25,13 @@ from cfdpaper.publication.literature import (
     load_literature,
 )
 from cfdpaper.publication.manuscript_changes import compare_manuscript_states
+from cfdpaper.publication.scientific_context import (
+    copy_scientific_context,
+    load_scientific_context,
+    read_source_parameters,
+    render_scientific_context,
+    select_scientific_context,
+)
 from cfdpaper.publication.section import (
     TASK as SECTION_TASK,
 )
@@ -61,6 +68,7 @@ class _ManuscriptInput(BaseModel):
     terms: dict[str, str] = Field(default_factory=dict)
     literature: str | None = None
     citation_style: str | None = None
+    scientific_context: str | None = None
     keywords: list[str] = Field(default_factory=list)
 
 
@@ -82,6 +90,10 @@ def _inputs(path: Path):
         raise ValueError("Section inputs must exactly match the spine sections")
     entries = {item.section_id: item for item in data.sections}
     _dependencies(entries)
+    if data.scientific_context:
+        load_scientific_context(
+            _relative(path.parent, data.scientific_context), allowed_sections=set(entries)
+        )
     if any(not word.strip() for word in data.keywords):
         raise ValueError("Keywords must not be blank")
     library = load_literature(_relative(path.parent, data.literature)) if data.literature else None
@@ -244,8 +256,25 @@ def _format_references(combined, library, style):
         reference["formatted_runs"] = record["runs"]
 
 
-def _section_context(package, data, contract, library=None):
+def _copy_science(path, destination, section_ids=None):
+    if path is None:
+        return None
+    context = copy_scientific_context(
+        path, destination / "scientific-context", section_ids=section_ids
+    )
+    context["source_parameters"] = read_source_parameters(
+        destination / "scientific-context/context.json"
+    )
+    _write(destination / "scientific-context/context.json", context)
+    (destination / "scientific-context.md").write_text(
+        render_scientific_context(context), encoding="utf-8"
+    )
+    return context
+
+
+def _section_context(package, data, contract, library=None, science_source=None):
     entry = next(s for s in data.sections if s.section_id == contract.section_id)
+    science = _copy_science(science_source, package, [contract.section_id])
     _write(
         package / "manuscript-context.json",
         {
@@ -257,6 +286,7 @@ def _section_context(package, data, contract, library=None):
             "section": contract.model_dump(),
             "evidence_bindings": entry.evidence_bindings,
             "depends_on": entry.depends_on,
+            **({"scientific_context": "scientific-context/context.json"} if science else {}),
         },
     )
     references = {
@@ -267,6 +297,15 @@ def _section_context(package, data, contract, library=None):
         "conclusion": "abstract-conclusions.md",
     }
     route = ""
+    if science is not None:
+        route += (
+            "Read scientific-context.md and scientific-context/context.json before drafting. "
+            "Their source paths resolve inside scientific-context/. Match each case, stage, "
+            "domain and operator to the actual comparison; recorded means located, not "
+            "independently validated. Keep conflict/unknown items unresolved and continue "
+            "supported comparisons. Use these facts to write concise reproducible Methods "
+            "and scoped Results; do not copy the evidence inventory into the paper.\n"
+        )
     if entry.evidence_bindings or entry.depends_on:
         route += (
             "Read the current owning sections listed in evidence_bindings and depends_on. "
@@ -351,8 +390,14 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
     input_path, output_dir = Path(input_path), Path(output_dir)
     _fresh(output_dir)
     data, loaded, library, bindings, _ = _inputs(input_path)
+    science_source = (
+        _relative(input_path.parent, data.scientific_context) if data.scientific_context else None
+    )
     with _stage(output_dir) as staged:
         _copy_workflow_skills(staged)
+        if science_source is not None:
+            _copy_science(science_source, staged)
+            data.scientific_context = "scientific-context/context.json"
         _copy_citation_style(data, input_path.parent, staged)
         if library is not None:
             copy_literature(_relative(input_path.parent, data.literature), staged / "literature")
@@ -380,7 +425,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
                     }
                 )
             _write(package / "input.json", section)
-            _section_context(package, data, contract, library)
+            _section_context(package, data, contract, library, science_source)
             entry = next(s for s in data.sections if s.section_id == sid)
             entries.append({**entry.model_dump(), "input": f"sections/{sid}/input.json"})
         manifest = {**data.model_dump(), "sections": entries}
@@ -396,6 +441,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
         (staged / "TASK.md").write_text(
             "# Prepare the manuscript with the host AI\n\n"
             "Read skills/cfd-paper-workflow/SKILL.md for first-manuscript evidence selection, "
+            "and scientific-context.md when present for located case/stage/operator facts, "
             "and manuscript-input.json for the PaperSpine publication order. Draft Methods "
             "and Results before Discussion, then revise Introduction against the answers; "
             "write Abstract and Conclusions from those current sections last. Read every section's "
@@ -408,7 +454,7 @@ def prepare_manuscript(input_path: Path, output_dir: Path) -> Path:
             "{{table:section_id/local_id}} or {{figure:section_id/local_id}}; "
             "unqualified IDs refer to the current section. "
             "Literal reference labels in prose are not renumbered.\n\n"
-            "Before drafting a dependent section, run `cfdpaper write --artifact manuscript "
+            "Before drafting a dependent section, run `cfdpaper write . --artifact manuscript "
             "--package PACKAGE --context-for SECTION_ID --draft PARTIAL_DRAFT_MAP "
             "--output FRESH_CONTEXT` to collect its current related passages, recomputed "
             "evidence and located literature. The draft map may contain only sections "
@@ -453,6 +499,9 @@ def prepare_writing_context(
     package_dir, output_dir = Path(package_dir), Path(output_dir)
     _fresh(output_dir)
     data, loaded, library, bindings, resolutions = _inputs(package_dir / "manuscript-input.json")
+    science_source = (
+        _relative(package_dir, data.scientific_context) if data.scientific_context else None
+    )
     entries = {item.section_id: item for item in data.sections}
     if section_id not in entries:
         raise ValueError(f"Unknown section: {section_id}")
@@ -477,6 +526,10 @@ def prepare_writing_context(
     }
     with _stage(output_dir) as staged:
         _copy_workflow_skills(staged)
+        science = _copy_science(science_source, staged, selected)
+        if science is not None:
+            context["scientific_context_path"] = "scientific-context/context.json"
+            context["scientific_context"] = science
         if library is not None:
             copy_literature(_relative(package_dir, data.literature), staged / "literature")
         for contract in data.spine.sections:
@@ -490,7 +543,7 @@ def prepare_writing_context(
                 evidence_overrides=_literature_overrides(library, sid, source.parent),
                 bound_evidence=bindings[sid],
             )
-            _section_context(local, data, contract, library)
+            _section_context(local, data, contract, library, science_source)
             raw = None
             if sid in drafts:
                 if not isinstance(drafts[sid], str):
@@ -526,6 +579,8 @@ def prepare_writing_context(
             "Read context.json, skills/cfd-paper-workflow/SKILL.md "
             "and the target section's TASK.md. "
             "Follow the workflow's evidence-selection reading before choosing numeric anchors. "
+            "Read scientific-context.md when present; its case/stage/operator records "
+            "and source text live under scientific-context/. "
             "Open the relevant figures "
             "and source definitions in its sections/ packages. Literature sources resolve "
             "from literature/literature.json. Use dependency passages to connect the argument, "
@@ -688,10 +743,13 @@ def _cross_references(raw, numbers):
     return _strings(raw, resolve), used
 
 
-def _writing_state(data, loaded, library, raw_drafts):
+def _writing_state(data, loaded, library, raw_drafts, science_path=None):
     """Keep the small inputs needed to identify changes after moving a manuscript."""
     state = {"sections": {}, "terms": data.terms, "context": data.context}
     records = {r["id"]: r for r in library["records"]} if library else {}
+    science = None
+    if science_path is not None:
+        science = load_scientific_context(science_path)
     for contract in data.spine.sections:
         sid = contract.section_id
         source, section = loaded[sid]
@@ -710,6 +768,17 @@ def _writing_state(data, loaded, library, raw_drafts):
                 sources[name] = raw.decode("utf-8")
             except UnicodeDecodeError:
                 sources[name] = "binary:" + raw.hex()
+        scientific = {}
+        if science is not None:
+            selected = select_scientific_context(science, [sid])
+            for kind in ("cases", "facts", "comparisons"):
+                scientific.update({f"{kind}/{r['id']}": r for r in selected[kind]})
+            for fact in selected["facts"]:
+                if fact.get("source"):
+                    name = fact["source"]["path"]
+                    sources["scientific-context/" + name] = (science_path.parent / name).read_text(
+                        encoding="utf-8-sig"
+                    )
         supports = (
             {
                 s["evidence_id"]: {**s, "reference": records[s["reference_id"]]}
@@ -728,6 +797,7 @@ def _writing_state(data, loaded, library, raw_drafts):
             "draft": raw_drafts[sid],
             "bindings": entry.evidence_bindings,
             "depends_on": entry.depends_on,
+            **({"scientific_context": scientific} if science is not None else {}),
         }
     return state
 
@@ -935,7 +1005,10 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
     if any(not isinstance(value, str) for value in drafts.values()):
         raise ValueError("Draft mapping values must be relative JSON paths")
     raw_drafts = {sid: _read(_relative(drafts_path.parent, path)) for sid, path in drafts.items()}
-    current = _writing_state(data, loaded, library, raw_drafts)
+    science_source = (
+        _relative(package_dir, data.scientific_context) if data.scientific_context else None
+    )
+    current = _writing_state(data, loaded, library, raw_drafts, science_source)
     previous_path = package_dir / "writing-state.json"
     previous = _read(previous_path) if previous_path.is_file() else None
     changes = _change_report(previous, current)
@@ -959,6 +1032,9 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
     }
     with _stage(output_dir) as staged:
         _copy_citation_style(data, package_dir, staged)
+        if science_source is not None:
+            _copy_science(science_source, staged)
+            data.scientific_context = "scientific-context/context.json"
         if library is not None:
             copy_literature(_relative(package_dir, data.literature), staged / "literature")
             data.literature = "literature/literature.json"
@@ -1062,7 +1138,8 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             # All figure/source paths already resolve in this section directory.
             # Keep the refreshed shared references rather than the historical bibliography text.
             _write(local / "input.json", loaded[sid][1].model_dump())
-            _section_context(local, data, contract, library)
+            _section_context(local, data, contract, library, science_source)
+            _copy_science(science_source, local / "review-packet", [sid])
             entry = next(s for s in data.sections if s.section_id == sid)
             _bound_review_materials(local, entry, loaded, resolutions.get(sid, {}))
             if library is not None:

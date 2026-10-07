@@ -6,6 +6,16 @@ The repository is published early and improved in visible, evidence-backed incre
 version contains only capabilities that run and are tested at that tag. Longer-term targets remain
 recorded here instead of being represented as already complete.
 
+## v0.16 scientific context and research writing
+
+The [v0.16 research-workflow plan](research/V0_16_RESEARCH_WORKFLOW_PLAN.md) connects located
+case/stage/operator facts and literal source parameters with manuscript writing and editing.
+Scientific-context transport, source-change propagation, DOI display and the module CLI are
+implemented. A focused known-project first-draft trial found mixed strengths and method omissions;
+those omissions motivated the parameter view. See the [release notes](releases/v0.16.0.md).
+Native-solver extraction, general temporal/multiphase analysis, author-edited Word return and
+three-domain validation remain explicit later work.
+
 ## Versioned delivery
 
 | Version | Public deliverable | Status |
@@ -27,6 +37,7 @@ recorded here instead of being represented as already complete.
 | `v0.13.0` | Readable definition scripts, portable five-skill host workflow and a calculated-materials-to-manuscript tutorial | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.14.0` | Selected-input first-manuscript bridge, richer evidence-reading guidance and publication display fixes | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.15.0` | Source-text lookup, selected analysis materials, portable scientific guidance and explicit review display refresh | Implemented; paired first-draft results are mixed; see release notes and release tag |
+| `v0.16.0` | Located scientific context, literal JSON parameter views, source-aware method updates, DOI display and module CLI | Implemented scope; first-draft scientific results remain mixed; see release notes and release tag |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection
@@ -61,9 +72,9 @@ The [first-batch specification](research/V0_9_FIRST_BATCH_SPEC.md) defines real-
 preparation and whole-paper review delivery without expanding the solver or submission scope.
 Native solver platforms and submission automation are not prerequisites for this writing route.
 
-## Approved direction — v0.14 first-manuscript workflow
+## Delivered direction — v0.14/v0.15 first-manuscript workflow
 
-The next [v0.15 priorities](research/V0_15_RESEARCH_PRIORITIES.md) and approved
+The [v0.15 priorities](research/V0_15_RESEARCH_PRIORITIES.md) and approved
 [implementation plan](research/V0_15_IMPLEMENTATION_PLAN.md) put first-pass scientific synthesis,
 method-source use, substantive literature comparison and publication-scale output first.
 Implementation and paired first-draft evaluation are complete. Source-text lookup and an

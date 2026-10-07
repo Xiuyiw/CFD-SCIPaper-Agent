@@ -4,6 +4,9 @@ Read this reference when drafting a results-section, after identifying its scien
 paragraph duties. Use the actual supplied evidence, not a fixed sentence template. A single figure
 may support a complete argument; multiple figures should answer one question through complementary
 evidence rather than repeat their captions.
+Consume the supplied scientific context on the first draft. Read each main quantity
+with its case/stage, domain, operator, normalization and source locator; use that
+scope throughout the argument rather than treating the context as a checklist to append.
 
 ## Establish what is known
 
@@ -44,6 +47,14 @@ If a normalized index rises while its absolute numerator falls, inspect the chan
 before describing stronger physical support. Use these comparisons when the supplied data support
 them, not as a required paragraph pattern.
 
+For a small observed effect, compare the available sensitivity or reconstruction
+discrepancy for the same quantity, domain and applicable control cases before calling
+it a robust advantage. A known discrepancy larger than the effect can rule out a
+resolved ordering without erasing a supported broader trend. If the control does not
+cover that comparison, say what the result supports instead; do not borrow a tolerance
+from another operator, treat model differences as statistical error or invent a
+universal percentage cutoff. This relevance judgment remains the host's responsibility.
+
 Before assigning an overall ranking such as more source-sensitive or more uniform, read the
 available complementary responses: a peak, regional mean and spatial spread may order designs
 differently. Name the response being ranked and explain the spatial support that makes the
@@ -70,6 +81,7 @@ argument rather than replaying every row.
 - Use consistent dimensions, reference scales and control-volume scope. Check mesh/time-step
   dependence, convergence and available validation before implying resolved accuracy.
 - Tie scale words such as "order-of-magnitude" to the actual ratio and named domain.
+  Read the local contribution alongside its total before compressing it into a scale claim.
   A large change in one layer does not describe the total, and one reference case's
   exact values do not represent every configuration. Preserve these scopes when
   compressing the finding into Abstract or Conclusions. Heat rejection and wetted area

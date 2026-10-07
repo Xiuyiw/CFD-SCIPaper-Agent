@@ -17,13 +17,15 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.15.0 adds source-text search with exact locations, explicit material selection for
-analysis, and an opt-in display refresh for continuing earlier manuscript reviews. Portable
-writing guidance now emphasizes case-specific solution stages, discriminating mechanism evidence
-and substantive comparisons with the closest literature.
+Version 0.16.0 connects located case, solution-stage and report definitions with manuscript tasks.
+Readable JSON parameter views help retain numerical method inputs; source changes reach the
+existing section update reports. The default bibliography avoids duplicate DOI display, and
+`python -m cfdpaper` supports a common host invocation. Source-text search, selected analysis
+materials and review display refresh remain available.
 Start with the
 [materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md) and
-[v0.15.0 notes](docs/releases/v0.15.0.md). The
+[v0.16.0 notes](docs/releases/v0.16.0.md) and
+[scientific context guide](docs/scientific-context.md). The
 [connected-writing example](examples/connected-writing/README.md) covers long-table evidence;
 the [review tutorial](examples/literature-manuscript/README.md#whole-manuscript-external-review-v09)
 covers whole-manuscript feedback and selected editing.
@@ -58,7 +60,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.15.0 checkout or its matching
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.16.0 checkout or its matching
 release wheel. From the checkout root, install with Word support:
 
 ```text
@@ -69,8 +71,8 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.15.0 notes](docs/releases/v0.15.0.md) for the current scope
-and the [v0.14.0 notes](docs/releases/v0.14.0.md) for the preceding baseline.
+remains available. See the [v0.16.0 notes](docs/releases/v0.16.0.md) for the current scope
+and the [v0.15.0 notes](docs/releases/v0.15.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.

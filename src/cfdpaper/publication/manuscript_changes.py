@@ -112,6 +112,7 @@ def compare_manuscript_states(previous: dict | None, current: dict) -> dict:
             ("source", "sources"),
             ("literature", "literature"),
             ("binding", "bindings"),
+            ("scientific", "scientific_context"),
         ):
             left, right = before.get(key, {}), after.get(key, {})
             for reference in sorted(left.keys() | right.keys()):
