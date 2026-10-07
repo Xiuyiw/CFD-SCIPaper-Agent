@@ -4,6 +4,8 @@ Use with the current paper spine, section duties, literature records and readabl
 The host may retrieve and synthesize literature needed by the authorized writing task using
 available search and full-text tools; the CLI does not perform or certify that scientific work.
 Reuse shared literature identities across sections, even when a source's role changes.
+Read the current scientific context when supplied: compare the actual case, stage,
+operator and claim scope, not a paper title against an unqualified summary finding.
 
 ## Find the comparison that the argument needs
 
@@ -16,7 +18,11 @@ supports a useful comparison, or record the specific missing access or evidence.
 
 For a central contribution, make a compact comparison in the existing working notes: the current
 finding; the closest source's located finding; comparable quantities and decisive condition or
-method differences; the additional understanding supplied by the present evidence. If the only
+method differences; the additional understanding supplied by the present evidence. Record the
+concrete agreement or disagreement (response, ordering, location or mechanism), not just that
+conditions differ. In Discussion, explain how the present evidence extends, qualifies or challenges
+that result; retain relevant jointly changed factors instead of assigning them a causal effect.
+This comparison is host scholarly work, not a result inferred by DOI matching. If the only
 answer is that the studies differ or cannot transfer validation, the source still serves as
 background or a boundary, not substantive contribution evidence. Seek a closer comparison only
 when that gap matters to the paper's argument. Do not force numerical agreement across different

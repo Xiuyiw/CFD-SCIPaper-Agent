@@ -16,6 +16,7 @@ from cfdpaper.publication.manuscript import (
     _SectionInput,
     prepare_manuscript,
 )
+from cfdpaper.publication.scientific_context import copy_scientific_context
 from cfdpaper.publication.section import (
     _check_comparison_definition,
     _copy_figures,
@@ -80,6 +81,7 @@ def prepare_manuscript_seed(outline_path: Path, output_dir: Path) -> Path:
     The outline has the existing manuscript-input fields, plus optional ``draft``
     on each section. ``input``, ``draft``, ``literature`` and ``citation_style``
     paths are absolute or relative to the outline (including parent paths).
+    An optional scientific_context uses the same outline path rules.
     Dependencies inside section/literature inputs retain their existing formats.
     ``drafts.json`` maps only supplied drafts; ``drafts-template.json`` gives all
     target paths. Missing drafts remain pending and are not fabricated.
@@ -119,6 +121,11 @@ def prepare_manuscript_seed(outline_path: Path, output_dir: Path) -> Path:
         if data.citation_style:
             shutil.copyfile(_source(base, data.citation_style), root / "citation-style.csl")
             manifest["citation_style"] = "citation-style.csl"
+        if data.scientific_context:
+            copy_scientific_context(
+                _source(base, data.scientific_context), root / "scientific-context"
+            )
+            manifest["scientific_context"] = "scientific-context/context.json"
         source = root / "manuscript-input.json"
         _write(source, manifest)
         with _stage(output_dir) as staged:

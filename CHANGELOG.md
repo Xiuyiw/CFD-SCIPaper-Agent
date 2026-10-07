@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-10-07
+
+### Added
+
+- Optional located scientific context with case, stage and report scopes in manuscript preparation,
+  selected writing tasks, review packets and source-aware change reports.
+- Literal JSON parameter views with exact Pointers, method-field priority and explicit truncation.
+- A recorded, portable scientific-context example with native Word table and equation output.
+- `python -m cfdpaper` as another entry point to the existing CLI.
+
+### Fixed
+
+- Duplicate DOI display when a default bibliography label and its doi.org source identify the same DOI.
+
+### Evaluation
+
+A focused known-project first-draft comparison found correct main values in both drafts, different
+strengths and avoidable method omissions. Those omissions motivated the JSON parameter view;
+one feedback-assisted revision remains distinct from first-pass performance.
+See the [release notes](docs/releases/v0.16.0.md).
+
 ## [0.15.0] — 2026-10-01
 
 ### Added

@@ -32,6 +32,17 @@ or restart topic selection when the question is already confirmed. Inspect the
 selected methods, source tables and actual figures first; a file inventory alone
 cannot determine the paper's central claim.
 
+If optional scientific context is supplied, read the package-root
+`scientific-context.md` and `scientific-context/context.json` before the first
+Methods/Results draft; copied source records are under `scientific-context/sources/`. Follow
+the located facts linking each comparison's cases, solution stages, report operators
+and applicable credibility checks; verify the relevant small records instead of
+reconstructing those relations from filenames. Reuse this context in current section
+tasks and continuation, and refresh it when its source facts change. Keep unresolved
+facts or conflicts attached to the affected comparison while independent work proceeds.
+Without a supplied context, use existing source files and notes; do not invent one
+from solver defaults or ask the author to fill a second full-project questionnaire.
+
 Before selecting numeric anchors, read the complete available column/key lists and
 the case, region, layer and model categories relevant to the question. Then open the
 definitions and source records that could distinguish the plausible explanations.
@@ -70,6 +81,13 @@ Use the writing skill's Methods reference to trace each main comparison back to 
 actual geometry, settings and diagnostic records, and its literature reference to
 locate the closest relevant findings when the supplied sources cannot establish the
 contribution. Resolve omissions from available records before asking the author.
+Write key procedural choices compactly, put case-specific parameters in a useful
+table and move noncentral detail to supplementary methods. In Results, preserve
+total/local/normalized scope and judge a small effect only against applicable controls.
+In Discussion, compare the nearest study's actual response, ordering or mechanism,
+not merely its different conditions. These are host writing duties; the CLI carries
+declared context, calculates supported operators and assembles documents, not proof
+of a physical explanation or an automatic literature comparison.
 Keep a necessary qualification beside the first claim it changes, and use the space
 saved from repeated limitations to explain the positive answer from the selected evidence.
 

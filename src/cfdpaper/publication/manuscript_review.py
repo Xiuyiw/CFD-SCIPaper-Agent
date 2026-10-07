@@ -27,6 +27,9 @@ Read the relevant section input definitions, raw sources, table-results.json,
 bound-evidence.json, literature-support.json and copied literature sources. Paths
 inside each section review packet are relative to that packet. Open actual figures
 and evaluate captions and cross-figure explanation, not only filenames or metadata.
+When present, read scientific-context.md and scientific-context/context.json for
+the actual case, solution stage and operator scope. Located excerpts establish
+source identity; assess whether they support the host's interpretation.
 
 Assess question-to-conclusion coherence; Methods sufficiency for the actual
 operators, domains, units and comparisons; Results versus interpretation; meaningful
@@ -156,6 +159,7 @@ def prepare_manuscript_review(candidate_dir: Path, output_dir: Path) -> dict:
             "drafts.json",
             "CHANGES.md",
             "changes.json",
+            "scientific-context.md",
         ):
             source = candidate_dir / name
             if source.is_file():
@@ -174,6 +178,7 @@ def prepare_manuscript_review(candidate_dir: Path, output_dir: Path) -> dict:
                 "manuscript-context.json",
                 "evidence-notes.md",
                 "table-results.json",
+                "scientific-context.md",
             ):
                 if (local / name).is_file():
                     _copy_file(local / name, target / name)
@@ -182,6 +187,8 @@ def prepare_manuscript_review(candidate_dir: Path, output_dir: Path) -> dict:
                 _copy_file(_inside(local, name), target / name)
             for figure in section["figures"]:
                 _copy_file(_inside(local, figure["path"]), target / figure["path"])
+            if (local / "scientific-context").is_dir():
+                _copy_tree(local / "scientific-context", target / "scientific-context")
             packet = local / "review-packet"
             if not packet.is_dir():
                 raise ValueError(f"Assembled section {sid} is missing its review packet")
@@ -197,6 +204,14 @@ def prepare_manuscript_review(candidate_dir: Path, output_dir: Path) -> dict:
         if manifest.get("citation_style"):
             name = manifest["citation_style"]
             _copy_file(_inside(candidate_dir, name), snapshot / name)
+        if manifest.get("scientific_context"):
+            path = _inside(candidate_dir, manifest["scientific_context"])
+            scientific = _read(path)
+            _copy_file(path, snapshot / manifest["scientific_context"])
+            for fact in scientific["facts"]:
+                if fact.get("source"):
+                    source = _inside(path.parent, fact["source"]["path"])
+                    _copy_file(source, snapshot / source.relative_to(candidate_dir))
         for extension in ("docx", "pdf"):
             name = f"manuscript.{extension}"
             source = candidate_dir / name

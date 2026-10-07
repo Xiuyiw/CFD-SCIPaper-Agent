@@ -12,7 +12,7 @@ def test_source_distribution_excludes_local_workspace_assets():
         assert f'"{name}"' in config
 
 
-def test_source_tree_version_fallback_matches_release(monkeypatch) -> None:
+def test_source_tree_version_fallback_matches_release(monkeypatch, release_version) -> None:
     def distribution_is_not_installed(_distribution_name: str) -> str:
         raise importlib.metadata.PackageNotFoundError
 
@@ -24,4 +24,4 @@ def test_source_tree_version_fallback_matches_release(monkeypatch) -> None:
     module.__spec__ = spec
     spec.loader.exec_module(module)
 
-    assert module.__version__ == "0.15.0"
+    assert module.__version__ == release_version

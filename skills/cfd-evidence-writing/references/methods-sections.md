@@ -1,12 +1,32 @@
 # Evidence-grounded Methods sections
 
-Read `manuscript-context.json`, `input.json`, the supplied source materials and
-`table-results.json` when present. Follow the assigned Methods role and purpose;
+When scientific-context.md includes Recorded source parameters, read the located
+material, geometry and boundary values before compressing Methods. These literal
+JSON fields supplement the host's selected facts; match their case and stage in
+the source rather than transferring every field to every case. A concise methods
+paragraph or parameter table should retain the inputs that determine the main
+comparison. A short fact summary such as 'inlet conditions are recorded' does not
+replace its numerical values. Open the relevant source when the view is truncated.
+
+Read `manuscript-context.json`, `input.json`, and, when supplied,
+the package-root `scientific-context.md` with its `scientific-context/context.json`
+facts before the first draft, not only after review. These files and copied records
+under `scientific-context/sources/` exist only when optional scientific context is
+supplied. Follow each located fact's applicable cases, solution
+stages and reported operators back to the small source record when needed; an
+organized fact is not proof of its scientific adequacy. Read `table-results.json`
+and relevant source materials alongside it. Follow the assigned Methods role and purpose;
 do not turn this section into a results-mechanism discussion. The shared spine
 identifies what the reader needs before interpreting each results section.
 
-Build Methods backward from the actual main comparisons, not from a generic solver
-checklist. Locate the records a reader would need to reconstruct each comparison:
+Build Methods backward from the actual main comparisons. Close the chain from
+case identity through the procedure producing its final state to the reported
+operator. Then give the reader a short account of the key choices: prose explains
+the comparison and essential stage sequence, a compact table carries case-specific
+parameters, and supplementary methods carry noncentral implementation detail.
+Do not transcribe fact IDs, file locators, run-status histories or a solver checklist
+into the manuscript. Concision must not remove conditions needed to reproduce the
+comparison. Locate the relevant records:
 
 - Geometry and operating changes: identify the reference and modified definitions,
   dimensions, materials, forcing, and conditions held fixed. Match any schematic to
@@ -36,8 +56,7 @@ it affects in `evidence_notes`; do not request the entire project again. Conflic
 definitions need resolution, not selection of the convenient one. Do not load or
 rerun a native solver solely to fill a prose template. Report only documented
 methods, using a compact table where it makes case differences easier to reproduce.
-For each main comparison, close the reader's path from case identity through the
-solution procedure to the reported operator. Include the available numerical inlet
+Include the available numerical inlet
 inputs and stopping criteria when needed to reproduce it, not only their generic names.
 Equations must match the model described in prose; a partial set should not be labeled
 as the complete governing system. Keep reconstruction-specific extraction details
@@ -84,6 +103,9 @@ Build dotted rates and overlined averages with one-child `dot` and `overbar` mat
 including nested accents, rather than composing decorated Unicode text in a long math run.
 These export as editable equation accents; inspect the rendered formula, not only its XML.
 
+The software transports declared facts and checks supported bindings; selecting
+the necessary procedure, checking its scientific sufficiency and writing this
+compact Methods account are host responsibilities, not automatic prose generation.
 Keep reader-facing methods prose separate from `evidence_notes`. Notes should
 name the missing source or setting and the minimum author information needed.
 Do not manufacture missing images, measurements, model parameters or citations.

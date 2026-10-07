@@ -2,6 +2,10 @@
 
 ## Start here
 
+- [Scientific context](scientific-context.md): carry located case, solution-stage and
+  report definitions into manuscript writing, review and continued editing.
+- [v0.16.0 release notes](releases/v0.16.0.md): scientific-context transport, literal
+  source parameters, method-source changes, DOI display and module CLI support.
 - [Materials to manuscript](../examples/material-analysis/MANUSCRIPT.md): reuse calculated
   Results in Methods/Results, export editable Word math and continue from the current candidate.
 - [v0.13.0 release notes](releases/v0.13.0.md): host workflow guidance, readable definition

@@ -26,6 +26,15 @@ method sufficiency for the actual comparisons, physical definitions and units,
 cross-figure reasoning, literature support and claim strength. CHANGES.md
 provides editing context, not proof that an issue has been scientifically fixed.
 
+When the optional scientific-context package is supplied, read its package-root
+scientific-context.md and scientific-context/context.json, then follow the center of the argument
+through its located case—stage—operator relationships. Check that the first Methods
+draft uses the necessary procedure and conditions without becoming an extraction log;
+that Results distinguishes local, total and normalized responses; and that Discussion
+engages the closest located study's actual agreement or disagreement. For small effects,
+check whether the cited sensitivity applies to that quantity, domain and comparison.
+Context transport and numeric bindings do not automate these scientific judgments.
+
 Follow the metric's domain and operator, not only its unit: surface maximum, volume maximum,
 interface mean and spatial SD cannot stand in for one another. Compare monitor definitions with
 the quantities actually reported before claiming convergence. For a strong overall ranking,

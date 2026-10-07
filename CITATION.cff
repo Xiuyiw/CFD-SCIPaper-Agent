@@ -3,8 +3,8 @@ message: >-
   If you use CFD-Paper-Agent, please cite the software metadata for the version you used.
 title: CFD-Paper-Agent
 type: software
-version: "0.15.0"
-date-released: 2026-10-01
+version: "0.16.0"
+date-released: 2026-10-07
 authors:
   - name: bluesarrow
     email: 727197749@qq.com

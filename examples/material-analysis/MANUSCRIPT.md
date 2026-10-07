@@ -1,5 +1,10 @@
 # Material analysis to a two section manuscript
 
+For located case/stage/operator context, run the companion
+`run_scientific_context.py --output NEW_OUTPUT` example and read the
+[scientific context guide](../../docs/scientific-context.md). It reuses this tutorial's
+calculations and carries method relationships into section tasks and later editing.
+
 This offline tutorial reuses `run_example.py`, its public synthetic CSV and method
 note, and its existing compile/analyze section input. No private fixtures, model
 call, solver run or new scientific validation is involved. Both section drafts
