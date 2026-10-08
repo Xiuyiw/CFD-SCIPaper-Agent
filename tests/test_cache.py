@@ -159,7 +159,7 @@ def test_digest_lock_acquisition_retries_a_transient_permission_error(
 
 
 def test_digest_lock_acquisition_failure_is_bounded(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, controlled_lock_clock
 ) -> None:
     payload = b"permanent lock acquisition failure"
     digest = hashlib.sha256(payload).hexdigest()
@@ -178,11 +178,14 @@ def test_digest_lock_acquisition_failure_is_bounded(
 
     monkeypatch.setattr(cache_module.os, "open", permanently_block_lock_acquisition)
 
-    started = time.monotonic()
     with pytest.raises(CacheLockTimeoutError, match="timed out"):
         cache.put_bytes(payload)
 
-    assert time.monotonic() - started < 1
+    clock = controlled_lock_clock
+    assert clock.sleeps
+    assert sum(clock.sleeps) <= cache.lock_timeout_seconds
+    assert cache.lock_timeout_seconds <= clock.now <= cache.lock_timeout_seconds + 3 * clock.tick
+    assert not cache.path_for(digest).exists()
 
 
 def test_shared_process_lock_timeout_maps_to_cache_lock_timeout(
