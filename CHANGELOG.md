@@ -1,6 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [0.17.0] — 2026-10-09
+
+### Added
+
+- Saved-history calculations with exact sampled windows, nonuniform trapezoidal integrals/means,
+  saved extrema and threshold times; cumulative increments never undergo another integration.
+- Temporal proposals, source-bound manuscript metrics and compatible common-window comparisons.
+- Packaged transient-science writing guidance and a portable invented thermal example with a
+  three-panel figure, native Word table and editable SVG/PDF/PNG/TIFF outputs.
+
+### Fixed
 
 - Make lock-timeout tests deterministic instead of depending on subsecond wall-clock scheduling
   on shared CI runners. Runtime behavior and released packages are unchanged.

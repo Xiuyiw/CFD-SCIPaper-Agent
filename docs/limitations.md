@@ -4,6 +4,12 @@ CFD-Paper-Agent is not a CFD solver and does not validate a model merely because
 exist. It cannot replace domain expertise, experimental validation, source-literature verification,
 or author responsibility.
 
+Version 0.17.0 adds explicitly declared saved-history calculations and portable transient writing.
+Time integration uses actual interval spacing and exact observed endpoints. Sampled extrema and
+threshold times are not native events or interpolated onsets. Cumulative increments are not another
+time integral. A known battery-project exercise does not establish general multiphase capability,
+cross-provider scientific equivalence or independent physical validation.
+
 Version 0.15.0 adds located source-text search, explicitly selected analysis materials and
 display-only continuation of an existing review. Its paired known-project first drafts showed
 mixed results: useful local argument improvements, but persistent method-reporting and literature

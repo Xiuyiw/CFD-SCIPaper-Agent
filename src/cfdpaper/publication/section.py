@@ -12,7 +12,7 @@ import tempfile
 from contextlib import contextmanager
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from PIL import Image
 from pydantic import (
@@ -69,6 +69,17 @@ class _ResultRef(_Record):
         "weighted_mean",
         "weighted_std",
         "weight_sum",
+        "sample_count",
+        "duration",
+        "start_value",
+        "end_value",
+        "change",
+        "minimum",
+        "maximum",
+        "peak_time",
+        "time_mean",
+        "integral",
+        "first_crossing_time",
     ]
     source_record: int | None = Field(default=None, strict=True, ge=2)
     places: int = Field(default=3, strict=True, ge=0, le=12)
@@ -109,7 +120,12 @@ class _TableCalculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
     operation: Literal[
-        "population", "partition", "scalar_select", "paired_change", "weighted_population"
+        "population",
+        "partition",
+        "scalar_select",
+        "paired_change",
+        "weighted_population",
+        "temporal",
     ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
@@ -127,6 +143,16 @@ class _TableCalculation(_Record):
     region_complement: bool = Field(default=False, strict=True)
     row_filters: dict[StrictStr, StrictStr] = Field(default_factory=dict)
     unit_column: StrictStr | None = None
+    time_window: (
+        tuple[
+            Annotated[float, Field(allow_inf_nan=False)],
+            Annotated[float, Field(allow_inf_nan=False)],
+        ]
+        | None
+    ) = None
+    temporal_value_kind: Literal["instantaneous", "cumulative"] = "instantaneous"
+    threshold: float | None = Field(default=None, allow_inf_nan=False)
+    crossing_direction: Literal["at-or-above", "at-or-below"] = "at-or-above"
 
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
@@ -147,7 +173,10 @@ class _TableCalculation(_Record):
                 "temperature_reference",
             ):
                 result.pop(key, None)
-        if self.operation not in {"paired_change", "weighted_population"} and not (
+        if self.operation != "temporal":
+            for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
+                result.pop(key, None)
+        if self.operation not in {"paired_change", "weighted_population", "temporal"} and not (
             self.operation == "scalar_select" and self.quantity_kind != "ordinary"
         ):
             result.pop("quantity_kind", None)
@@ -160,11 +189,24 @@ class _TableCalculation(_Record):
         required = {
             "partition": {"area", "rate"},
             "weighted_population": {"value", "weight"},
+            "temporal": {"time", "value"},
         }.get(self.operation, {"value"})
         if set(self.columns) != required or set(self.units) != required:
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
+        if self.operation == "temporal":
+            if self.units["time"] != "s":
+                raise ValueError("Temporal calculations require time in seconds")
+            if self.time_window is not None and self.time_window[0] >= self.time_window[1]:
+                raise ValueError("Time window requires increasing sampled endpoints")
+        elif (
+            self.time_window is not None
+            or self.temporal_value_kind != "instantaneous"
+            or self.threshold is not None
+            or self.crossing_direction != "at-or-above"
+        ):
+            raise ValueError("Time window and event options are only for temporal calculations")
         if any(not key.strip() for key in self.row_filters):
             raise ValueError("Row filter column names must not be blank")
         if self.unit_column is not None and "value" not in self.columns:
@@ -193,7 +235,7 @@ class _TableCalculation(_Record):
             or self.temperature_reference is not None
             or (
                 self.quantity_kind != "ordinary"
-                and self.operation not in {"weighted_population", "scalar_select"}
+                and self.operation not in {"weighted_population", "scalar_select", "temporal"}
             )
         ):
             raise ValueError("Pair selectors and temperature_reference are only for paired_change")
@@ -213,6 +255,17 @@ class _ScalarResult(_Record):
         "area",
         "rate",
         "mean_flux",
+        "time_mean",
+        "integral",
+        "minimum",
+        "maximum",
+        "start_value",
+        "end_value",
+        "change",
+        "duration",
+        "peak_time",
+        "first_crossing_time",
+        "sample_count",
     ]
 
 
@@ -449,6 +502,10 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
             region_complement=item.region_complement,
             row_filters=item.row_filters,
             unit_column=item.unit_column,
+            time_window=item.time_window,
+            temporal_value_kind=item.temporal_value_kind,
+            threshold=item.threshold,
+            crossing_direction=item.crossing_direction,
         )
         results.append({**item.model_dump(), **result})
     parents = list(results)
@@ -484,6 +541,9 @@ If table-results.json exists, read its source definitions, units, groups and all
 drafting. These were calculated from the copied CSVs. Missing groups remain missing; use supported
 groups and report the specific gap separately. Population CV uses equal records and ddof=0;
 partition results describe the supplied rows, not proof of exhaustive or disjoint physical regions.
+Temporal results use actual sample spacing and exact sampled window endpoints. A sampled peak or
+first qualifying threshold sample is not a solver-native event or interpolated onset. Read the
+group's actual time_window; cumulative quantities have change but no second integral or time_mean.
 No unit conversion or causal interpretation is performed. Resolve any conflict with supplied
 metric JSON before quoting it; do not favor whichever number makes the narrative stronger.
 Check free numbers in prose and captions against source values, not only token expansion.
@@ -518,6 +578,15 @@ List every paragraph's evidence_ids and figure_ids; tokens must be declared in t
 All duty evidence and figures must be covered by paragraph declarations. Supply all captions.
 Free scientific prose is allowed; successful structural validation is not semantic approval.
 Return only the JSON draft, with no approval claim. A human reviews the assembled section.
+
+Host execution capabilities:
+This folder is a provider-neutral file task. A host with local tools can call the existing CLI
+to assemble a fresh draft and then export Word. Use two separate commands from a directory:
+python -m cfdpaper write . --artifact results-section --package P --draft D --output N
+python -m cfdpaper write . --artifact results-section --package N --docx --output W
+Replace P/D/N/W with package/draft/fresh-section/fresh-DOCX paths. A web host can return draft JSON
+for a local operator to assemble; do not claim it executed calculations, viewed figures or exported
+Word unless those tools were actually available and used. No provider SDK is required for this path.
 """
 
 

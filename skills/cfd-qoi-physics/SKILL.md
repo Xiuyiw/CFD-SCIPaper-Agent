@@ -65,6 +65,28 @@ not the first row or an automatic average. Population aggregation still needs it
 basis. Source CSV record numbers remain original (header is record 1); NPZ indices stay zero-based.
 `unit_column` checks only the value role, not weighted measures or partition area/rate roles.
 
+For a saved transient series, use `temporal` with `columns: {"time": "time_s", "value":
+"temperature_K"}`, `units: {"time": "s", "value": "K"}`, explicit `time_window: [0, 12]`
+and `temporal_value_kind: "instantaneous"` or `"cumulative"`. Declare temperature semantics
+when applicable. Both window endpoints must be observed in every selected group; times must
+be unique and strictly increasing in source order. Do not repair a reversed, duplicate or
+missing timeline by sorting, interpolating or inventing records. Compare cases only on a
+shared, method-backed window and the same physical/statistical quantity.
+
+The operator returns sample_count, duration, start_value, end_value, change, minimum, maximum
+and peak_time (the earliest saved time attaining the maximum). Instantaneous series additionally
+provide a nonuniform trapezoidal integral and time_mean; this is a reconstruction from saved
+samples, not the solver's internal quadrature. A cumulative series supplies endpoint change,
+not an additional integral or a heat rate. Keep a rate integral distinct from an independently
+exported cumulative ledger; their discrepancy is a postprocessing comparison, not an energy
+balance unless the control-volume terms and coverage establish one.
+
+An optional threshold with crossing_direction `at-or-above` or `at-or-below` returns
+first_crossing_time at the first saved sample satisfying the condition in the selected window,
+or null if none does. It does not locate a sub-step event, establish onset causality, or reproduce
+a native solver event time. A null crossing cannot be bound as a numeric zero. Read the temporal
+writing reference in cfd-evidence-writing before drafting an event/thermal-response subsection.
+
 CSV preview limits do not determine whether a field can be analyzed. Read the complete copied
 source for calculations. NPZ sources can be used directly: map exact one-dimensional array keys
 as columns, declare their units, and use member_id ["__index__"] for zero-based element identity

@@ -7,6 +7,15 @@ import statistics
 from decimal import ROUND_HALF_EVEN, Decimal
 from pathlib import Path
 
+from cfdpaper.publication.temporal import (
+    TEMPORAL_FIELDS,
+    TIME_FIELDS,
+    select_temporal_window,
+    temporal_summary,
+    temporal_unit,
+    validate_temporal_options,
+)
+
 
 def display_unit(unit: str) -> str:
     """Typeset supported unit labels without converting their numerical scale."""
@@ -56,6 +65,10 @@ def calculate_table(
     region_complement=False,
     row_filters: dict[str, str] | None = None,
     unit_column: str | None = None,
+    time_window: list[float] | tuple[float, float] | None = None,
+    temporal_value_kind="instantaneous",
+    threshold: float | None = None,
+    crossing_direction="at-or-above",
 ):
     """Calculate over explicitly selected records, retaining original source locations.
 
@@ -65,19 +78,33 @@ def calculate_table(
     """
     scalar_ops = {"population", "scalar_select", "paired_change"}
     required = (
-        {"value", "weight"}
+        {"time", "value"}
+        if operation == "temporal"
+        else {"value", "weight"}
         if operation == "weighted_population"
         else {"value"}
         if operation in scalar_ops
         else {"area", "rate"}
     )
     if (
-        operation not in scalar_ops | {"partition", "weighted_population"}
+        operation not in scalar_ops | {"partition", "weighted_population", "temporal"}
         or set(columns) != required
     ):
         raise ValueError(
-            "Use scalar/value, weighted_population/value,weight or partition/area,rate"
+            "Use scalar/value, weighted_population/value,weight, partition/area,rate "
+            "or temporal/time,value"
         )
+    if operation == "temporal":
+        validate_temporal_options(
+            units, time_window, temporal_value_kind, threshold, crossing_direction
+        )
+    elif (
+        time_window is not None
+        or temporal_value_kind != "instantaneous"
+        or threshold is not None
+        or crossing_direction != "at-or-above"
+    ):
+        raise ValueError("Temporal options require operation temporal")
     if operation == "weighted_population":
         if weight_kind not in {"area", "volume"}:
             raise ValueError("Weighted population requires weight_kind area or volume")
@@ -92,7 +119,7 @@ def calculate_table(
             raise ValueError("Paired change requires pair_by, reference and comparison")
         if reference == comparison:
             raise ValueError("Reference and comparison must differ")
-    if operation in {"paired_change", "weighted_population"} or (
+    if operation in {"paired_change", "weighted_population", "temporal"} or (
         operation == "scalar_select" and quantity_kind != "ordinary"
     ):
         unit = (units or {}).get("value")
@@ -107,7 +134,7 @@ def calculate_table(
         if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
             raise ValueError("Absolute temperature requires Celsius or Kelvin units")
         if (
-            operation in {"weighted_population", "scalar_select"}
+            operation in {"weighted_population", "scalar_select", "temporal"}
             and quantity_kind == "temperature-difference"
             and unit != "K"
         ):
@@ -178,6 +205,22 @@ def calculate_table(
         groups.setdefault(group, []).append((index, row))
     results = []
     for name, items in groups.items():
+        temporal_metadata = {}
+        if operation == "temporal":
+            items = select_temporal_window(items, columns["time"], time_window)
+            temporal_metadata = {
+                "time_window": [items[0][1][columns["time"]], items[-1][1][columns["time"]]],
+                "temporal_value_kind": temporal_value_kind,
+                "sampling": "saved-samples",
+                "integration_method": "trapezoidal-nonuniform"
+                if temporal_value_kind == "instantaneous"
+                else None,
+                "threshold": threshold,
+                "crossing_direction": crossing_direction,
+                "window_selection": "exact-sampled-endpoints"
+                if time_window is not None
+                else "full-saved-coverage",
+            }
         if operation == "scalar_select" and len(items) != 1:
             raise ValueError(
                 f"Scalar selection requires exactly one record in group {name!r}; "
@@ -202,6 +245,15 @@ def calculate_table(
             raise ValueError(f"Group {name!r}: weights must be finite and strictly positive")
         if any(v is None for sequence in values.values() for v in sequence):
             result, status = None, "missing-values"
+        elif operation == "temporal":
+            result = temporal_summary(
+                values["time"],
+                values["value"],
+                value_kind=temporal_value_kind,
+                threshold=threshold,
+                direction=crossing_direction,
+            )
+            status = "computed"
         elif operation == "population":
             result, status = population_summary(values["value"]), "computed"
         elif operation == "weighted_population":
@@ -241,6 +293,7 @@ def calculate_table(
                 ],
                 "status": status,
                 "result": result,
+                **temporal_metadata,
             }
         )
     return {"rows_read": len(rows), "groups": results}
@@ -268,6 +321,7 @@ _COMPARABLE_FIELDS = {
     "scalar_select": {"value"},
     "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
     "partition": {"area", "rate", "mean_flux"},
+    "temporal": TEMPORAL_FIELDS,
 }
 
 
@@ -306,6 +360,24 @@ def calculate_result_comparison(
             raise ValueError(f"{role}: parent domain must match the comparison domain")
         resolved = resolve_table_result(reports, **ref)
         kind = parent.get("quantity_kind", "ordinary")
+        temporal_metadata = {}
+        if operation == "temporal":
+            if field == "integral" and kind == "absolute-temperature":
+                raise ValueError(
+                    "Absolute-temperature integral comparisons depend on temperature origin"
+                )
+            selected = next(g for g in parent["groups"] if g["group"] == ref["group"])
+            temporal_metadata = {
+                key: selected.get(key)
+                for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction")
+            }
+            temporal_metadata.update(
+                input_value_unit=parent["units"]["value"], input_quantity_kind=kind
+            )
+            if field in TIME_FIELDS | {"sample_count", "integral"}:
+                kind = "ordinary"
+            elif field == "change" and kind == "absolute-temperature":
+                kind = "temperature-difference"
         if field in {"weight_sum", "area", "rate", "mean_flux"}:
             kind = "ordinary"
         elif field == "weighted_std" and kind == "absolute-temperature":
@@ -326,11 +398,21 @@ def calculate_result_comparison(
             "weight_kind": parent.get("weight_kind"),
             "quantity_kind": kind,
             "definition_source": parent.get("definition_source"),
+            **temporal_metadata,
         }
     baseline, compared = upstream["reference"], upstream["comparison"]
     for key in ("operation", "field", "weight_kind", "quantity_kind", "unit"):
         if baseline[key] != compared[key]:
             raise ValueError(f"Result comparison requires matching {key}")
+    if baseline["operation"] == "temporal":
+        keys = ["time_window", "temporal_value_kind"]
+        if baseline["field"] == "first_crossing_time":
+            keys.extend(
+                ("threshold", "crossing_direction", "input_value_unit", "input_quantity_kind")
+            )
+        for key in keys:
+            if baseline[key] != compared[key] or baseline[key] is None:
+                raise ValueError(f"Temporal result comparison requires matching {key}")
     kind = baseline["quantity_kind"]
     if temperature_reference is not None and (
         kind != "absolute-temperature"
@@ -560,6 +642,7 @@ def resolve_table_result(
         "paired_change": {"difference", "relative_change", "relative_reduction"},
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
         "result_comparison": {"difference", "relative_change", "relative_reduction"},
+        "temporal": TEMPORAL_FIELDS,
     }
     operation = report.get("operation")
     if not isinstance(field, str) or field not in fields.get(operation, set()):
@@ -655,11 +738,15 @@ def resolve_table_result(
         if operation == "weighted_population"
         else {"area", "rate"}
         if operation == "partition"
+        else {"time", "value"}
+        if operation == "temporal"
         else {"value"}
     )
     if any(not isinstance(units.get(role), str) for role in required_units):
         raise ValueError(f"{location}: missing declared role units")
-    if field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:
+    if operation == "temporal":
+        unit = temporal_unit(field, units["value"], report.get("quantity_kind", "ordinary"))
+    elif field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:
         unit = ""
     elif field in {"sum", "mean", "value", "difference", "weighted_mean", "weighted_std"}:
         unit = units["value"]
