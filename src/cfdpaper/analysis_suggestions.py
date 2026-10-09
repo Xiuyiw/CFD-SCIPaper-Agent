@@ -10,7 +10,7 @@ import json
 import re
 import shutil
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, StrictStr, model_serializer, model_validator
 
@@ -56,7 +56,12 @@ class _Calculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
     operation: Literal[
-        "population", "partition", "weighted_population", "scalar_select", "paired_change"
+        "population",
+        "partition",
+        "weighted_population",
+        "scalar_select",
+        "paired_change",
+        "temporal",
     ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
@@ -69,6 +74,16 @@ class _Calculation(_Record):
     region_complement: bool = Field(default=False, strict=True)
     row_filters: dict[StrictStr, StrictStr] = Field(default_factory=dict)
     unit_column: StrictStr | None = None
+    time_window: (
+        tuple[
+            Annotated[float, Field(allow_inf_nan=False)],
+            Annotated[float, Field(allow_inf_nan=False)],
+        ]
+        | None
+    ) = None
+    temporal_value_kind: Literal["instantaneous", "cumulative"] = "instantaneous"
+    threshold: float | None = Field(default=None, allow_inf_nan=False)
+    crossing_direction: Literal["at-or-above", "at-or-below"] = "at-or-above"
     quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
         "ordinary"
     )
@@ -92,7 +107,10 @@ class _Calculation(_Record):
             result.pop("region_complement", None)
         if self.operation != "weighted_population":
             result.pop("weight_kind", None)
-        if self.operation not in {"paired_change", "weighted_population"} and not (
+        if self.operation != "temporal":
+            for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
+                result.pop(key, None)
+        if self.operation not in {"paired_change", "weighted_population", "temporal"} and not (
             self.operation == "scalar_select" and self.quantity_kind != "ordinary"
         ):
             result.pop("quantity_kind", None)
@@ -216,6 +234,14 @@ paired_change compares two records in each group using an explicit
 paired_selector {pair_by, reference, comparison}: pair_by names the identity column/key, and the
 other two fields name its exact reference/comparison values. Each selector must match exactly one
 record per group. This object is separate from the existing scientific comparison {status, scope}.
+For saved histories use temporal with columns/units time,value and time in s. Declare member_id
+using time plus any case identity. time_window endpoints must be exact samples in each group;
+source times must be strictly increasing, without sorting or duplicate removal. Instantaneous
+values provide nonuniform trapezoidal integral and time_mean, saved extrema and earliest peak_time.
+Cumulative values provide change only, not another integral/time_mean. Optional threshold and
+crossing_direction at-or-above/at-or-below return the first qualifying saved sample, never a
+solver-native or interpolated event. Missing crossings stay missing. Check the common saved
+window and quantity definition before comparing groups; an integrated temperature is not energy.
 Use member_id columns that identify all source records, including the paired configuration where
 necessary. Bind value for scalar_select and difference, relative_change or relative_reduction for
 paired_change. Difference is comparison minus reference; absolute-temperature percentages require
@@ -486,6 +512,10 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
         region_complement=calc.region_complement,
         row_filters=calc.row_filters,
         unit_column=calc.unit_column,
+        time_window=calc.time_window,
+        temporal_value_kind=calc.temporal_value_kind,
+        threshold=calc.threshold,
+        crossing_direction=calc.crossing_direction,
     )
     if any(group["status"] != "computed" for group in result["groups"]):
         raise ValueError(f"{calc.id}: selected calculation has missing numeric values")
@@ -653,6 +683,7 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "scalar_select": ("value",),
             "paired_change": ("difference",),
             "result_comparison": ("difference",),
+            "temporal": ("start_value", "end_value", "change", "maximum", "time_mean"),
         }[report["operation"]]
         for number, group in enumerate(report["groups"], 1):
             for field in fields:

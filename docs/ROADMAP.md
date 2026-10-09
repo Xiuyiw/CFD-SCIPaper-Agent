@@ -18,6 +18,12 @@ three-domain validation remain explicit later work.
 
 ## Versioned delivery
 
+The [v0.17 plan](research/V0_17_MODEL_PORTABLE_TRANSIENT_PLAN.md) adopts the
+author's model-neutral host strategy and a real battery thermal/transient project for analysis
+and scientific-writing evaluation. Saved-history operators, bound subsection output and portable
+tasks are implemented. A known-project first subsection and nonuniform-history regression have
+run; independent cross-provider scientific comparison remains untested.
+
 | Version | Public deliverable | Status |
 |---|---|---|
 | `v0.1.0` | Installable CLI, local project state, resumable inspection, and author-supplied topic ranking | Released 2026-08-30 |
@@ -38,6 +44,7 @@ three-domain validation remain explicit later work.
 | `v0.14.0` | Selected-input first-manuscript bridge, richer evidence-reading guidance and publication display fixes | Implemented; Windows/Linux Python 3.10–3.12 integration passed; see release tag |
 | `v0.15.0` | Source-text lookup, selected analysis materials, portable scientific guidance and explicit review display refresh | Implemented; paired first-draft results are mixed; see release notes and release tag |
 | `v0.16.0` | Located scientific context, literal JSON parameter views, source-aware method updates, DOI display and module CLI | Implemented scope; first-draft scientific results remain mixed; see release notes and release tag |
+| `v0.17.0` | Saved transient calculations, cumulative increments, common-window comparisons and portable writing example | Implemented scope; known-project trial, not general transient/multiphase validation; see release notes |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection

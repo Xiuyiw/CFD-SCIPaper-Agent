@@ -1,0 +1,46 @@
+{
+  "title": "Saved-sample timing and thermal response in invented histories",
+  "paragraphs": [
+    {
+      "text": "The invented histories separate saved-sample timing from thermal magnitude ({{figure:1}}). A first reaches the reporting threshold at {{value:A-crossing}} and has a saved maximum of {{value:A-max}} at {{value:A-peak}}, whereas B first satisfies the same threshold at {{value:B-crossing}} and reaches {{value:B-max}} at {{value:B-peak}}. Thus the later sampled threshold time in B accompanies a lower saved maximum in this illustrative pair. The time-weighted mean temperatures are {{value:A-mean}} and {{value:B-mean}}, respectively, distinguishing overall exposure from a single peak.",
+      "evidence_ids": ["definition", "A-crossing", "B-crossing", "A-max", "B-max", "A-peak", "B-peak", "A-mean", "B-mean"],
+      "figure_ids": ["1"]
+    },
+    {
+      "text": "The saved heat-input histories differ in timing but have equal trapezoidal integrals, {{value:A-integral}} for A and {{value:B-integral}} for B. The separately supplied cumulative ledgers instead increase by {{value:A-ledger}} and {{value:B-ledger}} ({{table:1}}). The close but unequal ledger values are deliberately invented independently of the saved-rate reconstruction. This comparison separates cumulative accounting from quadrature of an instantaneous rate; it does not supply a complete energy balance.",
+      "evidence_ids": ["definition", "A-integral", "B-integral", "A-ledger", "B-ledger"],
+      "figure_ids": ["1"]
+    },
+    {
+      "text": "Equal reconstructed heat input does not determine the temperature-peak ordering in these records. Relating that ordering to storage or transport would require a physical model and matched controls that are absent from this teaching dataset. The supported reading is therefore the joint temporal and thermal comparison, not a causal material ranking.",
+      "evidence_ids": ["definition"],
+      "figure_ids": ["1"]
+    }
+  ],
+  "captions": {
+    "1": "Invented nonuniform thermal histories on a shared observed 0–12 s window. (a) Domain-maximum temperature, with the 400 K tutorial reporting level; markers are saved samples and straight segments guide the eye. Threshold times are first qualifying saved samples, not native events or interpolated crossings. (b) Instantaneous domain-integrated heat-input rate. (c) Independently supplied cumulative heat ledgers (solid lines with markers) and cumulative trapezoidal reconstructions of the saved rates (dashed lines). The cumulative ledger is not integrated again; no storage or boundary-loss channels are supplied."
+  },
+  "tables": [
+    {
+      "table_id": "1",
+      "caption": "Computed diagnostics for the invented histories.",
+      "after_section_id": "transient-thermal-response",
+      "columns": ["Diagnostic", "A", "B"],
+      "rows": [
+        ["Saved temperature maximum", "{{value:A-max}}", "{{value:B-max}}"],
+        ["Earliest saved maximum time", "{{value:A-peak}}", "{{value:B-peak}}"],
+        ["First saved sample at or above 400 K", "{{value:A-crossing}}", "{{value:B-crossing}}"],
+        ["Time-weighted mean temperature", "{{value:A-mean}}", "{{value:B-mean}}"],
+        ["Saved-rate trapezoidal integral", "{{value:A-integral}}", "{{value:B-integral}}"],
+        ["Independent cumulative-ledger change", "{{value:A-ledger}}", "{{value:B-ledger}}"]
+      ],
+      "evidence_ids": ["A-max", "B-max", "A-peak", "B-peak", "A-crossing", "B-crossing", "A-mean", "B-mean", "A-integral", "B-integral", "A-ledger", "B-ledger"],
+      "numeric_columns": [1, 2],
+      "column_widths_mm": [90, 35, 35],
+      "note": "All diagnostics use the complete shared observed window. Temperature is absolute; saved times do not resolve a continuous peak or event."
+    }
+  ],
+  "image_observations": {"1": "author-provided"},
+  "evidence_notes": ["Recorded tutorial prose, not a fresh model-generated draft. All source values are invented. No literature or physical validation was supplied."],
+  "observation_notes": {}
+}

@@ -70,6 +70,9 @@ Install the optional `docs` extra for DOCX. The host AI, not the CLI, writes the
 `PROJECT_ROOT` is an existing directory. Every `--output` must be a fresh path; retain earlier
 author edits. For section writing, first read [mechanism-subsections.md](references/mechanism-subsections.md)
 in full; it guides single-figure reasoning and multi-evidence synthesis without canned prose.
+For transient series, saved-sample thresholds or event/thermal comparisons, also read
+[temporal-subsections.md](references/temporal-subsections.md). It distinguishes rates,
+cumulative quantities, common windows and sampled timing from native events.
 
 1. Prepare supplied inputs:
 
