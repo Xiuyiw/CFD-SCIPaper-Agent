@@ -26,6 +26,32 @@ def test_prepare_only_is_portable_without_recorded_answer(tmp_path):
     ).read_bytes()
 
 
+def test_figure_has_measured_header_clearance_when_times_new_roman_is_missing(
+    tmp_path, monkeypatch
+):
+    from matplotlib import font_manager
+
+    original_findfont = font_manager.findfont
+
+    def missing_times(properties, *args, **kwargs):
+        if isinstance(properties, font_manager.FontProperties) and properties.get_family() == [
+            "Times New Roman"
+        ]:
+            raise ValueError("Times New Roman deliberately unavailable")
+        return original_findfont(properties, *args, **kwargs)
+
+    monkeypatch.setattr(font_manager, "findfont", missing_times)
+    module = runpy.run_path(str(EXAMPLE / "plot_history.py"))
+    figure = module["run"](EXAMPLE / "inputs/history.csv", tmp_path / "fallback")
+    checks = json.loads((figure / "layout-checks.json").read_text(encoding="utf-8"))
+    assert {check["font_family"] for check in checks} == {"DejaVu Serif"}
+    expected_gap = module["HEADER_GAP_PT"] * 100 / 72
+    assert all(check["title_legend_gap_px"] == pytest.approx(expected_gap) for check in checks)
+    assert (figure / "source-data.csv").read_bytes() == (
+        EXAMPLE / "inputs/history.csv"
+    ).read_bytes()
+
+
 def test_temporal_values_bind_and_survive_relocation_with_native_docx(tmp_path):
     docx = pytest.importorskip("docx")
     module = runpy.run_path(str(EXAMPLE / "run_example.py"))

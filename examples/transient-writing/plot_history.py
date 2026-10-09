@@ -11,6 +11,10 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
+
+FONT_FAMILIES = ("Times New Roman", "DejaVu Serif")
+HEADER_GAP_PT = 3
 
 STYLE = {
     "font.family": "Times New Roman",
@@ -24,6 +28,19 @@ STYLE = {
     "pdf.fonttype": 42,
 }
 CASES = {"A": ("#416c86", "o"), "B": ("#aa7854", "s")}
+
+
+def select_font():
+    """Choose an available serif explicitly rather than silently falling back to sans."""
+    for family in FONT_FAMILIES:
+        try:
+            font_manager.findfont(
+                font_manager.FontProperties(family=family), fallback_to_default=False
+            )
+        except ValueError:
+            continue
+        return family
+    raise ValueError("The figure requires Times New Roman or Matplotlib's DejaVu Serif")
 
 
 def cumulative_trapezoids(times, values):
@@ -40,7 +57,8 @@ def run(source, output):
     output.mkdir(parents=True, exist_ok=False)
     with source.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
-    with plt.rc_context(STYLE):
+    font_family = select_font()
+    with plt.rc_context({**STYLE, "font.family": font_family}):
         fig, axes = plt.subplots(3, 1, figsize=(160 / 25.4, 155 / 25.4), sharex=True)
         fig.subplots_adjust(left=0.13, right=0.985, bottom=0.09, top=0.89, hspace=0.8)
         for case, (color, marker) in CASES.items():
@@ -115,6 +133,23 @@ def run(source, output):
         axes[2].set_xticks([0, 1, 3, 6, 8, 12])
         fig.canvas.draw()
         renderer = fig.canvas.get_renderer()
+        # Title placement follows the rendered legend height, which changes with fonts.
+        # A fixed axes-fraction offset can collide with a two-row fallback-font legend.
+        gap_px = HEADER_GAP_PT * fig.dpi / 72
+        for ax, title in zip(axes, headers, strict=True):
+            title_box = title.get_window_extent(renderer)
+            legend_box = ax.get_legend().get_window_extent(renderer)
+            x, y = title.get_position()
+            title.set_position(
+                (
+                    x,
+                    y
+                    + (legend_box.y1 + gap_px - title_box.y0)
+                    / ax.get_window_extent(renderer).height,
+                )
+            )
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
         checks = []
         for ax, title in zip(axes, headers, strict=True):
             title_box = title.get_window_extent(renderer)
@@ -122,7 +157,7 @@ def run(source, output):
             gap = title_box.y0 - legend_box.y1
             if gap <= 0:
                 raise ValueError("Panel title overlaps legend; adjust the header space")
-            checks.append({"title_legend_gap_px": gap})
+            checks.append({"title_legend_gap_px": gap, "font_family": font_family})
         for upper, lower in zip(axes[:-1], axes[1:], strict=True):
             if lower.get_tightbbox(renderer).y1 >= upper.get_window_extent(renderer).y0:
                 raise ValueError("Adjacent panels overlap")
