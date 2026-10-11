@@ -46,6 +46,7 @@ def test_ships_four_specialists_and_workflow_entry_with_current_references() -> 
             "manuscript-review.md",
             "mechanism-subsections.md",
             "methods-sections.md",
+            "multi-observation-synthesis.md",
             "temporal-subsections.md",
         ],
         "cfd-figure-production": [

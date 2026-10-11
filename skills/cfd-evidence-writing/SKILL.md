@@ -73,6 +73,9 @@ in full; it guides single-figure reasoning and multi-evidence synthesis without 
 For transient series, saved-sample thresholds or event/thermal comparisons, also read
 [temporal-subsections.md](references/temporal-subsections.md). It distinguishes rates,
 cumulative quantities, common windows and sampled timing from native events.
+When multiple observations support or challenge one interpretation, read
+[multi-observation-synthesis.md](references/multi-observation-synthesis.md) for joint reasoning,
+source-range comparisons and propagation from Methods to Discussion and Conclusions.
 
 1. Prepare supplied inputs:
 

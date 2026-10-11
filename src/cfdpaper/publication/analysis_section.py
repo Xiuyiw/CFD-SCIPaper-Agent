@@ -11,8 +11,8 @@ from pathlib import Path
 from cfdpaper.publication.render_figure import PlotStyle
 from cfdpaper.publication.section import _ResultComparison, _stage, _write, prepare_section
 from cfdpaper.publication.table_evidence import (
+    calculate_declared_table,
     calculate_result_comparison,
-    calculate_table,
     display_unit,
     resolve_table_result,
 )
@@ -34,6 +34,21 @@ _LABELS = {
     "weighted_mean": "Measure-weighted mean",
     "weighted_std": "Measure-weighted spatial standard deviation",
     "weight_sum": "Total supplied measure",
+    "reference_value": "Reference center",
+    "reference_lower": "Supplied reference lower bound",
+    "reference_upper": "Supplied reference upper bound",
+    "outside_distance": "Signed distance outside supplied range",
+    "sample_count": "Saved sample count",
+    "duration": "Sampled duration",
+    "start_value": "Window start value",
+    "end_value": "Window end value",
+    "change": "Window end minus start",
+    "minimum": "Sampled minimum",
+    "maximum": "Sampled maximum",
+    "peak_time": "First sampled peak time",
+    "time_mean": "Time-weighted mean",
+    "integral": "Time integral",
+    "first_crossing_time": "First saved threshold-crossing time",
 }
 
 
@@ -51,23 +66,7 @@ def _points(data: dict, root: Path) -> list[dict]:
     reports = [
         {
             **item,
-            **calculate_table(
-                _source(root, item["source"]),
-                operation=item["operation"],
-                columns=item["columns"],
-                group_by=item.get("group_by"),
-                pair_by=item.get("pair_by"),
-                reference=item.get("reference"),
-                comparison=item.get("comparison"),
-                units=item.get("units"),
-                quantity_kind=item.get("quantity_kind", "ordinary"),
-                temperature_reference=item.get("temperature_reference"),
-                weight_kind=item.get("weight_kind"),
-                region_fraction=item.get("region_fraction"),
-                region_complement=item.get("region_complement", False),
-                row_filters=item.get("row_filters"),
-                unit_column=item.get("unit_column"),
-            ),
+            **calculate_declared_table(_source(root, item["source"]), item),
         }
         for item in data["table_calculations"]
     ]
@@ -112,7 +111,8 @@ def render_analysis_figures(input_path: Path, *, style: PlotStyle | None = None)
     output.mkdir(exist_ok=True)
     plan = data.get("figure_plan") or {}
     rc = {
-        "font.family": style.font_family,
+        "font.family": [style.font_family, "serif"],
+        "font.serif": ["Times New Roman", "DejaVu Serif"],
         "font.size": style.font_pt,
         "axes.labelsize": style.axis_label_pt,
         "axes.titlesize": style.title_pt,
@@ -241,16 +241,26 @@ def build_analysis_section(input_path: Path, output_dir: Path) -> Path:
         presentation = data.get("presentation", "plot")
         if presentation not in {"plot", "prose", "table", "custom"}:
             raise ValueError("Unknown analysis presentation")
-        figures = (
-            render_analysis_figures(staged / "analysis-input.json")
-            if presentation == "plot"
-            else []
-        )
+        panels = data.get("evidence_panels")
+        if panels:
+            if presentation != "plot" or data.get("figure_plan"):
+                raise ValueError("evidence_panels requires plot without scalar figure_plan")
+            from cfdpaper.publication.evidence_panels import render_evidence_panels
+
+            figures = [
+                render_evidence_panels(staged / "analysis-input.json", panels, staged / "figures")
+            ]
+        else:
+            figures = (
+                render_analysis_figures(staged / "analysis-input.json")
+                if presentation == "plot"
+                else []
+            )
         existing = data.get("figures", [])
         ids = [fig["id"].casefold() for fig in [*figures, *existing]]
         if len(ids) != len(set(ids)):
             raise ValueError("Existing and calculated figures must use different IDs")
-        if presentation == "plot":
+        if presentation == "plot" and not panels:
             _write_plot_script(staged)
         used = {key for fig in figures for key in fig["evidence_ids"]}
         duties = [

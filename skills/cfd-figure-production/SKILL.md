@@ -51,6 +51,17 @@ units, legend, marker weights, whitespace and panel alignment on the actual manu
 Keep the result in existing figure contract/review notes; successful export and no clipping alone
 do not establish scientific readability.
 
+For declared numerical evidence, `evidence_panels` can combine only `profile` and
+`reference_range` panels. Each names a `calculation_id`, `title`, `x_label`, `y_label`, and
+optionally selected `groups`. A profile uses the temporal declaration's exact saved-sample
+window and value kind; it cannot manufacture an unavailable curve. A reference-range panel
+shows the supplied bounds/center, model value and signed difference, with the declared range
+kind retained in its caption and source data. Reported ranges, figure-reading envelopes and
+declared bounds are not confidence intervals. Different units belong in separate panels.
+The reusable output includes source locations, editable vector/raster exports and standalone
+`plot.py`; preserve local author edits and inspect the PNG at its final 160 mm width after
+the actual bounding-box checks. This finite route is not a general diagram engine.
+
 ## Do not trigger
 
 Do not use to change QoI values, case order, units, claim strength, chart semantics, or infer a
