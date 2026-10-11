@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.18.0] — 2026-10-11
+
+### Added
+
+- Source-defined reference-range comparisons with signed deviations, outside distances and explicit
+  range semantics; values bind to prose/tables without promoting a model to validated status.
+- Complementary temporal-profile and reference-range panels with source records, standalone local
+  plotting code, editable graphics, font/layout checks and publication-facing numeric figure labels.
+- Multi-observation scientific writing guidance and a connected four-section invented tutorial.
+
+### Fixed
+
+- Default automatic figures now use the same calculation options as writing, including temporal
+  windows, cumulative semantics and threshold directions; temporal result labels are supported.
+
+### Evaluation
+
+- Paired known-project first drafts showed mixed strengths, not uniform candidate superiority.
+  A separate bounded revision used saved-window extrema to strengthen a specific thermal argument.
+  A non-battery declared-range and numerical-binding regression ran without changing original data.
+
 ## [0.17.0] — 2026-10-09
 
 ### Added

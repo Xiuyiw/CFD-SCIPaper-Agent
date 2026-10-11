@@ -28,8 +28,8 @@ from cfdpaper.publication.section import (
 )
 from cfdpaper.publication.style import PublicationStyle
 from cfdpaper.publication.table_evidence import (
+    calculate_declared_table,
     calculate_result_comparison,
-    calculate_table,
     read_source_records,
     resolve_table_result,
 )
@@ -62,6 +62,7 @@ class _Calculation(_Record):
         "scalar_select",
         "paired_change",
         "temporal",
+        "reference_range",
     ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
@@ -84,6 +85,9 @@ class _Calculation(_Record):
     temporal_value_kind: Literal["instantaneous", "cumulative"] = "instantaneous"
     threshold: float | None = Field(default=None, allow_inf_nan=False)
     crossing_direction: Literal["at-or-above", "at-or-below"] = "at-or-above"
+    reference_kind: (
+        Literal["reported-range", "figure-reading-envelope", "declared-bound"] | None
+    ) = None
     quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
         "ordinary"
     )
@@ -110,9 +114,14 @@ class _Calculation(_Record):
         if self.operation != "temporal":
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
                 result.pop(key, None)
-        if self.operation not in {"paired_change", "weighted_population", "temporal"} and not (
-            self.operation == "scalar_select" and self.quantity_kind != "ordinary"
-        ):
+        if self.operation != "reference_range":
+            result.pop("reference_kind", None)
+        if self.operation not in {
+            "paired_change",
+            "weighted_population",
+            "temporal",
+            "reference_range",
+        } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
             result.pop("quantity_kind", None)
         if self.paired_selector is None:
             result.pop("paired_selector", None)
@@ -152,6 +161,23 @@ class _FigurePlan(_Record):
     category_labels: dict[str, StrictStr] = Field(default_factory=dict)
 
 
+class _EvidencePanel(_Record):
+    kind: Literal["profile", "reference_range"]
+    calculation_id: StrictStr
+    title: StrictStr
+    x_label: StrictStr
+    y_label: StrictStr
+    groups: list[StrictStr] | None = None
+
+    @model_validator(mode="after")
+    def distinct_groups(self):
+        if self.groups is not None and (
+            not self.groups or len(set(self.groups)) != len(self.groups)
+        ):
+            raise ValueError("Panel groups must be nonempty and distinct")
+        return self
+
+
 class _Candidate(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     question: str
@@ -166,6 +192,7 @@ class _Candidate(_Record):
     figures: list[_Figure] = Field(default_factory=list)
     supporting_evidence: list[_Evidence] = Field(default_factory=list)
     figure_plan: _FigurePlan | None = None
+    evidence_panels: list[_EvidencePanel] = Field(default_factory=list)
     interpretation_limits: list[StrictStr] = Field(min_length=1)
     missing_questions: list[StrictStr] = Field(default_factory=list)
 
@@ -174,6 +201,8 @@ class _Candidate(_Record):
         result = handler(self)
         if not self.result_comparisons:
             result.pop("result_comparisons", None)
+        if not self.evidence_panels:
+            result.pop("evidence_panels", None)
         return result
 
 
@@ -266,6 +295,18 @@ Do not turn centroid membership into exact geometric overlap. If fractions are u
 continue supported whole-domain analysis and identify the necessary regional extraction.
 
 To compare calculated diagnostics, add result_comparisons, not manually copied intermediate
+values. For a supplied reference interval, reference_range maps value/reference/lower/upper
+or value/reference/half_width, all in the same declared unit, with reference_kind reported-range,
+figure-reading-envelope or declared-bound. It yields value, reference_value, reference_lower,
+reference_upper, difference and signed outside_distance (zero inside, negative below, positive
+above). Group by an exact observation identity: one record per group. Range membership does not
+approve a model; do not recast printed variation or figure reading as confidence intervals.
+For complementary plots use evidence_panels instead of figure_plan: each entry has kind profile
+or reference_range, calculation_id, title, x_label, y_label and optional exact groups list.
+Set presentation plot. These panels use the same declared calculations as prose and preserve
+source records. Choose only panels that help answer the question, not all available statistics.
+
+For two already-computed scalars use result_comparisons, not manually copied intermediate
 values. Each record has id, reference and comparison ({calculation_id, group, field}), domain,
 definition_source (sources/method.md:L1-L3), comparison_scope and status. Only supported
 comparisons run. Compare the same operator/field, domain, weighting and units; a located
@@ -496,27 +537,7 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
             raise ValueError(f"{calc.id}: missing or unexpected members in declared groups")
     table = calc.table_calculation()
     base = table.model_dump()
-    result = calculate_table(
-        source,
-        operation=calc.operation,
-        columns=calc.columns,
-        group_by=calc.group_by,
-        pair_by=table.pair_by,
-        reference=table.reference,
-        comparison=table.comparison,
-        units=calc.units,
-        weight_kind=calc.weight_kind,
-        quantity_kind=calc.quantity_kind,
-        temperature_reference=calc.temperature_reference,
-        region_fraction=calc.region_fraction,
-        region_complement=calc.region_complement,
-        row_filters=calc.row_filters,
-        unit_column=calc.unit_column,
-        time_window=calc.time_window,
-        temporal_value_kind=calc.temporal_value_kind,
-        threshold=calc.threshold,
-        crossing_direction=calc.crossing_direction,
-    )
+    result = calculate_declared_table(source, base)
     if any(group["status"] != "computed" for group in result["groups"]):
         raise ValueError(f"{calc.id}: selected calculation has missing numeric values")
     return {**base, **result}
@@ -639,6 +660,12 @@ def compile_analysis(
             f"{item.id}: {item.comparison_scope}; definition {item.definition_source}"
             for item in chosen.result_comparisons
         )
+    if chosen.evidence_panels:
+        if chosen.presentation != "plot" or chosen.figure_plan is not None:
+            raise ValueError("evidence_panels requires plot without a scalar figure_plan")
+        payload["evidence_panels"] = [
+            p.model_dump(exclude_none=True) for p in chosen.evidence_panels
+        ]
     with _stage(output_dir) as staged:
         for name in sources:
             destination = staged / name
@@ -684,6 +711,7 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "paired_change": ("difference",),
             "result_comparison": ("difference",),
             "temporal": ("start_value", "end_value", "change", "maximum", "time_mean"),
+            "reference_range": ("value", "reference_value", "difference", "outside_distance"),
         }[report["operation"]]
         for number, group in enumerate(report["groups"], 1):
             for field in fields:

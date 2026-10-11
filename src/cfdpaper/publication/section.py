@@ -80,6 +80,10 @@ class _ResultRef(_Record):
         "time_mean",
         "integral",
         "first_crossing_time",
+        "reference_value",
+        "reference_lower",
+        "reference_upper",
+        "outside_distance",
     ]
     source_record: int | None = Field(default=None, strict=True, ge=2)
     places: int = Field(default=3, strict=True, ge=0, le=12)
@@ -126,6 +130,7 @@ class _TableCalculation(_Record):
         "paired_change",
         "weighted_population",
         "temporal",
+        "reference_range",
     ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
@@ -153,6 +158,9 @@ class _TableCalculation(_Record):
     temporal_value_kind: Literal["instantaneous", "cumulative"] = "instantaneous"
     threshold: float | None = Field(default=None, allow_inf_nan=False)
     crossing_direction: Literal["at-or-above", "at-or-below"] = "at-or-above"
+    reference_kind: (
+        Literal["reported-range", "figure-reading-envelope", "declared-bound"] | None
+    ) = None
 
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
@@ -176,9 +184,14 @@ class _TableCalculation(_Record):
         if self.operation != "temporal":
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
                 result.pop(key, None)
-        if self.operation not in {"paired_change", "weighted_population", "temporal"} and not (
-            self.operation == "scalar_select" and self.quantity_kind != "ordinary"
-        ):
+        if self.operation != "reference_range":
+            result.pop("reference_kind", None)
+        if self.operation not in {
+            "paired_change",
+            "weighted_population",
+            "temporal",
+            "reference_range",
+        } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
             result.pop("quantity_kind", None)
         if self.operation != "weighted_population":
             result.pop("weight_kind", None)
@@ -191,6 +204,17 @@ class _TableCalculation(_Record):
             "weighted_population": {"value", "weight"},
             "temporal": {"time", "value"},
         }.get(self.operation, {"value"})
+        if self.operation == "reference_range":
+            if set(self.columns) not in (
+                {"value", "reference", "lower", "upper"},
+                {"value", "reference", "half_width"},
+            ):
+                raise ValueError("Reference range requires value/reference and declared bounds")
+            required = set(self.columns)
+            if self.reference_kind is None or len(set(self.units.values())) != 1:
+                raise ValueError("Reference range requires reference_kind and matching role units")
+        elif self.reference_kind is not None:
+            raise ValueError("reference_kind is only for reference_range")
         if set(self.columns) != required or set(self.units) != required:
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
@@ -235,7 +259,8 @@ class _TableCalculation(_Record):
             or self.temperature_reference is not None
             or (
                 self.quantity_kind != "ordinary"
-                and self.operation not in {"weighted_population", "scalar_select", "temporal"}
+                and self.operation
+                not in {"weighted_population", "scalar_select", "temporal", "reference_range"}
             )
         ):
             raise ValueError("Pair selectors and temperature_reference are only for paired_change")
@@ -479,34 +504,17 @@ def _copy_sources(data: _Input, source_dir: Path, output: Path):
 
 def _calculate_sources(data: _Input, output: Path, *, write=True):
     """Compute on copied source tables, before the host begins drafting."""
-    from cfdpaper.publication.table_evidence import calculate_result_comparison, calculate_table
+    from cfdpaper.publication.table_evidence import (
+        calculate_declared_table,
+        calculate_result_comparison,
+    )
 
     results = []
     for item in data.table_calculations:
         relative = Path(item.source)
         if relative.is_absolute() or ".." in relative.parts or relative.parts[:1] != ("sources",):
             raise ValueError("Calculation sources must use relative sources/ paths")
-        result = calculate_table(
-            output / item.source,
-            operation=item.operation,
-            columns=item.columns,
-            group_by=item.group_by,
-            pair_by=item.pair_by,
-            reference=item.reference,
-            comparison=item.comparison,
-            units=item.units,
-            quantity_kind=item.quantity_kind,
-            temperature_reference=item.temperature_reference,
-            weight_kind=item.weight_kind,
-            region_fraction=item.region_fraction,
-            region_complement=item.region_complement,
-            row_filters=item.row_filters,
-            unit_column=item.unit_column,
-            time_window=item.time_window,
-            temporal_value_kind=item.temporal_value_kind,
-            threshold=item.threshold,
-            crossing_direction=item.crossing_direction,
-        )
+        result = calculate_declared_table(output / item.source, item.model_dump())
         results.append({**item.model_dump(), **result})
     parents = list(results)
     for item in data.result_comparisons:

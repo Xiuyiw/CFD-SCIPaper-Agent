@@ -16,6 +16,44 @@ from cfdpaper.publication.temporal import (
     validate_temporal_options,
 )
 
+REFERENCE_RANGE_FIELDS = {
+    "value",
+    "reference_value",
+    "reference_lower",
+    "reference_upper",
+    "difference",
+    "outside_distance",
+}
+REFERENCE_KINDS = {"reported-range", "figure-reading-envelope", "declared-bound"}
+_TABLE_DECLARATION_KEYS = {
+    "operation",
+    "columns",
+    "group_by",
+    "pair_by",
+    "reference",
+    "comparison",
+    "units",
+    "quantity_kind",
+    "temperature_reference",
+    "weight_kind",
+    "region_fraction",
+    "region_complement",
+    "row_filters",
+    "unit_column",
+    "time_window",
+    "temporal_value_kind",
+    "threshold",
+    "crossing_direction",
+    "reference_kind",
+}
+
+
+def calculate_declared_table(path, declaration: dict) -> dict:
+    """Forward calculation options only, without adding report identity or metadata."""
+    return calculate_table(
+        path, **{key: value for key, value in declaration.items() if key in _TABLE_DECLARATION_KEYS}
+    )
+
 
 def display_unit(unit: str) -> str:
     """Typeset supported unit labels without converting their numerical scale."""
@@ -69,6 +107,7 @@ def calculate_table(
     temporal_value_kind="instantaneous",
     threshold: float | None = None,
     crossing_direction="at-or-above",
+    reference_kind: str | None = None,
 ):
     """Calculate over explicitly selected records, retaining original source locations.
 
@@ -77,8 +116,25 @@ def calculate_table(
     column checks the declared value unit; no unit conversion is performed.
     """
     scalar_ops = {"population", "scalar_select", "paired_change"}
+    range_roles = {"value", "reference", "lower", "upper"}
+    if operation == "reference_range":
+        if set(columns) not in (range_roles, {"value", "reference", "half_width"}):
+            raise ValueError("Reference range requires value,reference,lower,upper or half_width")
+        if not isinstance(reference_kind, str) or reference_kind not in REFERENCE_KINDS:
+            raise ValueError("Reference range requires a declared reference_kind")
+        if (
+            not isinstance(units, dict)
+            or set(units) != set(columns)
+            or any(not isinstance(unit, str) for unit in units.values())
+            or len(set(units.values())) != 1
+        ):
+            raise ValueError("Reference range requires identical declared units for every role")
+    elif reference_kind is not None:
+        raise ValueError("reference_kind requires operation reference_range")
     required = (
-        {"time", "value"}
+        set(columns)
+        if operation == "reference_range"
+        else {"time", "value"}
         if operation == "temporal"
         else {"value", "weight"}
         if operation == "weighted_population"
@@ -87,12 +143,13 @@ def calculate_table(
         else {"area", "rate"}
     )
     if (
-        operation not in scalar_ops | {"partition", "weighted_population", "temporal"}
+        operation
+        not in scalar_ops | {"partition", "weighted_population", "temporal", "reference_range"}
         or set(columns) != required
     ):
         raise ValueError(
             "Use scalar/value, weighted_population/value,weight, partition/area,rate "
-            "or temporal/time,value"
+            "or temporal/time,value or reference_range/value,reference,bounds"
         )
     if operation == "temporal":
         validate_temporal_options(
@@ -119,7 +176,7 @@ def calculate_table(
             raise ValueError("Paired change requires pair_by, reference and comparison")
         if reference == comparison:
             raise ValueError("Reference and comparison must differ")
-    if operation in {"paired_change", "weighted_population", "temporal"} or (
+    if operation in {"paired_change", "weighted_population", "temporal", "reference_range"} or (
         operation == "scalar_select" and quantity_kind != "ordinary"
     ):
         unit = (units or {}).get("value")
@@ -134,7 +191,7 @@ def calculate_table(
         if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
             raise ValueError("Absolute temperature requires Celsius or Kelvin units")
         if (
-            operation in {"weighted_population", "scalar_select", "temporal"}
+            operation in {"weighted_population", "scalar_select", "temporal", "reference_range"}
             and quantity_kind == "temperature-difference"
             and unit != "K"
         ):
@@ -221,9 +278,10 @@ def calculate_table(
                 if time_window is not None
                 else "full-saved-coverage",
             }
-        if operation == "scalar_select" and len(items) != 1:
+        if operation in {"scalar_select", "reference_range"} and len(items) != 1:
+            selection = "Scalar selection" if operation == "scalar_select" else "Reference range"
             raise ValueError(
-                f"Scalar selection requires exactly one record in group {name!r}; "
+                f"{selection} requires exactly one record in group {name!r}; "
                 f"found {len(items)} at {path}, source records {[n for n, _ in items]}"
             )
         if operation == "paired_change":
@@ -243,7 +301,12 @@ def calculate_table(
             w is None or not math.isfinite(w) or w <= 0 for w in values["weight"]
         ):
             raise ValueError(f"Group {name!r}: weights must be finite and strictly positive")
-        if any(v is None for sequence in values.values() for v in sequence):
+        if operation == "reference_range":
+            result = _reference_range_result(
+                **{key: sequence[0] for key, sequence in values.items()}
+            )
+            status = "missing-values" if result is None else "computed"
+        elif any(v is None for sequence in values.values() for v in sequence):
             result, status = None, "missing-values"
         elif operation == "temporal":
             result = temporal_summary(
@@ -296,7 +359,44 @@ def calculate_table(
                 **temporal_metadata,
             }
         )
-    return {"rows_read": len(rows), "groups": results}
+    return {
+        "rows_read": len(rows),
+        "groups": results,
+        **({"reference_kind": reference_kind} if operation == "reference_range" else {}),
+    }
+
+
+def _reference_range_result(value, reference, *, lower=None, upper=None, half_width=None):
+    """Compare one observation to declared bounds, without a statistical/model verdict."""
+    if half_width is not None:
+        if half_width < 0:
+            raise ValueError("Reference range half_width must be nonnegative")
+        if reference is not None:
+            lower, upper = reference - half_width, reference + half_width
+    if lower is not None and upper is not None and lower > upper:
+        raise ValueError("Reference range lower bound exceeds upper bound")
+    if reference is not None and (
+        (lower is not None and reference < lower) or (upper is not None and reference > upper)
+    ):
+        raise ValueError("Reference value must lie within its declared bounds")
+    if any(number is None for number in (value, reference, lower, upper)):
+        return None
+    relation = "below" if value < lower else "above" if value > upper else "inside"
+    result = {
+        "value": value,
+        "reference_value": reference,
+        "reference_lower": lower,
+        "reference_upper": upper,
+        "difference": value - reference,
+        "outside_distance": value - lower
+        if relation == "below"
+        else value - upper
+        if relation == "above"
+        else 0.0,
+    }
+    if any(not math.isfinite(number) for number in result.values()):
+        raise ValueError("Reference range calculation produced a nonfinite result")
+    return {**result, "reference_relation": relation}
 
 
 def _paired_result(baseline, compared, quantity_kind, temperature_reference):
@@ -643,6 +743,7 @@ def resolve_table_result(
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
         "result_comparison": {"difference", "relative_change", "relative_reduction"},
         "temporal": TEMPORAL_FIELDS,
+        "reference_range": REFERENCE_RANGE_FIELDS,
     }
     operation = report.get("operation")
     if not isinstance(field, str) or field not in fields.get(operation, set()):
@@ -744,7 +845,14 @@ def resolve_table_result(
     )
     if any(not isinstance(units.get(role), str) for role in required_units):
         raise ValueError(f"{location}: missing declared role units")
-    if operation == "temporal":
+    if operation == "reference_range":
+        unit = units["value"]
+        if field in {"difference", "outside_distance"} and report.get("quantity_kind") in {
+            "absolute-temperature",
+            "temperature-difference",
+        }:
+            unit = "K"
+    elif operation == "temporal":
         unit = temporal_unit(field, units["value"], report.get("quantity_kind", "ordinary"))
     elif field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:
         unit = ""
