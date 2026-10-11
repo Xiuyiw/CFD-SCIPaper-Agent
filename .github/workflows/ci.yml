@@ -316,7 +316,8 @@ jobs:
           from docx import Document
           p = Path(sys.argv[1])
           data = json.loads((p / 'manuscript/section.json').read_text(encoding='utf-8'))
-          assert len(data['paragraphs']) == 4
+          assert len([p for p in data['paragraphs'] if 'section_heading' in p]) == 4
+          assert len([p for p in data['paragraphs'] if 'text' in p]) == 4
           text = (p / 'manuscript/manuscript.md').read_text(encoding='utf-8')
           assert '25.0 K' in text and '15.0 K' in text and 'Figure evidence-panels' not in text
           document = Document(p / 'manuscript.docx')

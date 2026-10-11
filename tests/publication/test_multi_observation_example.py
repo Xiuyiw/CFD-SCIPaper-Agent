@@ -25,6 +25,8 @@ def test_connected_proposal_numbers_moved_reassembly_and_native_word(tmp_path):
         "reference_range",
     ]
     result = json.loads((output / "manuscript/section.json").read_text(encoding="utf-8"))
+    assert len([p for p in result["paragraphs"] if "section_heading" in p]) == 4
+    assert len([p for p in result["paragraphs"] if "text" in p]) == 4
     numbers = {
         (r["calculation_id"], r["group"], r["field"]): r["raw_value"]
         for r in result["resolved_values"].values()
