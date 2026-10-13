@@ -24,6 +24,7 @@ from cfdpaper.publication.section import (
     _Draft,
     _Figure,
     _fresh,
+    _JsonValueRef,
     _read,
     _stage,
     _write,
@@ -53,6 +54,11 @@ def _copy_section_input(source: Path, destination: Path):
     raw = _read(source)
     source_files = list(raw.get("source_files", []))
     source_files.extend(item["source"] for item in raw.get("table_calculations", []))
+    source_files.extend(
+        _JsonValueRef.model_validate(item["json_value_ref"]).source
+        for item in raw.get("evidence", [])
+        if item.get("json_value_ref") is not None
+    )
     source_files.extend(
         _check_comparison_definition(source.parent, item["definition_source"])
         for item in raw.get("result_comparisons", [])

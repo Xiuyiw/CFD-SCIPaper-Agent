@@ -88,7 +88,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.18.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.19.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -324,9 +324,45 @@ jobs:
           assert len(document.inline_shapes) == 1
           assert b'<m:oMath>' in document._element.xml.encode()
           '@ | & $smokePython - $output
+      - name: Replay paired observations and source parameters from installed wheel
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $smokePython = Join-Path $env:RUNNER_TEMP "cfdpaper-wheel-smoke\Scripts\python.exe"
+          $example = Join-Path $env:RUNNER_TEMP "paired-observations-example"
+          $output = Join-Path $env:RUNNER_TEMP "paired-observations-output"
+          Copy-Item (Join-Path $env:GITHUB_WORKSPACE "examples\paired-observations") $example -Recurse
+          Set-Location $env:RUNNER_TEMP
+          & $smokePython (Join-Path $example "run_example.py") $output
+          @'
+          import json
+          import shutil
+          import sys
+          from pathlib import Path
+          from docx import Document
+          from cfdpaper.publication.manuscript import assemble_manuscript
+          p = Path(sys.argv[1])
+          data = json.loads((p / 'manuscript/section.json').read_text(encoding='utf-8'))
+          assert len([r for r in data['paragraphs'] if 'section_heading' in r]) == 4
+          values = list(data['resolved_values'].values())
+          assert any(r['raw_value'] == -15 and r.get('field') == 'outside_distance' for r in values)
+          assert any(r['raw_value'] == 0.25 and r.get('json_pointer') == '/solver/max_step_s' for r in values)
+          doc = Document(p / 'manuscript.docx')
+          assert len(doc.tables) == 2 and len(doc.inline_shapes) == 1 and '<m:oMath>' in doc._element.xml
+          moved = p.parent / 'paired-relocated'
+          shutil.copytree(p / 'manuscript', moved)
+          source = moved / 'sections/methods/sources/config.json'
+          config = json.loads(source.read_text(encoding='utf-8'))
+          config['solver']['max_step_s'] = 0.5
+          source.write_text(json.dumps(config), encoding='utf-8')
+          fresh = assemble_manuscript(moved, moved / 'drafts.json', p.parent / 'paired-refreshed')
+          assert '0.50 s' in (fresh / 'manuscript.md').read_text(encoding='utf-8')
+          assert '0.25 s' in (p / 'manuscript/manuscript.md').read_text(encoding='utf-8')
+          '@ | & $smokePython - $output
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.18.0-distributions
+          name: cfd-paper-agent-0.19.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

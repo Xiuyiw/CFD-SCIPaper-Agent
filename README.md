@@ -17,14 +17,16 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.18.0 connects complementary observations to analysis, figures and scientific writing.
-Source-defined reference ranges provide signed deviations without turning range membership into
-model approval. Reusable temporal-profile and reference-range panels share calculation declarations
-with prose. Specialist guidance develops the joint argument across Methods, Results, Discussion
-and Conclusions. Saved-history analysis, scientific context and portable host tasks remain available.
+Version 0.19.0 connects numerical methods to their JSON source and compares paired model/reference
+observations without losing either original measurement. Exact parameter pointers refresh prose,
+native tables and cross-section bindings. Paired contrasts retain signed deviations and conservative
+endpoint envelopes; complementary numerical panels share their calculation with writing. Specialist
+guidance emphasizes effective model settings, discriminating observations and connected scientific
+arguments. Saved-history analysis, scientific context and portable host tasks remain available.
 Start with the
 [materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md) and
-[v0.18.0 notes](docs/releases/v0.18.0.md) and
+[v0.19.0 notes](docs/releases/v0.19.0.md) and
+[paired-observation tutorial](examples/paired-observations/README.md) and
 [multi-observation tutorial](examples/multi-observation/README.md) and
 [transient writing tutorial](docs/tutorials/transient-writing.md) and
 [scientific context guide](docs/scientific-context.md). The
@@ -49,6 +51,8 @@ covers whole-manuscript feedback and selected editing.
 | Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
 | Saved transient evidence | Available | Exact sampled windows, nonuniform trapezoidal integrals/means, saved extrema and threshold samples; cumulative increments without double integration. No interpolation or native-event reconstruction. |
 | Reference-range evidence | Available | Model/reference deviations and signed distances from supplied bounds, with original range meaning and units; no combined model-validation score. |
+| Paired observation contrasts | Available | Model and reference changes from two explicit members, conservative endpoint subtraction and original records; contrast agreement does not erase absolute bias. |
+| Source-bound method parameters | Available | Finite JSON numbers at exact pointers refresh prose, native tables/equations and cross-section links; active configurations and units are declared by the host. |
 | Complementary numerical panels | Available | Declared saved profiles and model/reference-range panels with exact source CSV, standalone local plotting script and editable exports; not a general field or mechanism renderer. |
 | Linked computed comparisons | Available | Compare two compatible calculated scalars while retaining both sources; update bound prose, tables and cross-section values. Chained comparisons and inferred comparability are not supported. |
 | Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
@@ -65,7 +69,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.18.0 checkout or its matching
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.19.0 checkout or its matching
 release wheel. From the checkout root, install with Word support:
 
 ```text
@@ -76,8 +80,8 @@ cfdpaper --help
 Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.18.0 notes](docs/releases/v0.18.0.md) for the current scope
-and the [v0.17.0 notes](docs/releases/v0.17.0.md) for the preceding baseline.
+remains available. See the [v0.19.0 notes](docs/releases/v0.19.0.md) for the current scope
+and the [v0.18.0 notes](docs/releases/v0.18.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.

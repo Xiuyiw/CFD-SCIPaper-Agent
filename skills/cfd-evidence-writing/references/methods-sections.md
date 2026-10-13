@@ -1,5 +1,31 @@
 # Evidence-grounded Methods sections
 
+Start from the calculation that produced the chosen result, not a file's title or every model
+defined in that file. Follow the actual caller and its configuration: an inactive class, an
+earlier default or another run's discretization is not the effective method. Retain the small
+set of supplied choices that changes how the main comparison is read. For a coupled model,
+these may include the solver family, actual mesh/state resolution, timestep controls and which
+reaction/transport branches were changed. A parameter table should complement that explanation,
+not replace it with a list of flags. Read those located choices before the first draft.
+
+For a source/transport perturbation, supply the minimum mathematical definition that makes the
+comparison reproducible: the relevant balance, changed source or transport term, and effective
+coefficients or a located model reference. An undefined inherited model label does not identify
+its reaction law. Separate a reaction-rate law from its heat coefficient; distinguish a local
+ejection gate from activation of chemistry. Read these definitions from the active source before
+compression, and place lengthy effective parameter sets in a supplementary table when appropriate.
+Do not invent calibration evidence that is absent from the supplied records.
+
+For a numeric parameter in an explicitly located JSON configuration, use metric evidence with
+`json_value_ref: {source: "sources/config.json", pointer: "/solver/max_step_s", unit: "s", places: 2}`,
+omitting manual value/unit and result_ref. Optional unit_pointer checks an actual source unit
+field. parameter-results.json shows the current resolved numbers. Use the ordinary value token
+in prose, native tables and equations; dependent sections borrow it with existing manuscript
+evidence_bindings. Assembly reads the copied source again, rather than trusting a hand-transcribed
+display value. The host must still establish that this field governs the stated case/stage:
+pointer selection is not active-setting discovery or model validation. Model-name strings remain
+located prose; never execute the source project or infer a missing numeric default.
+
 When scientific-context.md includes Recorded source parameters, read the located
 material, geometry and boundary values before compressing Methods. These literal
 JSON fields supplement the host's selected facts; match their case and stage in

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.19.0] — 2026-10-13
+
+### Added
+
+- Exact JSON parameter references, optional located unit checks and automatic source copying;
+  numeric prose, native tables/equations and cross-section links refresh from the same source.
+- Paired model/reference changes with both original members, signed deviations and conservative
+  endpoint envelopes. Temperature differences use K; bounds are not statistical confidence intervals.
+- Paired reference panels with matching source data and standalone editable plotting exports.
+- Effective-method and multi-observation scientific guidance, plus a connected public tutorial
+  with an absolute-state table and source-bound numerical settings.
+
+### Fixed
+
+- Manuscript seed preparation includes declared JSON parameter dependencies instead of silently
+  omitting sources that were not repeated in the manual source list.
+
+### Evaluation
+
+- A new controlled thermal-probe first-writing comparison found correct principal numbers and
+  mixed scientific strengths. Feedback/observation coupling improved; a distinct boundary-exchange
+  diagnostic was omitted, and model-definition, bibliography and layout work remains. Existing
+  skill guidance incorporates these lessons; no manual manuscript rewrite is counted as product gain.
+
 ## [0.18.0] — 2026-10-11
 
 ### Added
