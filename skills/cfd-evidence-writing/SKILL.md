@@ -102,6 +102,10 @@ source-range comparisons and propagation from Methods to Discussion and Conclusi
    and a `unit_column` on each applicable value calculation. See the long-table example in the
    same reference; no pivot or hand-copied metric values are needed.
 
+   For selected numeric method parameters in JSON records, use json_value_ref and the existing
+   value token, as described in [methods-sections.md](references/methods-sections.md). This keeps
+   source changes connected to prose/native tables, without claiming every file default is active.
+
    When every bound value in one paragraph has the same display unit, the draft paragraph may
    declare `shared_unit: "Pa"` and state that unit explicitly in its text, for example:
    `"Pressure drops (Pa) are {{value:base}} and {{value:modified}}."` The usual value tokens then

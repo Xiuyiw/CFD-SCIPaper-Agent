@@ -62,6 +62,13 @@ The reusable output includes source locations, editable vector/raster exports an
 `plot.py`; preserve local author edits and inspect the PNG at its final 160 mm width after
 the actual bounding-box checks. This finite route is not a general diagram engine.
 
+The same range panel accepts paired_reference_change. Its model/reference points are differences,
+not absolute values; temperature-change axes use K even when input temperatures use Celsius.
+The span is conservative subtraction of source endpoints, not a directly supplied measurement
+interval. When apparent contrast agreement may result from offset cancellation, show the original
+observations alongside the paired panel or retain their absolute deviations in a compact table.
+Do not hide that evidence behind an attractive zero-mismatch marker.
+
 ## Do not trigger
 
 Do not use to change QoI values, case order, units, claim strength, chart semantics, or infer a

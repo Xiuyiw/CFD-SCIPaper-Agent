@@ -518,7 +518,7 @@ def test_display_refresh_rejects_changed_authoring_material(
 def test_refresh_rejects_changed_raw_computation_with_identical_sources(
     review_return, mapping, tmp_path, monkeypatch
 ):
-    from cfdpaper.publication import manuscript, table_evidence
+    from cfdpaper.publication import table_evidence
 
     original = table_evidence.resolve_table_result
 
@@ -528,7 +528,6 @@ def test_refresh_rejects_changed_raw_computation_with_identical_sources(
         return result
 
     monkeypatch.setattr(table_evidence, "resolve_table_result", changed_result)
-    monkeypatch.setattr(manuscript, "resolve_table_result", changed_result)
     actions = tmp_path / "actions.json"
     write(actions, mapping)
     with pytest.raises(ValueError, match="unchanged authoring material"):

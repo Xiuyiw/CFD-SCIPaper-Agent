@@ -41,6 +41,7 @@ from cfdpaper.publication.section import (
     _fresh,
     _load_input,
     _read,
+    _resolve_metric,
     _stage,
     _write,
     assemble_section,
@@ -48,7 +49,7 @@ from cfdpaper.publication.section import (
     reference_source_suffix,
 )
 from cfdpaper.publication.spine import PaperSpine
-from cfdpaper.publication.table_evidence import display_unit, resolve_table_result
+from cfdpaper.publication.table_evidence import display_unit
 
 
 class _SectionInput(BaseModel):
@@ -131,15 +132,16 @@ def _inputs(path: Path):
             value = record.model_dump()
             value["id"] = eid
             value["source"] = f"manuscript:{target}"
-            if record.result_ref is not None:
+            if record.result_ref is not None or record.json_value_ref is not None:
                 if owner not in reports:
                     reports[owner] = _calculate_sources(
                         owner_data, owner_source.parent, write=False
                     )
-                resolved = resolve_table_result(reports[owner], **record.result_ref.model_dump())
+                resolved = _resolve_metric(record, owner_source.parent, reports[owner])
                 value.update(
                     value=resolved["value"], unit=display_unit(resolved["unit"]), result_ref=None
                 )
+                value.pop("json_value_ref", None)
                 resolutions.setdefault(sid, {})[eid] = {
                     **resolved,
                     "owner_section": owner,
@@ -556,10 +558,8 @@ def prepare_writing_context(
             reports = _calculate_sources(section, local, write=False)
             evidence = {record.id: record.model_dump() for record in section.evidence}
             for record in section.evidence:
-                if record.result_ref is not None:
-                    evidence[record.id]["resolved"] = resolve_table_result(
-                        reports, **record.result_ref.model_dump()
-                    )
+                if record.result_ref is not None or record.json_value_ref is not None:
+                    evidence[record.id]["resolved"] = _resolve_metric(record, local, reports)
                 elif record.id in resolutions.get(sid, {}):
                     evidence[record.id]["resolved"] = resolutions[sid][record.id]
             context["sections"][sid] = {
@@ -757,10 +757,8 @@ def _writing_state(data, loaded, library, raw_drafts, science_path=None):
         evidence = {e.id: e.model_dump() for e in section.evidence}
         reports = _calculate_sources(section, source.parent, write=False)
         for record in section.evidence:
-            if record.result_ref is not None:
-                evidence[record.id]["resolved"] = resolve_table_result(
-                    reports, **record.result_ref.model_dump()
-                )
+            if record.result_ref is not None or record.json_value_ref is not None:
+                evidence[record.id]["resolved"] = _resolve_metric(record, source.parent, reports)
         sources = {}
         for name in section.source_files:
             raw = _relative(source.parent, name).read_bytes()
@@ -821,6 +819,7 @@ def _snapshot_scalar(state, sid, eid):
             **{
                 key: result[key]
                 for key in ("raw_value", "unit", "calculation_id", "group", "field")
+                if key in result
             },
         }
     return None

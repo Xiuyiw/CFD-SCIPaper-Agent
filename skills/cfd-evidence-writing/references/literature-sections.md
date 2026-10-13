@@ -107,6 +107,10 @@ Keep unresolved source requests in evidence notes rather than turning them into 
 Keep source-access and support-status annotations out of the rendered bibliography;
 its entries contain bibliographic information, while the existing evidence notes retain
 the passage and assessment needed for scientific review.
+For a manuscript with supplied publication metadata, use the existing shared CSL JSON literature
+library and claim-specific uses, rather than a legacy evidence label that concatenates the finding
+with the reference. Inspect the rendered list: a supported mechanism can still have an incomplete
+title/author/DOI entry. Correct the structured record from the source; do not hand-patch the Word list.
 Protect author-edited citation fields; visible bibliography counts alone do not prove identity survival.
 If a source or scientific definition changes, re-read the affected claims and neighboring argument.
 Numeric replacement or reference renumbering does not automatically update their scientific meaning.

@@ -1,0 +1,4 @@
+{
+  "solver": {"max_step_s": 0.25, "cell_count": 95},
+  "units": {"max_step_s": "s", "cell_count": ""}
+}

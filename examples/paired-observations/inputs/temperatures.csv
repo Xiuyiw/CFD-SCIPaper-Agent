@@ -1,0 +1,5 @@
+case,side,observation,model_K,reference_K,lower_K,upper_K
+A,heated,A-heated,455,450,448,452
+A,rear,A-rear,330,325,322,328
+B,heated,B-heated,460,450,448,452
+B,rear,B-rear,355,325,322,328

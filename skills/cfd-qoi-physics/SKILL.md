@@ -133,6 +133,14 @@ check their domains, denominators and imposed conditions. If the distinction nee
 field or controlled comparison, keep the candidate explanation bounded and name that missing
 observation; do not add algebraically equivalent metrics to simulate independent support.
 
+For a matched pair of observables with model values and reference bounds, use
+paired_reference_change with the reference_range column roles and an explicit paired_selector.
+Each group contains exactly the declared reference/comparison members. It computes their model
+difference and reference difference, then a conservative endpoint envelope and signed mismatch.
+Absolute-temperature inputs yield differences in K, without percentage normalization. Check
+both absolute observations before treating an agreeing difference as restored physics; offsets
+can cancel. The source range's reported/reading/declared meaning remains unchanged, not a new CI.
+
 When a domain total changes, read available regional or layer contributions before assigning
 that change to the whole field: a reduced total can coexist with an increased contribution in
 one region. Link an output change to an available temperature-drop or transport-path decomposition

@@ -48,6 +48,21 @@ Printed variation and digitization envelopes must keep their source meaning. Do 
 into a 95% confidence interval or a universal tolerance. A pooled cross-case peak summary is not
 a separate measurement for every case. Do not average unlike observables into one accuracy score.
 
+Read an apparent match in a paired contrast alongside its two original observables. Similar
+temperature gradients can conceal common positive offsets; a model effect matching a reference
+effect does not establish the absolute states. The paired_reference_change operator subtracts
+the declared comparison/reference members on both model and reference sides. Its reference bounds
+use conservative endpoint subtraction, not independent-error propagation or a confidence interval.
+Keep the original records visible when they distinguish cancellation from restored physics. A
+different conclusion at the absolute and contrast levels is worth explaining, not hiding.
+
+For controlled term-deletion or parameter perturbations, compare against the matching numerical
+control and distinguish fixed-time observations from states relative to each case's own event.
+The latter may compare different elapsed times. Removing one heat term or changing transport
+can discriminate effects within that mathematical model; it does not identify a real material
+parameter or validate the full physical mechanism. Local rate contributions and a whole-device
+energy ledger answer different questions and cannot be substituted for each other.
+
 ## Make the figure and prose tell the same argument
 
 Show complementary evidence together only when it improves the reader's decision. The finite
@@ -55,6 +70,13 @@ evidence_panels route supports temporal profiles and supplied reference ranges; 
 groups and panel titles from the scientific question. Preserve original observations and units.
 Straight segments on sampled profiles do not establish an interpolated event. Keep different
 measurement domains explicit even when they can share a legend or variable name.
+
+Prefer an additional independent observable over another algebraic combination of panels already
+shown when it distinguishes the proposed mechanism. For example, a boundary temperature relation
+with a supplied resistance law can constrain exchange direction, while a maximum-minus-boundary
+contrast alone does not locate a hotspot or quantify heat flow. Do not discard a supported opposing
+diagnostic to keep every panel similar. Choose a saved time window that makes the decisive change
+readable; retain early-time context only where it changes the argument, without smoothing events.
 
 Methods defines the comparison and the essential numerical assumptions once. Results describes
 the visible pattern and a small set of decisive quantitative anchors. Discussion uses physical

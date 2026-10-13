@@ -63,6 +63,7 @@ class _Calculation(_Record):
         "paired_change",
         "temporal",
         "reference_range",
+        "paired_reference_change",
     ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
@@ -114,13 +115,14 @@ class _Calculation(_Record):
         if self.operation != "temporal":
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
                 result.pop(key, None)
-        if self.operation != "reference_range":
+        if self.operation not in {"reference_range", "paired_reference_change"}:
             result.pop("reference_kind", None)
         if self.operation not in {
             "paired_change",
             "weighted_population",
             "temporal",
             "reference_range",
+            "paired_reference_change",
         } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
             result.pop("quantity_kind", None)
         if self.paired_selector is None:
@@ -136,8 +138,10 @@ class _Calculation(_Record):
         }
         data = {name: getattr(self, name) for name in fields}
         if self.paired_selector is not None:
-            if self.operation != "paired_change":
-                raise ValueError("paired_selector is only for paired_change")
+            if self.operation not in {"paired_change", "paired_reference_change"}:
+                raise ValueError(
+                    "paired_selector is only for paired_change or paired_reference_change"
+                )
             data.update(self.paired_selector.model_dump())
         return _TableCalculation.model_validate(data)
 
@@ -301,6 +305,12 @@ figure-reading-envelope or declared-bound. It yields value, reference_value, ref
 reference_upper, difference and signed outside_distance (zero inside, negative below, positive
 above). Group by an exact observation identity: one record per group. Range membership does not
 approve a model; do not recast printed variation or figure reading as confidence intervals.
+For a matched two-observation contrast, paired_reference_change uses the same columns plus
+paired_selector {pair_by, reference, comparison}. Its value is the model comparison-reference;
+the reference center is subtracted likewise. Bounds follow conservative endpoint subtraction
+(comparison.lower-reference.upper, comparison.upper-reference.lower), not a confidence interval
+or assumed independent-error propagation. Absolute-temperature inputs produce differences in K.
+Retain the two source observations; matching contrasts can conceal opposing absolute biases.
 For complementary plots use evidence_panels instead of figure_plan: each entry has kind profile
 or reference_range, calculation_id, title, x_label, y_label and optional exact groups list.
 Set presentation plot. These panels use the same declared calculations as prose and preserve
@@ -712,6 +722,12 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "result_comparison": ("difference",),
             "temporal": ("start_value", "end_value", "change", "maximum", "time_mean"),
             "reference_range": ("value", "reference_value", "difference", "outside_distance"),
+            "paired_reference_change": (
+                "value",
+                "reference_value",
+                "difference",
+                "outside_distance",
+            ),
         }[report["operation"]]
         for number, group in enumerate(report["groups"], 1):
             for field in fields:

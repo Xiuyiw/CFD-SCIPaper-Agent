@@ -12,6 +12,7 @@ from cfdpaper.publication.table_evidence import (
     calculate_declared_table,
     display_unit,
     read_source_records,
+    resolve_table_result,
 )
 
 _FIELDS = (
@@ -36,6 +37,21 @@ _FIELDS = (
     "temporal_value_kind",
 )
 
+_PAIRED_FIELDS = (
+    "operation",
+    "range_kind",
+    "pair_by",
+    "reference_member",
+    "comparison_member",
+    "reference_source_locator",
+    "comparison_source_locator",
+    "reference_source_values",
+    "comparison_source_values",
+    "source_columns",
+    "source_units",
+    "source_parameters",
+)
+
 
 def _panel_rows(data, root, panels):
     declarations = {item["id"]: item for item in data["table_calculations"]}
@@ -47,11 +63,14 @@ def _panel_rows(data, root, panels):
             for key in ("kind", "calculation_id", "title", "x_label", "y_label")
         ):
             raise ValueError("Panel requires kind, calculation_id, title, x_label and y_label")
-        expected = {"profile": "temporal", "reference_range": "reference_range"}
+        expected = {
+            "profile": {"temporal"},
+            "reference_range": {"reference_range", "paired_reference_change"},
+        }
         if panel["kind"] not in expected:
             raise ValueError("Unsupported evidence panel kind")
         declaration = declarations.get(panel["calculation_id"])
-        if declaration is None or declaration["operation"] != expected[panel["kind"]]:
+        if declaration is None or declaration["operation"] not in expected[panel["kind"]]:
             raise ValueError("Panel calculation is missing or has an incompatible operation")
         relative = Path(declaration["source"])
         source = (root / relative).resolve()
@@ -110,11 +129,61 @@ def _panel_rows(data, root, panels):
                     )
             else:
                 result = group["result"]
+                bound_report = {**declaration, **report}
+                value_unit = resolve_table_result(
+                    [bound_report],
+                    calculation_id=declaration["id"],
+                    group=name,
+                    field="value",
+                )["unit"]
+                difference_unit = resolve_table_result(
+                    [bound_report],
+                    calculation_id=declaration["id"],
+                    group=name,
+                    field="difference",
+                )["unit"]
+                paired = {}
+                if declaration["operation"] == "paired_reference_change":
+                    paired = {
+                        "operation": declaration["operation"],
+                        "range_kind": report["reference_kind"],
+                        "pair_by": declaration["pair_by"],
+                        "source_columns": json.dumps(columns, sort_keys=True),
+                        "source_units": json.dumps(declaration["units"], sort_keys=True),
+                        "source_parameters": json.dumps(
+                            {
+                                key: declaration[key]
+                                for key in (
+                                    "group_by",
+                                    "pair_by",
+                                    "reference",
+                                    "comparison",
+                                    "row_filters",
+                                    "unit_column",
+                                    "quantity_kind",
+                                    "temperature_reference",
+                                )
+                                if key in declaration
+                            },
+                            sort_keys=True,
+                        ),
+                    }
+                    for role, member in group["members"].items():
+                        member_location = member[
+                            "array_index" if location_key == "array_indices" else "csv_record"
+                        ]
+                        paired[f"{role}_member"] = member["member"]
+                        paired[f"{role}_source_locator"] = f"{location_key}:{member_location}"
+                        paired[f"{role}_source_values"] = json.dumps(
+                            member["values"], sort_keys=True
+                        )
                 # Missing bounds stay absent: a model/center can still be shown, never a fake span.
                 rows.append(
                     {
                         **common,
-                        "source_locator": f"{location_key}:{locations[0]}",
+                        "source_locator": f"{location_key}:"
+                        + ",".join(str(location) for location in locations),
+                        "value_unit": value_unit,
                         **{
                             key: result[key]
                             for key in (
@@ -126,10 +195,9 @@ def _panel_rows(data, root, panels):
                                 "outside_distance",
                             )
                         },
-                        "difference_unit": "K"
-                        if declaration.get("quantity_kind") == "absolute-temperature"
-                        else common["value_unit"],
+                        "difference_unit": difference_unit,
                         "reference_kind": report["reference_kind"],
+                        **paired,
                     }
                 )
     return rows
@@ -185,6 +253,7 @@ def _draw_panels(rows, panels, output, style):
                             linewidth=1.0,
                         )
                 else:
+                    paired_change = selected[0].get("operation") == "paired_reference_change"
                     for n, row in enumerate(selected):
                         low, high = row.get("reference_lower"), row.get("reference_upper")
                         if low not in (None, "") and high not in (None, ""):
@@ -194,7 +263,11 @@ def _draw_panels(rows, panels, output, style):
                                 color="#8B9BA7",
                                 linewidth=3,
                                 solid_capstyle="butt",
-                                label="Supplied range" if n == 0 else None,
+                                label=(
+                                    "Reference-change range" if paired_change else "Supplied range"
+                                )
+                                if n == 0
+                                else None,
                             )
                         ax.scatter(
                             float(row["reference_value"]),
@@ -202,7 +275,9 @@ def _draw_panels(rows, panels, output, style):
                             marker="|",
                             s=65,
                             color="#52616C",
-                            label="Reference center" if n == 0 else None,
+                            label=("Reference change" if paired_change else "Reference center")
+                            if n == 0
+                            else None,
                         )
                         ax.scatter(
                             float(row["value"]),
@@ -212,7 +287,9 @@ def _draw_panels(rows, panels, output, style):
                             facecolor="white",
                             edgecolor=colors[0],
                             linewidth=1,
-                            label="Model" if n == 0 else None,
+                            label=("Model change" if paired_change else "Model")
+                            if n == 0
+                            else None,
                             zorder=3,
                         )
                         ax.text(
@@ -319,11 +396,17 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
     style = style or PlotStyle(
         width_mm=160, height_mm=65 * len(panels), font_family="Times New Roman"
     )
-    # Units are appended from the declaration, never guessed from the host's axis wording.
+    # Units come from the bound calculation, never from the host's axis wording.
     prepared = []
     for index, panel in enumerate(panels, 1):
         row = next(r for r in rows if r["panel"] == index)
         labels = dict(panel)
+        if row.get("operation") == "paired_reference_change":
+            input_unit = json.loads(row["source_units"])["value"]
+            for source_unit in {input_unit, display_unit(input_unit)}:
+                suffix = f" ({source_unit})"
+                if labels["x_label"].endswith(suffix):
+                    labels["x_label"] = labels["x_label"][: -len(suffix)]
         for key, unit in (
             ("x_label", row["time_unit"] if panel["kind"] == "profile" else row["value_unit"]),
             ("y_label", row["value_unit"] if panel["kind"] == "profile" else ""),
@@ -335,7 +418,8 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
     output_dir.mkdir(parents=True, exist_ok=True)
     source_data = output_dir / "evidence-panels-source-data.csv"
     with source_data.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=_FIELDS)
+        fields = _FIELDS + _PAIRED_FIELDS if any("operation" in row for row in rows) else _FIELDS
+        writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
     script.write_text(
@@ -361,8 +445,16 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
             "Profiles connect saved samples within the declared exact window, without smoothing. "
         )
     if range_kinds:
+        paired_change = any(r.get("operation") == "paired_reference_change" for r in rows)
+        if paired_change:
+            caption += (
+                "Paired-change intervals use conservative endpoint subtraction of the two "
+                "supplied envelopes; Δ denotes model change minus reference change. "
+            )
         caption += (
-            "Intervals are supplied " + ", ".join(range_kinds) + ", not confidence intervals."
+            ("Source envelopes are supplied " if paired_change else "Intervals are supplied ")
+            + ", ".join(range_kinds)
+            + ", not confidence intervals."
         )
     ids = {p["calculation_id"] for p in panels}
     figure = {

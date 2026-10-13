@@ -90,6 +90,15 @@ class _ResultRef(_Record):
     percentage: bool = Field(default=False, strict=True)
 
 
+class _JsonValueRef(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: StrictStr = Field(min_length=1)
+    pointer: StrictStr
+    unit: StrictStr
+    places: int = Field(default=3, strict=True, ge=0, le=12)
+    unit_pointer: StrictStr | None = None
+
+
 class _Evidence(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     text: str = Field(min_length=1)
@@ -98,9 +107,27 @@ class _Evidence(_Record):
     value: StrictStr | None = None
     unit: StrictStr = ""
     result_ref: _ResultRef | None = None
+    json_value_ref: _JsonValueRef | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_evidence(self, handler):
+        result = handler(self)
+        if self.json_value_ref is None:
+            result.pop("json_value_ref", None)
+        return result
 
     @model_validator(mode="after")
     def finite_metric(self):
+        if self.json_value_ref is not None:
+            if (
+                self.value is not None
+                or self.unit
+                or self.kind != "metric"
+                or self.result_ref is not None
+            ):
+                raise ValueError(
+                    "json_value_ref needs metric evidence without manual value/unit or result_ref"
+                )
         if self.result_ref is not None:
             if self.value is not None or self.unit or self.kind != "metric":
                 raise ValueError("result_ref requires metric evidence without manual value or unit")
@@ -131,6 +158,7 @@ class _TableCalculation(_Record):
         "weighted_population",
         "temporal",
         "reference_range",
+        "paired_reference_change",
     ]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
@@ -173,7 +201,7 @@ class _TableCalculation(_Record):
             result.pop("region_fraction", None)
             result.pop("region_complement", None)
         # New paired options must not make an unchanged historical input look stale.
-        if self.operation != "paired_change":
+        if self.operation not in {"paired_change", "paired_reference_change"}:
             for key in (
                 "pair_by",
                 "reference",
@@ -184,13 +212,14 @@ class _TableCalculation(_Record):
         if self.operation != "temporal":
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
                 result.pop(key, None)
-        if self.operation != "reference_range":
+        if self.operation not in {"reference_range", "paired_reference_change"}:
             result.pop("reference_kind", None)
         if self.operation not in {
             "paired_change",
             "weighted_population",
             "temporal",
             "reference_range",
+            "paired_reference_change",
         } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
             result.pop("quantity_kind", None)
         if self.operation != "weighted_population":
@@ -204,7 +233,7 @@ class _TableCalculation(_Record):
             "weighted_population": {"value", "weight"},
             "temporal": {"time", "value"},
         }.get(self.operation, {"value"})
-        if self.operation == "reference_range":
+        if self.operation in {"reference_range", "paired_reference_change"}:
             if set(self.columns) not in (
                 {"value", "reference", "lower", "upper"},
                 {"value", "reference", "half_width"},
@@ -214,7 +243,7 @@ class _TableCalculation(_Record):
             if self.reference_kind is None or len(set(self.units.values())) != 1:
                 raise ValueError("Reference range requires reference_kind and matching role units")
         elif self.reference_kind is not None:
-            raise ValueError("reference_kind is only for reference_range")
+            raise ValueError("reference_kind is only for reference range operations")
         if set(self.columns) != required or set(self.units) != required:
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
@@ -251,7 +280,7 @@ class _TableCalculation(_Record):
                 raise ValueError("Weighted population requires area or volume weight_kind")
         elif self.weight_kind is not None:
             raise ValueError("weight_kind is only for weighted_population")
-        if self.operation == "paired_change":
+        if self.operation in {"paired_change", "paired_reference_change"}:
             if not all(paired) or self.reference == self.comparison:
                 raise ValueError("Paired change requires distinct reference/comparison and pair_by")
         elif (
@@ -420,6 +449,11 @@ def _load_input(
     for calculation in data.table_calculations:
         if calculation.source not in data.source_files:
             data.source_files.append(calculation.source)
+    for record in data.evidence:
+        if record.json_value_ref is not None:
+            name = record.json_value_ref.source
+            if name not in data.source_files:
+                data.source_files.append(name)
     for comparison in data.result_comparisons:
         comparison.engine_arguments()
         name = _check_comparison_definition(path.parent, comparison.definition_source)
@@ -521,7 +555,25 @@ def _calculate_sources(data: _Input, output: Path, *, write=True):
         results.append(calculate_result_comparison(parents, **item.engine_arguments()))
     if results and write:
         _write(output / "table-results.json", results)
+    parameters = {}
+    for record in data.evidence:
+        if record.json_value_ref is not None:
+            parameters[record.id] = _resolve_metric(record, output, results)
+    if parameters and write:
+        _write(output / "parameter-results.json", parameters)
     return results
+
+
+def _resolve_metric(record: _Evidence, root: Path, reports: list) -> dict | None:
+    if record.json_value_ref is not None:
+        from cfdpaper.publication.parameter_evidence import resolve_json_value
+
+        return resolve_json_value(root, **record.json_value_ref.model_dump())
+    if record.result_ref is not None:
+        from cfdpaper.publication.table_evidence import resolve_table_result
+
+        return resolve_table_result(reports, **record.result_ref.model_dump())
+    return None
 
 
 TASK = """# Write a figure-grounded subsection with the host AI
@@ -573,6 +625,8 @@ cell-volume weighting. Keep all compared quantities on a consistent control-volu
 Token syntax inside paragraph text and captions:
 - {{value:evidence_id}} inserts the supplied value, or resolves result_ref from the current
   source table with its declared precision and computed unit. Do not duplicate it as a manual value.
+  json_value_ref reads a declared numeric JSON pointer from a copied sources/ configuration;
+  parameter-results.json supplies its current value. Read the effective case/stage before using it.
 - {{math:local_id}} inserts a paragraph's declared inline_math expression as editable Word math.
   Use explicit sub/sup/fraction nodes for scientific notation, not underscore strings in prose.
 - Optional tables/equations use the finite structures in the packaged writing reference.
@@ -682,14 +736,13 @@ def assemble_section(
             _references([identifier], declared_evidence)
             record = evidence[identifier]
             if kind == "value":
-                if record.result_ref is not None:
+                if record.result_ref is not None or record.json_value_ref is not None:
                     from cfdpaper.publication.table_evidence import (
                         display_unit,
-                        resolve_table_result,
                     )
 
                     try:
-                        resolved = resolve_table_result(reports, **record.result_ref.model_dump())
+                        resolved = _resolve_metric(record, package_dir, reports)
                     except ValueError as exc:
                         raise ValueError(f"Evidence {identifier}: {exc}") from exc
                     resolved_values[identifier] = resolved
