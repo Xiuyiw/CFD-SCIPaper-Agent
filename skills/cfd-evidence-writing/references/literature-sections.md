@@ -111,6 +111,10 @@ For a manuscript with supplied publication metadata, use the existing shared CSL
 library and claim-specific uses, rather than a legacy evidence label that concatenates the finding
 with the reference. Inspect the rendered list: a supported mechanism can still have an incomplete
 title/author/DOI entry. Correct the structured record from the source; do not hand-patch the Word list.
+For a small section without a shared library, a literature evidence item may carry
+`citation_record`, a supplied CSL JSON metadata record. Its `text` remains the supported finding;
+the bibliography displays the metadata instead. Keep source identity and excerpt roles intact.
+This does not retrieve missing authors/titles or establish that the cited sentence is supported.
 Protect author-edited citation fields; visible bibliography counts alone do not prove identity survival.
 If a source or scientific definition changes, re-read the affected claims and neighboring argument.
 Numeric replacement or reference renumbering does not automatically update their scientific meaning.

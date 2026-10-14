@@ -52,6 +52,13 @@ _PAIRED_FIELDS = (
     "source_parameters",
 )
 
+_DIFFERENCE_FIELDS = (
+    "reference_original",
+    "comparison_original",
+    "difference_direction",
+    "crossing_time_kind",
+)
+
 
 def _panel_rows(data, root, panels):
     declarations = {item["id"]: item for item in data["table_calculations"]}
@@ -64,7 +71,7 @@ def _panel_rows(data, root, panels):
         ):
             raise ValueError("Panel requires kind, calculation_id, title, x_label and y_label")
         expected = {
-            "profile": {"temporal"},
+            "profile": {"temporal", "temporal_difference"},
             "reference_range": {"reference_range", "paired_reference_change"},
         }
         if panel["kind"] not in expected:
@@ -96,7 +103,7 @@ def _panel_rows(data, root, panels):
         columns = declaration["columns"]
         raw = (
             read_source_records(source, list(columns.values()))
-            if panel["kind"] == "profile"
+            if panel["kind"] == "profile" and declaration["operation"] == "temporal"
             else []
         )
         for name in selected:
@@ -111,9 +118,33 @@ def _panel_rows(data, root, panels):
                 "calculation_id": declaration["id"],
                 "group": name,
                 "source": declaration["source"],
-                "value_unit": declaration["units"]["value"],
+                "value_unit": group["difference_unit"]
+                if declaration["operation"] == "temporal_difference"
+                else declaration["units"]["value"],
             }
             if panel["kind"] == "profile":
+                if declaration["operation"] == "temporal_difference":
+                    for sample in group["samples"]:
+                        location = sample.get("array_index", sample.get("csv_record"))
+                        rows.append(
+                            {
+                                **common,
+                                "source_locator": f"{location_key}:{location}",
+                                "time": sample["time"],
+                                "time_unit": "s",
+                                "value": sample["value"],
+                                "time_window": json.dumps(group["time_window"]),
+                                "temporal_value_kind": group["temporal_value_kind"],
+                                "operation": declaration["operation"],
+                                "reference_original": sample["reference"],
+                                "comparison_original": sample["comparison"],
+                                "difference_direction": group["difference_direction"],
+                                "crossing_time_kind": group["crossing_time_kind"],
+                                "source_columns": json.dumps(columns, sort_keys=True),
+                                "source_units": json.dumps(declaration["units"], sort_keys=True),
+                            }
+                        )
+                    continue
                 for location in locations:
                     record = raw[location if location_key == "array_indices" else location - 2]
                     rows.append(
@@ -407,6 +438,12 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
                 suffix = f" ({source_unit})"
                 if labels["x_label"].endswith(suffix):
                     labels["x_label"] = labels["x_label"][: -len(suffix)]
+        if row.get("operation") == "temporal_difference":
+            input_unit = json.loads(row["source_units"])["reference"]
+            for source_unit in {input_unit, display_unit(input_unit)}:
+                suffix = f" ({source_unit})"
+                if labels["y_label"].endswith(suffix):
+                    labels["y_label"] = labels["y_label"][: -len(suffix)]
         for key, unit in (
             ("x_label", row["time_unit"] if panel["kind"] == "profile" else row["value_unit"]),
             ("y_label", row["value_unit"] if panel["kind"] == "profile" else ""),
@@ -419,6 +456,8 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
     source_data = output_dir / "evidence-panels-source-data.csv"
     with source_data.open("w", encoding="utf-8", newline="") as stream:
         fields = _FIELDS + _PAIRED_FIELDS if any("operation" in row for row in rows) else _FIELDS
+        if any(row.get("operation") == "temporal_difference" for row in rows):
+            fields += _DIFFERENCE_FIELDS
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
@@ -443,6 +482,11 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
     if any(p["kind"] == "profile" for p in panels):
         caption += (
             "Profiles connect saved samples within the declared exact window, without smoothing. "
+        )
+    if any(row.get("operation") == "temporal_difference" for row in rows):
+        caption += (
+            "Differences are comparison minus reference at each saved record; "
+            "the source table retains both original readings. "
         )
     if range_kinds:
         paired_change = any(r.get("operation") == "paired_reference_change" for r in rows)

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.20.0] — 2026-10-15
+
+### Added
+
+- Static Python definition indexes and exact qualified-name reads through materials/inspect,
+  preserving original locations, ambiguity and truncation without executing source projects.
+- Same-record temporal differences with original member readings, K temperature contrasts,
+  shared saved-window statistics and declaration-bound profile plots.
+- Optional inline CSL records for bibliography display separate from supporting evidence prose.
+- Explicit section-end figure placement with unchanged default layout and dimensions.
+- Effective-methods tutorial and Chinese engineering trial guide.
+
+### Evaluation
+
+- Same-input installed v0.19/v0.20 first manuscripts had correct principal values and usable
+  actual Word pages. The independent review was mixed: the new boundary-direction diagnostic
+  was useful, but matched-time mechanism support, self-contained method definitions and exact
+  source locations still needed host revision. Raw first drafts remain preserved; feedback
+  editing is not evidence of autonomous scientific improvement.
+
 ## [0.19.0] — 2026-10-13
 
 ### Added

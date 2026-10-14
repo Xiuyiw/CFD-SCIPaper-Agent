@@ -78,6 +78,14 @@ contrast alone does not locate a hotspot or quantify heat flow. Do not discard a
 diagnostic to keep every panel similar. Choose a saved time window that makes the decisive change
 readable; retain early-time context only where it changes the argument, without smoothing events.
 
+For two observations stored in each history record, `temporal_difference` declares roles
+`time`, `reference`, `comparison` and matching role units. It computes comparison minus reference
+on the same saved row, with both original values and locations preserved, and reuses temporal
+window/statistics/threshold definitions. Temperature differences are K. Use this difference only
+for the inference its physical definition supports: a known positive resistance and two boundary
+temperatures may constrain exchange direction, but the difference is not itself a heat budget.
+Native event times still come from their own recorded operator, not a sampled difference crossing.
+
 Methods defines the comparison and the essential numerical assumptions once. Results describes
 the visible pattern and a small set of decisive quantitative anchors. Discussion uses physical
 reasoning and relevant literature to explain what the joint observations support or contradict.

@@ -47,6 +47,14 @@ class _Figure(_Record):
     caption: str = Field(min_length=1)
     description: str = Field(min_length=1)
     sizing: FigureSizing = Field(default_factory=FigureSizing)
+    placement: Literal["default", "section-end"] = "default"
+
+    @model_serializer(mode="wrap")
+    def serialize_figure(self, handler):
+        result = handler(self)
+        if self.placement == "default":
+            result.pop("placement", None)
+        return result
 
 
 class _ResultRef(_Record):
@@ -108,16 +116,30 @@ class _Evidence(_Record):
     unit: StrictStr = ""
     result_ref: _ResultRef | None = None
     json_value_ref: _JsonValueRef | None = None
+    citation_record: dict | None = None
+
+    @field_validator("citation_record")
+    @classmethod
+    def citation_metadata(cls, value):
+        if value is not None:
+            from cfdpaper.publication.literature import validate_citation_record
+
+            return validate_citation_record(value)
+        return value
 
     @model_serializer(mode="wrap")
     def serialize_evidence(self, handler):
         result = handler(self)
         if self.json_value_ref is None:
             result.pop("json_value_ref", None)
+        if self.citation_record is None:
+            result.pop("citation_record", None)
         return result
 
     @model_validator(mode="after")
     def finite_metric(self):
+        if self.citation_record is not None and self.kind != "literature":
+            raise ValueError("citation_record is only for literature evidence")
         if self.json_value_ref is not None:
             if (
                 self.value is not None
@@ -157,6 +179,7 @@ class _TableCalculation(_Record):
         "paired_change",
         "weighted_population",
         "temporal",
+        "temporal_difference",
         "reference_range",
         "paired_reference_change",
     ]
@@ -209,7 +232,7 @@ class _TableCalculation(_Record):
                 "temperature_reference",
             ):
                 result.pop(key, None)
-        if self.operation != "temporal":
+        if self.operation not in {"temporal", "temporal_difference"}:
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
                 result.pop(key, None)
         if self.operation not in {"reference_range", "paired_reference_change"}:
@@ -218,6 +241,7 @@ class _TableCalculation(_Record):
             "paired_change",
             "weighted_population",
             "temporal",
+            "temporal_difference",
             "reference_range",
             "paired_reference_change",
         } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
@@ -232,6 +256,7 @@ class _TableCalculation(_Record):
             "partition": {"area", "rate"},
             "weighted_population": {"value", "weight"},
             "temporal": {"time", "value"},
+            "temporal_difference": {"time", "reference", "comparison"},
         }.get(self.operation, {"value"})
         if self.operation in {"reference_range", "paired_reference_change"}:
             if set(self.columns) not in (
@@ -248,11 +273,21 @@ class _TableCalculation(_Record):
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
-        if self.operation == "temporal":
+        if self.operation in {"temporal", "temporal_difference"}:
             if self.units["time"] != "s":
                 raise ValueError("Temporal calculations require time in seconds")
             if self.time_window is not None and self.time_window[0] >= self.time_window[1]:
                 raise ValueError("Time window requires increasing sampled endpoints")
+            if self.operation == "temporal_difference":
+                from cfdpaper.publication.temporal import validate_temporal_difference_options
+
+                validate_temporal_difference_options(
+                    self.units,
+                    self.time_window,
+                    self.temporal_value_kind,
+                    self.threshold,
+                    self.crossing_direction,
+                )
         elif (
             self.time_window is not None
             or self.temporal_value_kind != "instantaneous"
@@ -289,7 +324,13 @@ class _TableCalculation(_Record):
             or (
                 self.quantity_kind != "ordinary"
                 and self.operation
-                not in {"weighted_population", "scalar_select", "temporal", "reference_range"}
+                not in {
+                    "weighted_population",
+                    "scalar_select",
+                    "temporal",
+                    "temporal_difference",
+                    "reference_range",
+                }
             )
         ):
             raise ValueError("Pair selectors and temperature_reference are only for paired_change")
@@ -854,6 +895,11 @@ def assemble_section(
         resolve_node(content["expression"])
         equations.append(content)
     references = [{"number": n, **evidence[key].model_dump()} for n, key in enumerate(citations, 1)]
+    for record in references:
+        if record.get("citation_record") is not None:
+            from cfdpaper.publication.literature import _reference_label
+
+            record["text"] = _reference_label(record["citation_record"])
     with _stage(output_dir) as staged:
         _copy_figures(data, package_dir, staged)
         _copy_sources(data, package_dir, staged)
@@ -935,7 +981,11 @@ def reference_source_suffix(record):
     """Omit only a duplicate display source; retain the record's citation identity."""
     source = record["source"].strip()
     text = record["text"].strip().casefold()
-    if "formatted_runs" in record or source.casefold() == text:
+    if (
+        "formatted_runs" in record
+        or record.get("citation_record") is not None
+        or source.casefold() == text
+    ):
         return ""
     doi_pattern = r"(?:doi\s*:\s*|https?://(?:dx\.)?doi\.org/)?(10\.\d{4,9}/[^\s<>\"“”]+)"
 
@@ -1045,7 +1095,10 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
             f"Figure {figure['id']}. {display_scientific_text(figure['caption'])}", style="Caption"
         )
         apply_figure_pagination(
-            image_paragraph, caption_paragraph, config, page_break_before=layout == "after-text"
+            image_paragraph,
+            caption_paragraph,
+            config,
+            page_break_before=layout == "after-text" and figure.get("placement") != "section-end",
         )
 
     from cfdpaper.publication.elements import (
@@ -1079,8 +1132,26 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
                 p.paragraph_format.first_line_indent = Pt(0)
                 p.paragraph_format.space_before = p.paragraph_format.space_after = Pt(0)
 
+    def add_section_figures(section_id):
+        ownership = data.get("section_objects", {})
+        ids = (
+            ownership.get(section_id, {}).get("figure_ids", [])
+            if ownership
+            else [figure["id"] for figure in data["figures"]]
+        )
+        for figure in data["figures"]:
+            if (
+                figure.get("placement") == "section-end"
+                and figure["id"] in ids
+                and figure["id"] not in placed
+            ):
+                add_figure(figure)
+                placed.add(figure["id"])
+
     for paragraph in data["paragraphs"]:
         if "section_heading" in paragraph:
+            if current_section is not None:
+                add_section_figures(current_section)
             if layout == "near-reference" and current_section is not None:
                 add_section_objects(current_section)
             add_keywords(current_section)
@@ -1116,9 +1187,14 @@ def export_section_docx(section_dir: Path, output_path: Path, *, layout="after-t
         p.paragraph_format.widow_control = True
         if layout == "near-reference":
             for figure in data["figures"]:
-                if figure["id"] in paragraph["figure_ids"] and figure["id"] not in placed:
+                if (
+                    figure["id"] in paragraph["figure_ids"]
+                    and figure["id"] not in placed
+                    and figure.get("placement") != "section-end"
+                ):
                     add_figure(figure)
                     placed.add(figure["id"])
+    add_section_figures(current_section)
     add_keywords(current_section)
     if layout == "near-reference" and current_section is not None:
         add_section_objects(current_section)

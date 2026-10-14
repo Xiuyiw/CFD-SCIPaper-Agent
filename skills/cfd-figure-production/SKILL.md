@@ -62,6 +62,11 @@ The reusable output includes source locations, editable vector/raster exports an
 `plot.py`; preserve local author edits and inspect the PNG at its final 160 mm width after
 the actual bounding-box checks. This finite route is not a general diagram engine.
 
+A profile also accepts `temporal_difference` on two columns of the same saved record. Its plotted
+value and prose statistics share the declaration; the source CSV includes both original readings,
+units and record locations. State comparison-minus-reference and retain a relevant original-state
+observation when it affects the interpretation. Derived curves alone do not identify a mechanism.
+
 The same range panel accepts paired_reference_change. Its model/reference points are differences,
 not absolute values; temperature-change axes use K even when input temperatures use Celsius.
 The span is conservative subtraction of source endpoints, not a directly supplied measurement

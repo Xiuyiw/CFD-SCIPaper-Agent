@@ -245,6 +245,10 @@ Verify the actual paragraph properties and the rendered pages, including indenta
 spacing, readable figure size, caption proximity and page breaks. No clipping alone is not a format
 pass. If the exporter cannot implement a required property, report the specific implementation gap;
 do not mark formatting complete or quietly substitute manual repair for an Agent capability.
+For a large figure that cannot fit beside its first reference, its input may explicitly set
+`placement: "section-end"`; Word then places it after that section's prose, before the next heading.
+This preserves figure dimensions/fonts and may use page space more effectively; it does not promise
+automatic compact pagination. Omit the field to retain the chosen document layout's default.
 When the user requests rule/skill improvements, update those instructions and record implementation
 follow-up without editing their example document or redrawing its figures.
 

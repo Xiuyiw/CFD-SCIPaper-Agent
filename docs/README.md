@@ -2,6 +2,13 @@
 
 ## Start here
 
+- [v0.20.0 release notes](releases/v0.20.0.md): effective method reads, same-record history
+  contrasts and explicit bibliography/figure placement.
+- [工程试用指南](tutorials/engineering-trial.md): Chinese practical instructions for local
+  AI-assisted analysis and writing from mature results.
+- [Effective methods tutorial](../examples/effective-methods/README.md): recorded synthetic
+  replay of source definitions, two saved profiles and a portable four-section Word document.
+
 - [Scientific context](scientific-context.md): carry located case, solution-stage and
   report definitions into manuscript writing, review and continued editing.
 - [v0.16.0 release notes](releases/v0.16.0.md): scientific-context transport, literal

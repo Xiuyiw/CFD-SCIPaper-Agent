@@ -11,8 +11,10 @@ from cfdpaper.publication.temporal import (
     TEMPORAL_FIELDS,
     TIME_FIELDS,
     select_temporal_window,
+    temporal_differences,
     temporal_summary,
     temporal_unit,
+    validate_temporal_difference_options,
     validate_temporal_options,
 )
 
@@ -118,6 +120,7 @@ def calculate_table(
     scalar_ops = {"population", "scalar_select", "paired_change"}
     range_ops = {"reference_range", "paired_reference_change"}
     paired_ops = {"paired_change", "paired_reference_change"}
+    temporal_ops = {"temporal", "temporal_difference"}
     range_roles = {"value", "reference", "lower", "upper"}
     if operation in range_ops:
         if set(columns) not in (range_roles, {"value", "reference", "half_width"}):
@@ -138,6 +141,8 @@ def calculate_table(
     required = (
         set(columns)
         if operation in range_ops
+        else {"time", "reference", "comparison"}
+        if operation == "temporal_difference"
         else {"time", "value"}
         if operation == "temporal"
         else {"value", "weight"}
@@ -147,15 +152,28 @@ def calculate_table(
         else {"area", "rate"}
     )
     if (
-        operation not in scalar_ops | range_ops | {"partition", "weighted_population", "temporal"}
+        operation
+        not in scalar_ops | range_ops | temporal_ops | {"partition", "weighted_population"}
         or set(columns) != required
     ):
         raise ValueError(
             "Use scalar/value, weighted_population/value,weight, partition/area,rate "
             "or temporal/time,value or reference_range/paired_reference_change/"
-            "value,reference,bounds"
+            "value,reference,bounds or temporal_difference/time,reference,comparison"
         )
-    if operation == "temporal":
+    if operation == "temporal_difference":
+        validate_temporal_difference_options(
+            units, time_window, temporal_value_kind, threshold, crossing_direction
+        )
+        if any(
+            option is not None
+            for option in (pair_by, reference, comparison, temperature_reference, weight_kind)
+        ):
+            raise ValueError(
+                "Temporal difference does not accept paired-member, temperature_reference "
+                "or weight_kind options"
+            )
+    elif operation == "temporal":
         validate_temporal_options(
             units, time_window, temporal_value_kind, threshold, crossing_direction
         )
@@ -165,7 +183,7 @@ def calculate_table(
         or threshold is not None
         or crossing_direction != "at-or-above"
     ):
-        raise ValueError("Temporal options require operation temporal")
+        raise ValueError("Temporal options require operation temporal or temporal_difference")
     if operation == "weighted_population":
         if weight_kind not in {"area", "volume"}:
             raise ValueError("Weighted population requires weight_kind area or volume")
@@ -180,10 +198,10 @@ def calculate_table(
             raise ValueError("Paired change requires pair_by, reference and comparison")
         if reference == comparison:
             raise ValueError("Reference and comparison must differ")
-    if operation in paired_ops | range_ops | {"weighted_population", "temporal"} or (
+    if operation in paired_ops | range_ops | temporal_ops | {"weighted_population"} or (
         operation == "scalar_select" and quantity_kind != "ordinary"
     ):
-        unit = (units or {}).get("value")
+        unit = (units or {}).get("reference" if operation == "temporal_difference" else "value")
         if not isinstance(unit, str):
             raise ValueError("Calculation requires a declared value unit")
         if quantity_kind not in {"ordinary", "absolute-temperature", "temperature-difference"}:
@@ -195,7 +213,7 @@ def calculate_table(
         if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
             raise ValueError("Absolute temperature requires Celsius or Kelvin units")
         if (
-            operation in range_ops | {"weighted_population", "scalar_select", "temporal"}
+            operation in range_ops | temporal_ops | {"weighted_population", "scalar_select"}
             and quantity_kind == "temperature-difference"
             and unit != "K"
         ):
@@ -268,7 +286,7 @@ def calculate_table(
     for name, items in groups.items():
         temporal_metadata = {}
         member_metadata = {}
-        if operation == "temporal":
+        if operation in temporal_ops:
             items = select_temporal_window(items, columns["time"], time_window)
             temporal_metadata = {
                 "time_window": [items[0][1][columns["time"]], items[-1][1][columns["time"]]],
@@ -321,6 +339,29 @@ def calculate_table(
                     }
                 }
         values = {key: [r[column] for _, r in items] for key, column in columns.items()}
+        if operation == "temporal_difference":
+            difference_values = temporal_differences(values["reference"], values["comparison"])
+            array_source = Path(path).suffix.lower() == ".npz"
+            temporal_metadata.update(
+                difference_direction="comparison-reference",
+                difference_unit="K" if quantity_kind != "ordinary" else units["reference"],
+                difference_quantity_kind="temperature-difference"
+                if quantity_kind != "ordinary"
+                else "ordinary",
+                crossing_time_kind="first-matching-saved-sample",
+                samples=[
+                    {
+                        ("array_index" if array_source else "csv_record"): n - 2
+                        if array_source
+                        else n,
+                        "time": row[columns["time"]],
+                        "reference": row[columns["reference"]],
+                        "comparison": row[columns["comparison"]],
+                        "value": value,
+                    }
+                    for (n, row), value in zip(items, difference_values, strict=True)
+                ],
+            )
         if operation == "weighted_population" and any(
             w is None or not math.isfinite(w) or w <= 0 for w in values["weight"]
         ):
@@ -335,10 +376,10 @@ def calculate_table(
             status = "missing-values" if result is None else "computed"
         elif any(v is None for sequence in values.values() for v in sequence):
             result, status = None, "missing-values"
-        elif operation == "temporal":
+        elif operation in temporal_ops:
             result = temporal_summary(
                 values["time"],
-                values["value"],
+                difference_values if operation == "temporal_difference" else values["value"],
                 value_kind=temporal_value_kind,
                 threshold=threshold,
                 direction=crossing_direction,
@@ -789,6 +830,7 @@ def resolve_table_result(
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
         "result_comparison": {"difference", "relative_change", "relative_reduction"},
         "temporal": TEMPORAL_FIELDS,
+        "temporal_difference": TEMPORAL_FIELDS,
         "reference_range": REFERENCE_RANGE_FIELDS,
         "paired_reference_change": REFERENCE_RANGE_FIELDS,
     }
@@ -888,6 +930,8 @@ def resolve_table_result(
         if operation == "partition"
         else {"time", "value"}
         if operation == "temporal"
+        else {"time", "reference", "comparison"}
+        if operation == "temporal_difference"
         else {"value"}
     )
     if any(not isinstance(units.get(role), str) for role in required_units):
@@ -901,6 +945,13 @@ def resolve_table_result(
             operation == "paired_reference_change" or field in {"difference", "outside_distance"}
         ):
             unit = "K"
+    elif operation == "temporal_difference":
+        value_unit = (
+            "K"
+            if report.get("quantity_kind") in {"absolute-temperature", "temperature-difference"}
+            else units["reference"]
+        )
+        unit = temporal_unit(field, value_unit, "ordinary")
     elif operation == "temporal":
         unit = temporal_unit(field, units["value"], report.get("quantity_kind", "ordinary"))
     elif field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:

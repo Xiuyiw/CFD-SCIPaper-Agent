@@ -16,6 +16,13 @@ ejection gate from activation of chemistry. Read these definitions from the acti
 compression, and place lengthy effective parameter sets in a supplementary table when appropriate.
 Do not invent calibration evidence that is absent from the supplied records.
 
+For supplied Python method text, `inspect --materials --material-path model.py --output INDEX`
+lists lexical definitions. Read the needed body with `--definition Class.method` (repeatable),
+using another fresh output directory. `source-definitions.json` retains exact source lines and
+explicit truncation. Follow the actual caller and configuration as well as that body; a lexical
+match does not establish the runtime-active model. Read a truncated continuation directly from
+the supplied text if necessary. Never import or execute a definition script to write Methods.
+
 For a numeric parameter in an explicitly located JSON configuration, use metric evidence with
 `json_value_ref: {source: "sources/config.json", pointer: "/solver/max_step_s", unit: "s", places: 2}`,
 omitting manual value/unit and result_ref. Optional unit_pointer checks an actual source unit

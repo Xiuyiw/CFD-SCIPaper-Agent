@@ -415,6 +415,7 @@ def test_three_sections_portable_methods_math_numbering_and_notes(tmp_path):
         assert result["paragraphs"][2 * index - 2]["section_id"] == sid
         assert result["section_objects"][sid] == {
             "role": "methods" if sid == "methods" else "results",
+            "figure_ids": [str(index)],
             "tables": [str(index)],
             "equations": [str(index)],
         }
