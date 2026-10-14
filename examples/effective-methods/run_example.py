@@ -125,7 +125,7 @@ def run(output: Path):
     for i, line in enumerate(lines):
         if line.startswith("PLOT_STYLE = "):
             style = ast.literal_eval(line.removeprefix("PLOT_STYLE = "))
-            style["height_mm"] = 110
+            style["height_mm"] = 130
             lines[i] = f"PLOT_STYLE = {style!r}"
             break
     plot.write_text("\n".join(lines) + "\n", encoding="utf-8")

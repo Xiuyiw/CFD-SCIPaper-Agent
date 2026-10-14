@@ -64,7 +64,7 @@ def test_public_static_difference_seed_word_and_portable_source_refresh(tmp_path
     ) == (350, 305, 45)
     summary = read(figure_root / "figure-summary.json")
     assert summary["style"]["width_mm"] == 160
-    assert summary["style"]["height_mm"] == 110
+    assert summary["style"]["height_mm"] == 130
     assert summary["checks"]["minimum_source_font_pt"] >= 8
     assert summary["checks"]["text_nonoverlapping"] is True
     for extension in ("svg", "pdf", "png", "tiff"):
@@ -103,6 +103,16 @@ def test_public_static_difference_seed_word_and_portable_source_refresh(tmp_path
         == "200"
     )
     assert claim not in next(p for p in paragraphs if p.startswith("[1]"))
+    # This installed example also runs on Linux without Times New Roman.
+    # Keep collision QA and physical font sizes with the actual wider serif face.
+    from cfdpaper.publication.evidence_panels import _draw_panels
+
+    fallback = tmp_path / "fallback-preview"
+    fallback.mkdir()
+    settings = {**summary["style"], "font_family": "DejaVu Serif"}
+    panels = runpy.run_path(str(figure_root / "plot.py"))["PANELS"]
+    checks = _draw_panels(rows, panels, fallback, settings)
+    assert checks["text_nonoverlapping"] and checks["text_inside_canvas"]
     moved = tmp_path / "relocated"
     shutil.copytree(output / "manuscript", moved)
     config = moved / "sections/methods/sources/config.json"

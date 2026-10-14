@@ -18,7 +18,7 @@ differences are in K; time-weighted means use the declared 0–5 s window. No so
 transport coefficient or causal mechanism is inferred.
 
 An original-front-temperature profile and a same-record front-minus-rear contrast profile
-are exported at 160 × 110 mm with unchanged readable fonts and no smoothing. Both original
+are exported at 160 × 130 mm with unchanged readable fonts and no smoothing. Both original
 readings remain in the contrast source data; endpoint states and contrasts appear in prose
 and a compact native table.
 The local `analysis/figures/plot.py`, source data, SVG/PDF/PNG/TIFF and layout checks are retained
