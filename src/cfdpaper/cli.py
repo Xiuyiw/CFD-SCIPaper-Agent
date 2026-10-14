@@ -115,6 +115,13 @@ def inspect_project(
             "--find", help="Locate literal terms in material text; repeat for alternatives"
         ),
     ] = None,
+    definitions: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--definition",
+            help="Read an exact qualified Python definition in each selected file; repeat names",
+        ),
+    ] = None,
     material_paths: Annotated[
         list[Path] | None,
         typer.Option(
@@ -129,25 +136,61 @@ def inspect_project(
     if materials:
         if output is None:
             raise typer.BadParameter("--materials requires --output DIR")
+        if definitions and find:
+            raise typer.BadParameter("--definition and --find are mutually exclusive")
+        if definitions and not material_paths:
+            raise typer.BadParameter("--definition requires exact --material-path .py files")
         from cfdpaper.materials import profile_materials
         from cfdpaper.publication.section import _stage, _write
 
         try:
-            if find:
+            if definitions:
+                from cfdpaper.materials import read_material_definitions
+
+                summary = read_material_definitions(root, definitions, paths=material_paths)
+            elif find:
                 from cfdpaper.material_search import search_materials
 
                 summary = search_materials(root, find, paths=material_paths, limit=match_limit)
             else:
                 summary = profile_materials(root, paths=material_paths)
             with _stage(output) as staged:
-                name = "material-matches.json" if find else "materials.json"
+                name = (
+                    "source-definitions.json"
+                    if definitions
+                    else "material-matches.json"
+                    if find
+                    else "materials.json"
+                )
                 _write(staged / name, summary)
         except (ValueError, OSError, RuntimeError) as error:
             _workflow_error(error)
-        console.print(f"Material {'matches' if find else 'profile'}: {output / name}", markup=False)
+        label = "definitions" if definitions else "matches" if find else "profile"
+        console.print(f"Material {label}: {output / name}", markup=False)
+        if definitions and summary["issues"]:
+            for issue in summary["issues"]:
+                console.print(
+                    f"{issue['code']}: {issue['path']}: {issue['message']}",
+                    markup=False,
+                    soft_wrap=True,
+                )
+                for candidate in issue.get("candidates", []):
+                    console.print(
+                        f"  {candidate['qualified_name']} at {candidate['source']['locator']}",
+                        markup=False,
+                    )
+            console.print(
+                "Select exact UTF-8 .py files with --material-path and a uniquely named "
+                "--definition from their definition_index; use --find for source-text lookup.",
+                markup=False,
+                soft_wrap=True,
+            )
+            raise typer.Exit(code=3)
         return
-    if find or material_paths or match_limit != 50:
-        raise typer.BadParameter("--find, --material-path and --match-limit require --materials")
+    if find or definitions or material_paths or match_limit != 50:
+        raise typer.BadParameter(
+            "--find, --definition, --material-path and --match-limit require --materials"
+        )
     if output is not None:
         raise typer.BadParameter("--output requires --materials")
     try:
@@ -652,5 +695,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.19.0.",
+        help="Roadmap command; not available in v0.20.0.",
     )(_placeholder_command(_command_name))

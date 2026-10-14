@@ -1,0 +1,78 @@
+{
+  "methods": {
+    "input": {
+      "section_id": "methods", "title": "Methods", "question": "Read the supplied definition",
+      "figures": [], "source_files": ["sources/model.py", "sources/config.json"],
+      "evidence": [
+        {"id": "definition", "kind": "observation", "text": "Filled from the static definition reader", "source": "TutorialBalance.front_rate definition"},
+        {"id": "capacity", "kind": "metric", "text": "Illustrative front heat capacity", "source": "Synthetic configuration", "json_value_ref": {"source": "sources/config.json", "pointer": "/capacity_J_K", "unit": "J/K", "unit_pointer": "/units/capacity_J_K", "places": 0}}
+      ],
+      "duties": [{"purpose": "Explain the supplied method text", "evidence_ids": ["definition", "capacity"], "figure_ids": []}]
+    },
+    "draft": {
+      "title": "Methods",
+      "paragraphs": [{"text": "We statically read TutorialBalance.front_rate and its exact source lines without importing the module. The balance in {{equation:balance}} has an illustrative front capacity of {{value:capacity}}. The independently chosen CSV states do not result from executing that balance. At each record we subtract rear from front, then use trapezoidal time weights over 0–5 s; no native solver event is inferred."}],
+      "captions": {}, "image_observations": {},
+      "evidence_notes": ["Synthetic teaching replay, not a scientific validation or AI trial."],
+      "equations": [{
+        "equation_id": "balance", "evidence_ids": ["definition"],
+        "expression": {"kind": "row", "children": [
+          {"kind": "sub", "children": [{"kind": "symbol", "text": "C"}, {"kind": "text", "text": "f"}]},
+          {"kind": "fraction", "children": [
+            {"kind": "row", "children": [{"kind": "symbol", "text": "d"}, {"kind": "sub", "children": [{"kind": "symbol", "text": "T"}, {"kind": "text", "text": "f"}]}]},
+            {"kind": "row", "children": [{"kind": "symbol", "text": "d"}, {"kind": "symbol", "text": "t"}]}
+          ]},
+          {"kind": "text", "text": " = "},
+          {"kind": "sub", "children": [{"kind": "symbol", "text": "Q"}, {"kind": "text", "text": "in"}]},
+          {"kind": "text", "text": " − "}, {"kind": "symbol", "text": "G"}, {"kind": "text", "text": "("},
+          {"kind": "sub", "children": [{"kind": "symbol", "text": "T"}, {"kind": "text", "text": "f"}]},
+          {"kind": "text", "text": " − "},
+          {"kind": "sub", "children": [{"kind": "symbol", "text": "T"}, {"kind": "text", "text": "r"}]},
+          {"kind": "text", "text": ")"}
+        ]}
+      }]
+    }
+  },
+  "results": {
+    "draft": {
+      "title": "Results",
+      "paragraphs": [
+        {"text": "Case B ends at {{value:front-B-end_value}} at the front and {{value:rear-B-end_value}} at the rear ({{figure:1}}). The same-record contrasts end at {{value:contrast-A-end_value}} and {{value:contrast-B-end_value}} for A and B. Their time-weighted means are {{value:contrast-A-time_mean}} and {{value:contrast-B-time_mean}} ({{table:contrasts}})."},
+        {"text": "The original readings remain available in the source table. The contrast summarizes their separation but is not a heat flux or transport coefficient."}
+      ],
+      "captions": {"1": "Illustrative front temperature and front-minus-rear contrast, six saved states per case. Straight segments join records without smoothing; both original temperature readings are retained in the source data. These chosen histories were not computed from the supplied model text."},
+      "image_observations": {"1": "not-viewed"},
+      "evidence_notes": ["Synthetic teaching replay, not a scientific validation or AI trial."],
+      "tables": [{"table_id": "contrasts", "after_section_id": "results", "caption": "Original endpoint states and their same-record contrast", "columns": ["Case", "Front temperature", "Rear temperature", "Contrast"], "numeric_columns": [1, 2, 3], "rows": [
+        ["A", "{{value:front-A-end_value}}", "{{value:rear-A-end_value}}", "{{value:contrast-A-end_value}}"],
+        ["B", "{{value:front-B-end_value}}", "{{value:rear-B-end_value}}", "{{value:contrast-B-end_value}}"]
+      ]}]
+    }
+  },
+  "discussion": {
+    "input": {
+      "section_id": "discussion", "title": "Discussion", "question": "What does a contrast represent?", "figures": [],
+      "evidence": [{"id": "tutorial", "kind": "literature", "text": "Retain both original temperatures before interpreting their difference.", "source": "Synthetic tutorial reference"}],
+      "duties": [{"purpose": "Attribute the teaching note", "evidence_ids": ["tutorial"], "figure_ids": []}]
+    },
+    "draft": {
+      "title": "Discussion",
+      "paragraphs": [{"text": "The synthetic teaching note {{cite:tutorial}} motivates retaining both temperatures. B has a hotter front and cooler rear at 5 s. A larger contrast alone cannot identify a changed source or conductance; matched heat-flow information would be needed."}],
+      "captions": {}, "image_observations": {},
+      "evidence_notes": ["Synthetic teaching replay, not a scientific validation or AI trial."]
+    }
+  },
+  "conclusion": {
+    "input": {
+      "section_id": "conclusion", "title": "Conclusion", "question": "Summarize the software demonstration", "figures": [],
+      "evidence": [{"id": "scope", "kind": "interpretation", "text": "The demonstration covers deterministic software plumbing only.", "source": "Tutorial author"}],
+      "duties": [{"purpose": "State the tutorial outcome", "evidence_ids": ["scope"], "figure_ids": []}]
+    },
+    "draft": {
+      "title": "Conclusion",
+      "paragraphs": [{"text": "Static definition reads, bound same-record differences and separate bibliography metadata remain traceable. Chosen teaching histories do not establish physical model performance or AI writing quality."}],
+      "captions": {}, "image_observations": {},
+      "evidence_notes": ["Synthetic teaching replay, not a scientific validation or AI trial."]
+    }
+  }
+}

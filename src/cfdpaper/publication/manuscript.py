@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from cfdpaper.publication.citation_style import format_numeric_bibliography
 from cfdpaper.publication.elements import SectionEquation, SectionTable, math_text
 from cfdpaper.publication.literature import (
+    _normalized,
     copy_literature,
     literature_evidence,
     load_literature,
@@ -1096,6 +1097,24 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                         {**record, "number": number, "id": f"ref-{number}"}
                     )
                     numbering["references"].append({"number": number, "source": record["source"]})
+                else:
+                    existing = combined["references"][reference_sources[identity] - 1]
+                    metadata = record.get("citation_record")
+                    previous = existing.get("citation_record")
+                    if metadata is not None and previous is not None:
+                        if _normalized({k: v for k, v in metadata.items() if k != "id"}) != (
+                            _normalized({k: v for k, v in previous.items() if k != "id"})
+                        ):
+                            raise ValueError(
+                                "Conflicting citation metadata for source: " + record["source"]
+                            )
+                    elif metadata is not None:
+                        number = existing["number"]
+                        combined["references"][number - 1] = {
+                            **record,
+                            "number": number,
+                            "id": f"ref-{number}",
+                        }
                 mapping["cite"][record["id"]] = reference_sources[identity]
             citation_locals = {r["id"]: r["number"] for r in result["references"]}
 
@@ -1159,6 +1178,7 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             )
             combined["section_objects"][sid] = {
                 "role": contract.role,
+                "figure_ids": list(mapping["figure"].values()),
                 "tables": list(mapping["table"].values()),
                 "equations": list(mapping["equation"].values()),
             }

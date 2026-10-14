@@ -62,6 +62,7 @@ class _Calculation(_Record):
         "scalar_select",
         "paired_change",
         "temporal",
+        "temporal_difference",
         "reference_range",
         "paired_reference_change",
     ]
@@ -112,7 +113,7 @@ class _Calculation(_Record):
             result.pop("region_complement", None)
         if self.operation != "weighted_population":
             result.pop("weight_kind", None)
-        if self.operation != "temporal":
+        if self.operation not in {"temporal", "temporal_difference"}:
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
                 result.pop(key, None)
         if self.operation not in {"reference_range", "paired_reference_change"}:
@@ -121,6 +122,7 @@ class _Calculation(_Record):
             "paired_change",
             "weighted_population",
             "temporal",
+            "temporal_difference",
             "reference_range",
             "paired_reference_change",
         } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
@@ -275,6 +277,9 @@ Cumulative values provide change only, not another integral/time_mean. Optional 
 crossing_direction at-or-above/at-or-below return the first qualifying saved sample, never a
 solver-native or interpolated event. Missing crossings stay missing. Check the common saved
 window and quantity definition before comparing groups; an integrated temperature is not energy.
+For a same-record difference use temporal_difference with time,reference,comparison roles,
+matching member units and time in s. It computes comparison-reference, retains both readings,
+and uses saved samples rather than interpolated events. A temperature difference is in K.
 Use member_id columns that identify all source records, including the paired configuration where
 necessary. Bind value for scalar_select and difference, relative_change or relative_reduction for
 paired_change. Difference is comparison minus reference; absolute-temperature percentages require
@@ -721,6 +726,7 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "paired_change": ("difference",),
             "result_comparison": ("difference",),
             "temporal": ("start_value", "end_value", "change", "maximum", "time_mean"),
+            "temporal_difference": ("start_value", "end_value", "change", "maximum", "time_mean"),
             "reference_range": ("value", "reference_value", "difference", "outside_distance"),
             "paired_reference_change": (
                 "value",

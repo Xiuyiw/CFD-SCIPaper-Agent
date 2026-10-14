@@ -1,0 +1,9 @@
+{
+  "id": "synthetic-tutorial",
+  "type": "report",
+  "author": [{"literal": "Synthetic tutorial reference"}],
+  "title": "Illustrative temperature contrast teaching note",
+  "issued": {"date-parts": [[2026]]},
+  "publisher": "CFD-Paper-Agent synthetic example",
+  "note": "Invented bibliographic metadata for testing; not a real publication"
+}

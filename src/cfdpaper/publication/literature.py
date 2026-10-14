@@ -98,6 +98,48 @@ def _merge(target, incoming):
             target[key] = copy.deepcopy(value)
 
 
+def validate_citation_record(record):
+    """Copy and validate one CSL record using the local bibliography rules."""
+    if not isinstance(record, dict):
+        raise ValueError("Each bibliography record must be an object")
+    record = copy.deepcopy(record)
+    rid = _nonblank(record.get("id"), "bibliography id")
+    if "DOI" in record:
+        record["DOI"] = _doi(record["DOI"])
+        _nonblank(record["DOI"], "DOI")
+    for key in ("title", "container-title", "URL", "publisher"):
+        if key in record and not isinstance(record[key], str):
+            raise ValueError(f"Bibliography {key} must be a string: {rid}")
+    for key in ("volume", "issue", "page"):
+        if key in record and (
+            not isinstance(record[key], (str, int, float)) or isinstance(record[key], bool)
+        ):
+            raise ValueError(f"Bibliography {key} must be a string or number: {rid}")
+    if "author" in record and (
+        not isinstance(record["author"], list)
+        or not all(isinstance(author, dict) for author in record["author"])
+    ):
+        raise ValueError(f"Bibliography author must be a list of objects: {rid}")
+    for author in record.get("author", []):
+        if any(
+            key in author and not isinstance(author[key], str)
+            for key in ("given", "family", "literal")
+        ):
+            raise ValueError(f"Bibliography author names must be strings: {rid}")
+    if "issued" in record:
+        issued = record["issued"]
+        if not isinstance(issued, dict):
+            raise ValueError(f"Bibliography issued must be an object: {rid}")
+        parts = issued.get("date-parts", [])
+        if not isinstance(parts, list) or not all(
+            isinstance(part, list)
+            and all(isinstance(v, (str, int)) and not isinstance(v, bool) for v in part)
+            for part in parts
+        ):
+            raise ValueError(f"Bibliography date-parts must be lists of date values: {rid}")
+    return record
+
+
 def _bibliography(path):
     if path.suffix.lower() == ".bib":
         pandoc = shutil.which("pandoc")
@@ -127,30 +169,15 @@ def _bibliography(path):
     if not isinstance(data, list):
         raise ValueError("CSL JSON bibliography must be a list of records")
     ids = set()
+    checked = []
     for record in data:
-        if not isinstance(record, dict):
-            raise ValueError("Each bibliography record must be an object")
-        rid = _nonblank(record.get("id"), "bibliography id")
+        record = validate_citation_record(record)
+        rid = record["id"]
         if rid in ids:
             raise ValueError(f"Duplicate bibliography id: {rid}")
         ids.add(rid)
-        if "DOI" in record:
-            record["DOI"] = _doi(record["DOI"])
-            _nonblank(record["DOI"], "DOI")
-        for key in ("title", "container-title", "URL"):
-            if key in record and not isinstance(record[key], str):
-                raise ValueError(f"Bibliography {key} must be a string: {rid}")
-        for key in ("volume", "issue", "page"):
-            if key in record and (
-                not isinstance(record[key], (str, int, float)) or isinstance(record[key], bool)
-            ):
-                raise ValueError(f"Bibliography {key} must be a string or number: {rid}")
-        if "author" in record and (
-            not isinstance(record["author"], list)
-            or not all(isinstance(author, dict) for author in record["author"])
-        ):
-            raise ValueError(f"Bibliography author must be a list of objects: {rid}")
-    return data
+        checked.append(record)
+    return checked
 
 
 def _deduplicate(records):
@@ -324,6 +351,7 @@ def literature_evidence(library: dict, section_id: str) -> list[dict]:
                 "source": f"doi:{record['DOI']}"
                 if record.get("DOI")
                 else f"reference:{record['id']}",
+                "citation_record": validate_citation_record(record),
             }
         )
     return evidence

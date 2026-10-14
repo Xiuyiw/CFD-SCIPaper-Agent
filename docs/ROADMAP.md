@@ -18,6 +18,11 @@ three-domain validation remain explicit later work.
 
 ## Versioned delivery
 
+The [v0.20 plan](research/V0_20_EFFECTIVE_METHODS_PLAN.md) addresses effective mathematical
+method reading, same-record saved contrasts and limited bibliography/Word delivery improvements.
+These are scoped tools for host scientific writing, not active-model inference or autonomous
+validation. See [the release notes](releases/v0.20.0.md).
+
 The [v0.19 plan](research/V0_19_METHODS_COMPARISON_PLAN.md) connects selected numerical methods
 to JSON sources and retains original observations in paired reference contrasts. It evaluates a
 new controlled source/transport problem rather than repeating the previous reconstruction draft.
@@ -57,6 +62,7 @@ run; independent cross-provider scientific comparison remains untested.
 | `v0.17.0` | Saved transient calculations, cumulative increments, common-window comparisons and portable writing example | Implemented scope; known-project trial, not general transient/multiphase validation; see release notes |
 | `v0.18.0` | Source-defined reference ranges, complementary numerical panels and joint-observation manuscript guidance | Implemented scope; paired first-draft results mixed; see release notes and release tag |
 | `v0.19.0` | Source-bound JSON parameters, paired model/reference contrasts and their numerical panels | Implemented scope; scientific exercise and exact-package checks described in release notes |
+| `v0.20.0` | Static method reads, saved history differences, inline metadata and section-end figures | Implemented scope; scientific exercise and exact-package checks described in release notes |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection

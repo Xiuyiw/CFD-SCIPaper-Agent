@@ -1,0 +1,5 @@
+{
+  "description": "Synthetic tutorial setting, not an executed model configuration",
+  "capacity_J_K": 100,
+  "units": {"capacity_J_K": "J/K"}
+}

@@ -203,7 +203,8 @@ def _table(path: Path, relative: str) -> dict[str, Any]:
 
 def _document(path: Path, relative: str) -> dict[str, Any]:
     # Method scripts and JSON are source text, never imported or executed.
-    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    text = path.read_text(encoding="utf-8-sig")
+    lines = text.splitlines()
     excerpt: list[str] = []
     remaining = MAX_EXCERPT_CHARS
     truncated = False
@@ -217,13 +218,110 @@ def _document(path: Path, relative: str) -> dict[str, Any]:
         excerpt.append(rendered)
         remaining -= len(rendered) + 1
     truncated = truncated or len(excerpt) < len(lines)
-    return {
+    document = {
         "path": relative,
         "excerpt": "\n".join(excerpt),
         "truncated": truncated,
         "line_count": len(lines),
         "source": {"path": relative, "locator": f"line:1-line:{len(excerpt)}" if excerpt else None},
     }
+    if path.suffix.lower() == ".py":
+        from .source_definitions import SourceDefinitionError, python_definition_index
+
+        try:
+            document["definition_index"] = python_definition_index(text)
+        except SourceDefinitionError as exc:
+            document["definition_index"] = []
+            document["definition_index_error"] = {"code": exc.code, "message": str(exc)}
+    return document
+
+
+def read_material_definitions(
+    root: Path, qualified_names: list[str], *, paths: list[Path]
+) -> dict[str, Any]:
+    """Read every requested lexical name in every explicitly selected Python file.
+
+    Selection uses the material profiler's root/link and unique-file byte
+    boundaries. Missing and ambiguous requests remain per-file issues; names
+    are not resolved across files or interpreted as active scientific models.
+    """
+    from .source_definitions import SourceDefinitionError, read_python_definition
+
+    if not paths:
+        raise ValueError("Definition reads require exact --material-path .py files")
+    if not qualified_names or any(
+        not isinstance(name, str) or not name.strip() for name in qualified_names
+    ):
+        raise ValueError("Provide at least one nonempty exact qualified definition name")
+    names = list(dict.fromkeys(qualified_names))
+    root = Path(os.path.abspath(root))
+    if not root.is_dir() or any(_is_link(part) for part in [root, *root.parents]):
+        raise ValueError("Material root must be a directory without links")
+    result: dict[str, Any] = {"qualified_names": names, "definitions": [], "issues": []}
+    issues = result["issues"]
+    seen: set[Path] = set()
+    total_bytes = 0
+    for selected in paths:
+        path = Path(os.path.abspath(root / selected))
+        try:
+            relative_path = path.relative_to(root)
+        except ValueError:
+            _issue(issues, str(selected), "outside_root", "Selected file is outside material root")
+            continue
+        if path in seen:
+            continue
+        seen.add(path)
+        relative = relative_path.as_posix()
+        try:
+            if any(
+                _is_link(root.joinpath(*relative_path.parts[:i]))
+                for i in range(1, len(relative_path.parts) + 1)
+            ):
+                _issue(issues, relative, "skipped_link", "Link not followed")
+                continue
+            if path.suffix.lower() != ".py":
+                _issue(issues, relative, "unsupported_extension", "Select a UTF-8 .py source file")
+                continue
+            if not path.is_file():
+                raise ValueError("Selected material is not a file")
+            size = path.stat().st_size
+            if size > MAX_FILE_BYTES or total_bytes + size > MAX_TOTAL_BYTES:
+                _issue(
+                    issues, relative, "size_limit", "Selected source exceeds material read budget"
+                )
+                continue
+            total_bytes += size
+        except (OSError, ValueError) as exc:
+            _issue(issues, relative, "unreadable_source", str(exc).replace(str(path), relative))
+            continue
+        for name in names:
+            try:
+                definition = read_python_definition(path, name)
+                definition["path"] = relative
+                definition["source"]["path"] = relative
+                result["definitions"].append(definition)
+            except SourceDefinitionError as exc:
+                issue: dict[str, Any] = {
+                    "path": relative,
+                    "qualified_name": name,
+                    "code": exc.code,
+                    "message": str(exc).replace(str(path), relative),
+                }
+                if exc.candidates:
+                    issue["candidates"] = [
+                        {
+                            **candidate,
+                            "source": {
+                                "path": relative,
+                                "locator": (
+                                    f"line:{candidate['start_line']}-line:{candidate['end_line']}"
+                                ),
+                            },
+                        }
+                        for candidate in exc.candidates
+                    ]
+                issues.append(issue)
+    return result
 
 
 def _table_preview(path: Path, relative: str) -> dict[str, Any]:

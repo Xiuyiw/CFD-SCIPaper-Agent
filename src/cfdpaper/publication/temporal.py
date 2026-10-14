@@ -43,6 +43,36 @@ def validate_temporal_options(units, time_window, value_kind, threshold, directi
         raise ValueError("time_window requires two finite, strictly increasing endpoints")
 
 
+def validate_temporal_difference_options(units, time_window, value_kind, threshold, direction):
+    if (
+        not isinstance(units, dict)
+        or set(units) != {"time", "reference", "comparison"}
+        or not isinstance(units["reference"], str)
+        or units["reference"] != units["comparison"]
+    ):
+        raise ValueError("Temporal difference requires identical reference and comparison units")
+    if value_kind != "instantaneous":
+        raise ValueError("Temporal difference requires instantaneous values; not cumulative inputs")
+    validate_temporal_options(
+        {"time": units["time"], "value": units["reference"]},
+        time_window,
+        value_kind,
+        threshold,
+        direction,
+    )
+
+
+def temporal_differences(reference, comparison):
+    """Subtract values in the same saved record, retaining missing endpoints."""
+    values = [
+        None if left is None or right is None else right - left
+        for left, right in zip(reference, comparison, strict=True)
+    ]
+    if any(value is not None and not math.isfinite(value) for value in values):
+        raise ValueError("Temporal difference produced a nonfinite result")
+    return values
+
+
 def select_temporal_window(items, time_column, time_window):
     times = [row[time_column] for _, row in items]
     if len(times) < 2:
