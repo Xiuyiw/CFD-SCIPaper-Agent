@@ -34,6 +34,8 @@ _LABELS = {
     "weighted_mean": "Measure-weighted mean",
     "weighted_std": "Measure-weighted spatial standard deviation",
     "weight_sum": "Total supplied measure",
+    "measure_above": "Threshold-selected measure",
+    "exceedance_fraction": "Threshold-selected measure fraction",
     "reference_value": "Reference center",
     "reference_lower": "Supplied reference lower bound",
     "reference_upper": "Supplied reference upper bound",

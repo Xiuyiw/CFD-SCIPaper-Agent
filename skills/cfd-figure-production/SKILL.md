@@ -74,6 +74,24 @@ interval. When apparent contrast agreement may result from offset cancellation, 
 observations alongside the paired panel or retain their absolute deviations in a compact table.
 Do not hide that evidence behind an attractive zero-mismatch marker.
 
+## Original-face surface studies
+
+For original-face surface exports, `render_surface_study` supplies common-scale
+polygon fields and an exact measure-weighted exceedance distribution. The spatial
+map explains where a change occurs; the curve and weighted statistics explain its
+extent and level. These are complementary summaries of the same numerical solution,
+not independent validation. Use physical face areas, not projected display areas;
+state strict versus inclusive thresholds, and do not promote a diagnostic threshold
+to a device failure limit. A spatial standard deviation measures nonuniformity,
+not simulation uncertainty. Preserve the distinction between the observed interface
+and a larger volume or other boundary when naming the quantity.
+
+The research workspace retains its editable `figures/plot.py`. On a source update,
+run that current script through the declared recipe rather than regenerating it
+from a template. This keeps author style edits while recalculating the source data
+and figures together. Inspect both the map and distribution at the actual Word width;
+the complementary relationship, legibility and caption remain host responsibilities.
+
 ## Do not trigger
 
 Do not use to change QoI values, case order, units, claim strength, chart semantics, or infer a

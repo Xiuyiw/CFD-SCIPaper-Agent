@@ -486,6 +486,40 @@ def _copy_workflow_skills(destination: Path) -> None:
         shutil.copytree(root / name, destination / "skills" / name)
 
 
+def _writing_resolution(resolved: dict, reports: list[dict], report_path: str) -> dict:
+    """Project only long source-record lists; complete reports stay untouched."""
+    projected = copy.deepcopy(resolved)
+
+    def project(item):
+        for key in ("array_indices", "csv_records"):
+            indices = item.get(key)
+            if not isinstance(indices, list) or len(indices) <= 64:
+                continue
+            locations = [
+                f"/{i}/groups/{j}/{key}"
+                for i, report in enumerate(reports)
+                if report.get("id") == item.get("calculation_id")
+                and report.get("source") == item.get("source")
+                for j, group in enumerate(report.get("groups", []))
+                if group.get("group") == item.get("group") and group.get(key) == indices
+            ]
+            # Never replace a subset with a pointer to its larger parent group.
+            if len(locations) != 1:
+                continue
+            item.pop(key)
+            item[f"{key}_summary"] = {
+                "count": len(indices),
+                "kind": key,
+                "index_base": 0 if key == "array_indices" else 1,
+                "details": {"path": report_path, "json_pointer": locations[0]},
+            }
+        for parent in item.get("supporting_results", []):
+            project(parent)
+
+    project(projected)
+    return projected
+
+
 def prepare_writing_context(
     package_dir: Path,
     section_id: str,
@@ -535,6 +569,7 @@ def prepare_writing_context(
             context["scientific_context"] = science
         if library is not None:
             copy_literature(_relative(package_dir, data.literature), staged / "literature")
+        reports_by_section = {}
         for contract in data.spine.sections:
             sid = contract.section_id
             if sid not in selected:
@@ -557,6 +592,7 @@ def prepare_writing_context(
             elif sid != section_id:
                 context["missing_dependency_drafts"].append(sid)
             reports = _calculate_sources(section, local, write=False)
+            reports_by_section[sid] = reports
             evidence = {record.id: record.model_dump() for record in section.evidence}
             for record in section.evidence:
                 if record.result_ref is not None or record.json_value_ref is not None:
@@ -574,11 +610,29 @@ def prepare_writing_context(
                     if support["section_id"] == sid
                 ],
             }
+        for sid, section_context in context["sections"].items():
+            for evidence in section_context["evidence"].values():
+                if "resolved" not in evidence:
+                    continue
+                resolved = evidence["resolved"]
+                owner = resolved.get("owner_section", sid)
+                if owner not in reports_by_section:
+                    continue
+                evidence["resolved"] = _writing_resolution(
+                    resolved,
+                    reports_by_section[owner],
+                    f"sections/{owner}/table-results.json",
+                )
         _write(staged / "context.json", context)
         (staged / "TASK.md").write_text(
             f"# Write {section_id} within the current manuscript\n\n"
             "Read context.json, skills/cfd-paper-workflow/SKILL.md "
             "and the target section's TASK.md. "
+            "Current calculated values and source locators are in context.json. "
+            "Long source-index lists use count and details (a context-root-relative path and "
+            "exact JSON Pointer) into the unchanged full table-results.json; inspect that "
+            "located detail when needed instead of loading every source index into writing "
+            "context. Calculation definitions remain in each section's input.json. "
             "Follow the workflow's evidence-selection reading before choosing numeric anchors. "
             "Read scientific-context.md when present; its case/stage/operator records "
             "and source text live under scientific-context/. "

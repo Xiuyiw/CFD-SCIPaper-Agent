@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import Field, StrictStr, model_serializer, model_validator
+from pydantic import Field, StrictStr, field_validator, model_serializer, model_validator
 
 from cfdpaper.adapters.csv import CSVAdapter, _split_header
 from cfdpaper.publication.section import (
@@ -59,6 +59,7 @@ class _Calculation(_Record):
         "population",
         "partition",
         "weighted_population",
+        "weighted_exceedance",
         "scalar_select",
         "paired_change",
         "temporal",
@@ -86,6 +87,7 @@ class _Calculation(_Record):
     ) = None
     temporal_value_kind: Literal["instantaneous", "cumulative"] = "instantaneous"
     threshold: float | None = Field(default=None, allow_inf_nan=False)
+    exceedance_relation: Literal["above", "at-or-above"] = "above"
     crossing_direction: Literal["at-or-above", "at-or-below"] = "at-or-above"
     reference_kind: (
         Literal["reported-range", "figure-reading-envelope", "declared-bound"] | None
@@ -101,6 +103,17 @@ class _Calculation(_Record):
     interpretation_limits: list[StrictStr] = Field(min_length=1)
     missing_questions: list[StrictStr] = Field(default_factory=list)
 
+    @field_validator("threshold", mode="before")
+    @classmethod
+    def numeric_exceedance_threshold(cls, value, info):
+        if (
+            info.data.get("operation") == "weighted_exceedance"
+            and value is not None
+            and type(value) not in (int, float)
+        ):
+            raise ValueError("Weighted exceedance threshold must be a numeric value")
+        return value
+
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
@@ -111,16 +124,21 @@ class _Calculation(_Record):
         if self.region_fraction is None and not self.region_complement:
             result.pop("region_fraction", None)
             result.pop("region_complement", None)
-        if self.operation != "weighted_population":
+        if self.operation not in {"weighted_population", "weighted_exceedance"}:
             result.pop("weight_kind", None)
         if self.operation not in {"temporal", "temporal_difference"}:
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
+                if key == "threshold" and self.operation == "weighted_exceedance":
+                    continue
                 result.pop(key, None)
+        if self.operation != "weighted_exceedance":
+            result.pop("exceedance_relation", None)
         if self.operation not in {"reference_range", "paired_reference_change"}:
             result.pop("reference_kind", None)
         if self.operation not in {
             "paired_change",
             "weighted_population",
+            "weighted_exceedance",
             "temporal",
             "temporal_difference",
             "reference_range",
@@ -262,7 +280,13 @@ definition gap or change comparison status merely to make the command succeed.
 The executable operators are population (equal-record count/sum/mean/population CV, ddof=0),
 partition (sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
 shares), and weighted_population (value plus positive area/volume weights, giving weighted_mean,
-weighted_std and weight_sum). For long tables, row_filters selects exact column/value matches
+weighted_std and weight_sum). weighted_exceedance uses the same value/weight roles and an explicit
+finite numeric threshold in the value unit, with exceedance_relation above (strict >) or
+at-or-above (>=). Its fields are weight_sum, measure_above, exceedance_fraction and count;
+exceedance_fraction stores a 0-1 fraction, with percentage=true for percent display. This is a
+supplied-element measure distribution, not a safety threshold or interpolated field. It does not
+accept temporal crossing options or regional fractions. For long tables, row_filters selects
+exact column/value matches
 before numeric conversion. unit_column checks the selected value units against units.value;
 it does not convert units. scalar_select then requires exactly one selected record per group.
 paired_change compares two records in each group using an explicit
@@ -722,6 +746,7 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "population": ("mean", "cv"),
             "partition": ("area", "rate", "mean_flux"),
             "weighted_population": ("weighted_mean", "weighted_std", "weight_sum"),
+            "weighted_exceedance": ("weight_sum", "measure_above", "exceedance_fraction"),
             "scalar_select": ("value",),
             "paired_change": ("difference",),
             "result_comparison": ("difference",),
@@ -747,6 +772,7 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
                             calculation_id=report["id"],
                             group=group["group"],
                             field=field,
+                            percentage=field == "exceedance_fraction",
                         ),
                     )
                 )

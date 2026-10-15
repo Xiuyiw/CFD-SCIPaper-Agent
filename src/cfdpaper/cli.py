@@ -452,6 +452,53 @@ def figure_project(
     )
 
 
+@app.command("research")
+def research_workspace(
+    output: Annotated[Path, typer.Option("--output", help="Fresh workspace or build directory")],
+    study: Annotated[
+        Path | None,
+        typer.Option("--study", help="Prepare from a declared surface NPZ study JSON"),
+    ] = None,
+    workspace: Annotated[
+        Path | None,
+        typer.Option(
+            "--workspace", help="Build from current author script and completed drafts.json"
+        ),
+    ] = None,
+    baseline: Annotated[
+        Path | None,
+        typer.Option("--baseline", help="Previous build for a targeted change comparison"),
+    ] = None,
+) -> None:
+    """Prepare a surface research workspace, or assemble the host-written candidate."""
+    try:
+        if (study is None) == (workspace is None):
+            raise WorkflowInputError("Choose exactly one of --study or --workspace.")
+        if baseline is not None and workspace is None:
+            raise WorkflowInputError("--baseline requires --workspace and a previous build.")
+        from cfdpaper.publication.research_workspace import (
+            build_research_workspace,
+            prepare_surface_workspace,
+        )
+
+        if study is not None:
+            prepare_surface_workspace(study, output)
+            console.print(f"Research workspace ready: {output}", markup=False)
+            console.print(
+                "Host writing required: read TASK.md and RESEARCH.md, then complete the section "
+                "drafts referenced by drafts.json.",
+                markup=False,
+            )
+        else:
+            build_research_workspace(workspace, output, baseline_dir=baseline)
+            console.print(
+                f"Research candidate assembled from current author script and drafts: {output}",
+                markup=False,
+            )
+    except Exception as error:
+        _workflow_error(error)
+
+
 @app.command("write")
 def write_project(
     root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],

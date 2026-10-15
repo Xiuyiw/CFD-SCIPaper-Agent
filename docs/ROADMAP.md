@@ -1,5 +1,24 @@
 # CFD-Paper-Agent public roadmap
 
+## Current direction: Research Workbench
+
+The author approved the [v0.21–v0.24 development plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md).
+The released baseline is v0.20.0. The v0.21 development branch has completed a connected
+four-case surface study and a selective-refresh exercise; it is not a released version.
+Existing releases and their limitations are retained below as history.
+
+| Version | Complete user capability | Status |
+|---|---|---|
+| v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Local implementation and known-project task verified; release pending |
+| v0.22 | Spatial/temporal diagnostics and discriminating mechanism evidence, with tested native and neutral field extraction | Planned |
+| v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return | Planned |
+| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
+
+Each release must improve an actual research task. Later task ordering can change with observed
+results, but scientific depth, readable publication output and author-edit preservation cannot be
+silently removed. The [contribution principles](../CONTRIBUTING.md#product-and-development-principles)
+apply across hosts and contributors. No universal solver support or publication readiness is implied.
+
 ## Release principle
 
 The repository is published early and improved in visible, evidence-backed increments. A public

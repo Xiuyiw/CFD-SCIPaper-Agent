@@ -93,6 +93,26 @@ saved from repeated limitations to explain the positive answer from the selected
 
 ## Reuse analysis output instead of remapping values
 
+For a surface study with original face values, physical areas and polygon connectivity,
+use the connected research workspace rather than manually constructing every metric
+and section. After inspecting the actual materials, the host supplies the compact
+study definition (case identity, domain, association, units, time support, common
+conditions and located method source); the author need not prefill it or supply the
+scientific answer. `cfdpaper research --study study.json --output work` prepares the
+calculations, complementary figures and section context. Read its `TASK.md` and `RESEARCH.md`,
+inspect the figures, and write the supplied drafts using the existing value bindings.
+`cfdpaper research --workspace work --output candidate` runs the current local
+figure script and assembles the document. This reference route consumes declared
+surface NPZ exports; it does not itself open native solver files or infer their model.
+
+Continue from the candidate's retained workspace. With `--baseline candidate`, a
+new build recomputes affected figures and bound values while retaining unrelated
+drafts and current author plotting code. Resolve the reported interpretation changes
+in the affected prose before treating it as current: numeric replacement is not a
+mechanism rewrite. If Word has independent author edits, retain that file and reconcile
+them with the workspace first; this route does not silently merge arbitrary Word edits.
+The repository's `docs/research-workspace.md` gives the portable input and output layout.
+
 After the analysis selection command, `selected/section-input/writing/input.json`
 already contains the section identity, evidence IDs, calculations, source copies
 and result bindings. Point the manuscript manifest's section entry to that file.
