@@ -256,13 +256,33 @@ def test_invalid_declarations_rejected(tmp_path, change, match):
         _read_study(path)
 
 
-def test_non_temperature_and_permuted_projection_retain_declared_units(tmp_path):
+@pytest.mark.parametrize("font_family", [None, "DejaVu Serif"])
+def test_non_temperature_and_permuted_projection_retain_declared_units(tmp_path, font_family):
     path, data = study(tmp_path, unit="Pa")
     data.update(quantity="Pressure", projection_axes=[1, 0])
     path.write_text(json.dumps(data))
     output = tmp_path / "figures"
-    render_surface_study(path, output)
+    style = (
+        PlotStyle(
+            width_mm=160,
+            height_mm=110,
+            font_family=font_family,
+            font_pt=9,
+            axis_label_pt=9,
+            title_pt=10,
+            tick_pt=8,
+            legend_pt=9,
+        )
+        if font_family is not None
+        else None
+    )
+    render_surface_study(path, output, style=style)
     svg = (output / "field.svg").read_text(encoding="utf-8")
     assert "Pressure (Pa)" in svg
     rows = csv_rows(output, "field-source-data.csv")
     assert [float(row["value"]) for row in rows] == [300, 400, 350, 450]
+    checks = json.loads((output / "surface-checks.json").read_text(encoding="utf-8"))
+    assert checks["coordinate_limits"] == [[0, 0], [1, 4]]
+    assert checks["field"]["text_nonoverlapping"] is True
+    assert checks["field"]["text_inside_canvas"] is True
+    assert checks["field"]["minimum_source_font_pt"] == 8

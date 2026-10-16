@@ -365,6 +365,11 @@ def render_surface_study(
                 ax.locator_params(axis="both", nbins=4)
             colorbar = fig.colorbar(collection, cax=fig.add_subplot(grid[:, -1]))
             colorbar.set_label(f"{data['quantity']} ({display_unit(data['unit'])})")
+            # Fixed aspect can make projected x axes narrow, especially with fallback fonts.
+            # Use Matplotlib's label-space estimate without increasing the existing tick cap.
+            fig.canvas.draw()
+            for ax in fig.axes[:-1]:
+                ax.locator_params(axis="x", nbins=min(4, max(1, ax.xaxis.get_tick_space())))
             checks["field"] = _export(fig, output_dir, "field", style)
         finally:
             plt.close(fig)
