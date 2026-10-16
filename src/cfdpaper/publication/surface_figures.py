@@ -201,6 +201,7 @@ def _source_rows(data, cases):
 
 
 def _export(fig, output, figure_id, style):
+    from matplotlib.transforms import Bbox
     from PIL import Image
 
     fig.canvas.draw()
@@ -237,8 +238,26 @@ def _export(fig, output, figure_id, style):
         raise ValueError(f"Surface figure labels overlap or leave canvas: {collisions}")
     if minimum < 8:
         raise ValueError("Surface figures require at least 8 pt at the declared final width")
+    export_options = {}
+    if figure_id == "field":
+        # Equal-aspect fields may occupy only a short band of the requested canvas.
+        # Keep the full declared width and font sizes; remove only unused vertical space.
+        tight = fig.get_tightbbox(renderer)
+        export_options["bbox_inches"] = Bbox.from_extents(
+            0,
+            max(0, tight.y0 - 0.05),
+            fig.get_figwidth(),
+            min(fig.get_figheight(), tight.y1 + 0.05),
+        )
+        # Freeze the checked layout so vector/raster backends use the same crop geometry.
+        fig.set_layout_engine("none")
     for extension in ("svg", "pdf", "png", "tiff"):
-        fig.savefig(output / f"{figure_id}.{extension}", dpi=style.dpi, facecolor="white")
+        fig.savefig(
+            output / f"{figure_id}.{extension}",
+            dpi=style.dpi,
+            facecolor="white",
+            **export_options,
+        )
     with Image.open(output / f"{figure_id}.png") as raster:
         raster.load()
         pixels = list(raster.size)
@@ -312,8 +331,9 @@ def render_surface_study(
     figures, checks = [], {}
     relation = data.get("exceedance_relation", "above")
     with plt.rc_context(rc):
+        # Compressed layout fits the shared colorbar to the actual fixed-aspect field boxes.
         fig = plt.figure(
-            figsize=(style.width_mm / 25.4, style.height_mm / 25.4), layout="constrained"
+            figsize=(style.width_mm / 25.4, style.height_mm / 25.4), layout="compressed"
         )
         try:
             grid = fig.add_gridspec(nrows, columns + 1, width_ratios=[1] * columns + [0.045])

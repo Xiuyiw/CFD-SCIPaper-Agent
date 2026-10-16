@@ -1297,7 +1297,7 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                 "Recheck related figures/tables after source changes; images are not regenerated."
             )
             for passage in changes["affected_passages"][sid]:
-                if not passage["result_changes"]:
+                if not passage["result_changes"] and not passage["figures"]:
                     continue
                 change_lines += ["", f"Paragraph {passage['paragraph']}: {passage['text']}"]
                 for change in passage["result_changes"]:

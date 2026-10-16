@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.21.0] — 2026-10-16
+
+### Added
+
+- Connect declared surface face arrays and physical areas to weighted diagnostics,
+  original-polygon maps, exact exceedance distributions and a host-written research manuscript
+  through `research --study` and `research --workspace`.
+- Preserve author-local plotting scripts and drafts while rebuilding affected outputs;
+  `--baseline` provides targeted source/definition change context for host review.
+- Add portable paper-framework Studio guidance for mechanisms and explicit schematic-only
+  raster delivery, without representing conceptual images as computed CFD fields.
+- Attach imported figures, source files, captions and body references through
+  `research --attach-figure`, reusing global numbering and the existing Word assembly.
+- Include a runnable synthetic surface-research example; private cooling results remain local.
+
+### Fixed
+
+- Include affected mechanisms and captions in interpretation-review reports for definition-only
+  changes, even when scalar values do not change; conceptual artwork is not automatically redrawn.
+- Fit shared colorbars to fixed-aspect surface maps and remove unused vertical canvas
+  space without rescaling their declared width, fonts or numerical coordinates.
+
+### Evaluation
+
+- A known cooling-project trial connected four real surface fields to a four-section research
+  draft, then attached one reviewed Studio concept figure. Actual Word/PDF pages were inspected;
+  source/threshold refresh exercises preserved author scripts and drafts. The demonstrated gain
+  is a connected analysis-to-manuscript workflow, not new physical validation or general scientific
+  superiority. See the [release notes](docs/releases/v0.21.0.md).
+
 ## [0.20.0] — 2026-10-15
 
 ### Added

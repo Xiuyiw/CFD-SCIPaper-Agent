@@ -6,8 +6,11 @@ import shutil
 import numpy as np
 import pytest
 from docx import Document
+from PIL import Image, ImageDraw
 
+from cfdpaper.publication.figure_tasks import import_figure_task, prepare_figure_task
 from cfdpaper.publication.research_workspace import (
+    attach_imported_figure,
     build_research_workspace,
     prepare_surface_workspace,
 )
@@ -95,6 +98,59 @@ def assets(tmp_path_factory):
     fill_drafts(filled)
     built = build_research_workspace(filled, root / "baseline")
     return source, prepared, filled, built
+
+
+@pytest.fixture(scope="module")
+def figure_candidate(tmp_path_factory):
+    root = tmp_path_factory.mktemp("figure-candidate")
+    (root / "context.md").write_text("Synthetic interpretation, not physical validation.\n")
+    write(
+        root / "task.json",
+        {
+            "figure_id": "mechanism",
+            "kind": "schematic",
+            "purpose": "Synthetic mechanism drawing",
+            "claim_ceiling": "Conceptual interpretation only",
+            "sources": [
+                {
+                    "id": "context",
+                    "path": "context.md",
+                    "role": "context",
+                    "description": "Synthetic context",
+                }
+            ],
+            "labels": [{"text": "Synthetic pathway", "unit": ""}],
+            "final_width_mm": 100,
+        },
+    )
+    task = prepare_figure_task(root / "task.json", root / "task")
+    returned = root / "returned"
+    (returned / "artwork").mkdir(parents=True)
+    (returned / "artwork/figure.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="100" height="40"/></svg>'
+    )
+    preview = Image.new("RGB", (800, 400), "white")
+    ImageDraw.Draw(preview).rectangle((20, 20, 780, 380), outline="black", width=3)
+    preview.save(returned / "artwork/figure.png")
+    (returned / "artwork/legend.txt").write_text("A synthetic diagram, not a field plot.\n")
+    write(
+        returned / "delivery.json",
+        {
+            "figure_id": "mechanism",
+            "editable_sources": ["artwork/figure.svg"],
+            "preview": "artwork/figure.png",
+            "caption": "Conceptual synthesis of {{figure:results/field}}; no causal validation.",
+            "title": "Synthetic interpretation",
+            "legend": "Solid outline indicates a synthetic object.",
+            "body_reference": (
+                "The interpretation in {{figure:mechanism}} is constrained by "
+                "{{figure:results/field}}, without establishing transport causation."
+            ),
+            "exports": ["artwork/legend.txt"],
+            "sizing": {"source_width_mm": 100, "minimum_source_font_pt": 10},
+        },
+    )
+    return import_figure_task(task, returned / "delivery.json", root / "imported")
 
 
 def clone(assets, tmp_path):
@@ -257,3 +313,191 @@ def test_prepare_and_build_refuse_overwrite_or_nested_output(assets, tmp_path):
         build_research_workspace(old / "workspace", old / "workspace/nested")
     with pytest.raises(ValueError, match="outside"):
         build_research_workspace(old / "workspace", old)
+
+
+def test_imported_figure_builds_with_global_numbering_and_preserved_sources(
+    assets, figure_candidate, tmp_path
+):
+    work, baseline = clone(assets, tmp_path)
+    discussion_input = work / "sections/discussion/input.json"
+    section = read(discussion_input)
+    section["evidence"] = [record for record in section["evidence"] if record["id"] != "A-mean"]
+    write(discussion_input, section)
+    original, imported_original = snapshot(work), snapshot(figure_candidate)
+    old_draft = read(work / "sections/discussion/draft.json")
+    attached = attach_imported_figure(
+        work,
+        figure_candidate,
+        tmp_path / "attached",
+        section_id="discussion",
+        evidence_ids=["A-mean", "study-definition"],
+        image_observation="viewed",
+        observation_note="The caller inspected this synthetic outline.",
+        paragraph_index=0,
+    )
+    new_draft = read(attached / "sections/discussion/draft.json")
+    assert new_draft["paragraphs"][1:] == old_draft["paragraphs"]
+    assert new_draft["image_observations"]["mechanism"] == "viewed"
+    assert new_draft["observation_notes"]["mechanism"] == (
+        "The caller inspected this synthetic outline."
+    )
+    for name, content in original.items():
+        if name not in {
+            "manuscript-input.json",
+            "sections/discussion/input.json",
+            "sections/discussion/draft.json",
+        }:
+            assert (attached / name).read_bytes() == content
+    result = build_research_workspace(attached, tmp_path / "candidate", baseline_dir=baseline)
+    numbering = read(result / "manuscript/numbering.json")
+    assert numbering["sections"]["discussion"]["figure"] == {"mechanism": "3"}
+    data = read(result / "manuscript/section.json")
+    figure = data["figures"][2]
+    assert figure["id"] == "3"
+    assert figure["caption"] == "Conceptual synthesis of Figure 1; no causal validation."
+    assert figure["sizing"]["target_width_mm"] == 100
+    assert any(
+        p.get("text", "").startswith("The interpretation in Figure 3")
+        and "Figure 1" in p["text"]
+        and p["figure_ids"] == ["3"]
+        for p in data["paragraphs"]
+    )
+    document = Document(result / "manuscript.docx")
+    assert len(document.inline_shapes) == 3
+    assert document.inline_shapes[2].width.mm == pytest.approx(100)
+    assert any(
+        p.text.startswith("Figure 3. Conceptual synthesis of Figure 1") for p in document.paragraphs
+    )
+    assert read(result / "refresh.json")["figure_recipes"][0]["status"] == "unchanged"
+    section = read(attached / "sections/discussion/input.json")
+    expected_names = {
+        "task.json",
+        "delivery.json",
+        "sources/context.md",
+        "artwork/figure.svg",
+        "artwork/figure.png",
+        "artwork/legend.txt",
+    }
+    assert set(section["source_files"]) == {
+        "sources/figure-tasks/mechanism/" + name for name in expected_names
+    }
+    for root in (attached, result / "workspace", result / "manuscript"):
+        sources = root / "sections/discussion/sources/figure-tasks/mechanism"
+        assert not (sources / "skills").exists()
+        for name in expected_names:
+            assert (sources / name).read_bytes() == imported_original[name]
+    assert snapshot(work) == original
+    assert snapshot(figure_candidate) == imported_original
+
+
+@pytest.mark.parametrize("changed_definition", ["thresholds", "definition"])
+def test_imported_figure_review_lists_caption_without_changed_paragraph_values(
+    assets, figure_candidate, tmp_path, changed_definition
+):
+    work, old = clone(assets, tmp_path)
+    attached = attach_imported_figure(
+        work,
+        figure_candidate,
+        tmp_path / "attached",
+        section_id="discussion",
+        evidence_ids=["A-mean", "study-definition"],
+    )
+    baseline = build_research_workspace(attached, tmp_path / "baseline", baseline_dir=old)
+    working = tmp_path / "definition-update"
+    shutil.copytree(baseline / "workspace", working)
+    draft_path = "sections/discussion/draft.json"
+    author_draft = (working / draft_path).read_bytes()
+    caption = read(working / draft_path)["captions"]["mechanism"]
+    artwork_path = "sections/discussion/sources/figure-tasks/mechanism/artwork/figure.png"
+    artwork = (working / artwork_path).read_bytes()
+    study_path = working / "sections/results/study.json"
+    data = read(study_path)
+    if changed_definition == "thresholds":
+        data["thresholds"] = [450]
+    else:
+        data["definition"]["text"] += "; revised observation interpretation"
+    write(study_path, data)
+
+    result = build_research_workspace(working, tmp_path / "updated", baseline_dir=baseline)
+    refresh = read(result / "refresh.json")
+    assert refresh["definition_changes"] == [changed_definition]
+    assert refresh["interpretation_review_required"] is True
+    assert "discussion" in refresh["interpretation_review_sections"]
+    passages = read(result / "manuscript/changes.json")["affected_passages"]["discussion"]
+    mechanism = next(p for p in passages if any(f["id"] == "mechanism" for f in p["figures"]))
+    assert mechanism["result_changes"] == []
+    assert mechanism["figures"][0]["caption"] == caption
+    for root in (working, baseline / "workspace", result / "workspace", result / "manuscript"):
+        assert (root / draft_path).read_bytes() == author_draft
+        assert (root / artwork_path).read_bytes() == artwork
+    for root in (result, result / "manuscript"):
+        report = (root / "CHANGES.md").read_text(encoding="utf-8")
+        assert "- Figure mechanism:" in report
+        assert caption in report
+
+
+def test_imported_figure_defaults_to_append_and_not_viewed(assets, figure_candidate, tmp_path):
+    work, _ = clone(assets, tmp_path)
+    path = work / "sections/discussion/draft.json"
+    old_draft = read(path)
+    attached = attach_imported_figure(
+        work,
+        figure_candidate,
+        tmp_path / "attached",
+        section_id="discussion",
+        evidence_ids=[],
+    )
+    draft = read(attached / "sections/discussion/draft.json")
+    assert draft["paragraphs"][:-1] == old_draft["paragraphs"]
+    assert draft["image_observations"]["mechanism"] == "not-viewed"
+    assert "mechanism" not in draft["observation_notes"]
+    with pytest.raises(ValueError, match="already exists"):
+        attach_imported_figure(
+            attached,
+            figure_candidate,
+            tmp_path / "duplicate",
+            section_id="discussion",
+            evidence_ids=[],
+        )
+    with pytest.raises(FileExistsError):
+        attach_imported_figure(
+            work, figure_candidate, attached, section_id="discussion", evidence_ids=[]
+        )
+    with pytest.raises(ValueError, match="outside"):
+        attach_imported_figure(
+            work, figure_candidate, work / "nested", section_id="discussion", evidence_ids=[]
+        )
+
+
+@pytest.mark.parametrize(
+    "failure",
+    ["missing-token", "unknown-evidence", "section", "index", "preview", "observation", "source"],
+)
+def test_imported_figure_failure_preserves_inputs(assets, figure_candidate, tmp_path, failure):
+    work, _ = clone(assets, tmp_path)
+    imported = tmp_path / "imported"
+    shutil.copytree(figure_candidate, imported)
+    kwargs = {"section_id": "discussion", "evidence_ids": ["A-mean"]}
+    metadata = read(imported / "delivery.json")
+    if failure == "missing-token":
+        metadata["body_reference"] = "Figure 3 is not a stable reference."
+        write(imported / "delivery.json", metadata)
+    elif failure == "unknown-evidence":
+        kwargs["evidence_ids"] = ["not-an-evidence-id"]
+    elif failure == "section":
+        kwargs["section_id"] = "not-a-section"
+    elif failure == "index":
+        kwargs["paragraph_index"] = -1
+    elif failure == "preview":
+        (imported / metadata["preview"]).write_bytes(b"not an image")
+    elif failure == "observation":
+        kwargs["image_observation"] = "scientifically-approved"
+    elif failure == "source":
+        (imported / "sources/context.md").unlink()
+    before, imported_before = snapshot(work), snapshot(imported)
+    output = tmp_path / "failed"
+    with pytest.raises((ValueError, OSError)):
+        attach_imported_figure(work, imported, output, **kwargs)
+    assert not output.exists()
+    assert snapshot(work) == before
+    assert snapshot(imported) == imported_before

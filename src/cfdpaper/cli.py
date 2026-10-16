@@ -469,19 +469,74 @@ def research_workspace(
         Path | None,
         typer.Option("--baseline", help="Previous build for a targeted change comparison"),
     ] = None,
+    attach_figure: Annotated[
+        Path | None,
+        typer.Option("--attach-figure", help="Attach an imported figure to a new workspace copy"),
+    ] = None,
+    section: Annotated[
+        str | None, typer.Option("--section", help="Target manuscript section for --attach-figure")
+    ] = None,
+    evidence: Annotated[
+        list[str] | None,
+        typer.Option("--evidence", help="Supporting section evidence ID; repeat for multiple IDs"),
+    ] = None,
+    paragraph_index: Annotated[
+        int | None,
+        typer.Option(
+            "--paragraph-index", help="Insert before this zero-based paragraph; else append"
+        ),
+    ] = None,
+    viewed: Annotated[
+        bool, typer.Option("--viewed", help="Host has actually inspected the imported preview")
+    ] = False,
+    observation_note: Annotated[
+        str, typer.Option("--observation-note", help="Host's actual figure observations")
+    ] = "",
 ) -> None:
-    """Prepare a surface research workspace, or assemble the host-written candidate."""
+    """Prepare a workspace, attach an imported figure, or build the host-written candidate."""
     try:
         if (study is None) == (workspace is None):
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
         if baseline is not None and workspace is None:
             raise WorkflowInputError("--baseline requires --workspace and a previous build.")
+        if attach_figure is not None:
+            if workspace is None:
+                raise WorkflowInputError("--attach-figure requires --workspace.")
+            if section is None:
+                raise WorkflowInputError("--attach-figure requires --section.")
+            if baseline is not None:
+                raise WorkflowInputError("Attach first, then use --baseline in a separate build.")
+        elif (
+            section is not None
+            or evidence
+            or paragraph_index is not None
+            or viewed
+            or observation_note
+        ):
+            raise WorkflowInputError("Figure attachment options require --attach-figure.")
         from cfdpaper.publication.research_workspace import (
+            attach_imported_figure,
             build_research_workspace,
             prepare_surface_workspace,
         )
 
-        if study is not None:
+        if attach_figure is not None:
+            attach_imported_figure(
+                workspace,
+                attach_figure,
+                output,
+                section_id=section,
+                evidence_ids=evidence or [],
+                paragraph_index=paragraph_index,
+                image_observation="viewed" if viewed else "not-viewed",
+                observation_note=observation_note,
+            )
+            console.print(f"Research workspace with figure ready: {output}", markup=False)
+            console.print(
+                "Use this new --workspace to build the candidate; existing drafts are preserved.",
+                markup=False,
+            )
+        elif study is not None:
             prepare_surface_workspace(study, output)
             console.print(f"Research workspace ready: {output}", markup=False)
             console.print(
@@ -742,5 +797,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.20.0.",
+        help="Roadmap command; not available in v0.21.0.",
     )(_placeholder_command(_command_name))

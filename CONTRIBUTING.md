@@ -29,8 +29,10 @@ publication authority. The current development sequence and acceptance criteria 
   adapters and task context. Reuse the existing SQLite/FTS, IDs, calculations and document bindings.
 - Source changes drive deterministic recalculation/redrawing and targeted writing context. Scientific
   interpretation remains the host/author's responsibility; do not certify causality by a status flag.
-- Figures need real source data, runnable local scripts, editable SVG/PDF and readable previews.
-  Match the visual grammar to the evidence; two scalar values do not automatically justify a full figure.
+- Quantitative figures need real source data, runnable local scripts, editable SVG/PDF and readable
+  previews. Explicitly chosen conceptual raster artwork must disclose that it is not editable;
+  it cannot replace computed fields or numerical plots. Match the visual grammar to the evidence;
+  two scalar values do not automatically justify a full figure.
 - Default manuscript body paragraphs use a two-character first-line indent and zero spacing before
   and after. Headings, captions and tables have distinct styles; an explicit journal template wins.
   Check actual Word/PDF pages, not only document XML or file existence.

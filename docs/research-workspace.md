@@ -11,6 +11,10 @@ writes the argument. The author does **not** need to prefill scientific conclusi
 use this workflow. Ask the author only for consequential information that cannot be
 established from the supplied sources.
 
+For a complete runnable example without private data or an AI API, start with the
+[synthetic surface study](../examples/surface-research/README.md). Its fixed sample
+prose demonstrates assembly; a real task still needs the host's scientific reading.
+
 ## Prepare the workspace
 
 Use an environment with CFD-Paper-Agent and its `docs` extra installed; the build step
@@ -137,6 +141,36 @@ cfdpaper research --workspace research-workspace --output build-02 --baseline bu
 materials directory. The comparison identifies affected content; the host still revisits
 interpretations when their supporting values change. Preserve previous builds and current
 author edits. This command does not alter the existing `write` or refresh interfaces.
+
+## Add a mechanism figure without rebuilding the quantitative figures
+
+Prepare and import the artwork through the existing `figure --task-input` and
+`figure --package ... --delivery ...` route described in
+[figure-task reference](../skills/cfd-figure-production/references/external-backends.md). For schematic/hybrid tasks the package includes the
+paper-framework Studio guidance. Real field maps and numerical plots stay data-driven;
+conceptual artwork explains source-supported relationships, not new simulated evidence.
+
+The returned `delivery.json` carries a caption and a `body_reference` containing the
+local figure token, for example `{{figure:heat-path}}`. Attach the imported candidate:
+
+```console
+cfdpaper research --workspace research-workspace --attach-figure imported-figure --section discussion --evidence location-observation --paragraph-index 2 --output workspace-with-mechanism
+cfdpaper research --workspace workspace-with-mechanism --baseline build-01 --output build-with-mechanism
+```
+
+Use an evidence ID that actually exists in the target section; repeat `--evidence`
+for multiple supporting records. The paragraph index is zero-based and inserts before
+that paragraph; omit it to append. The operation creates a new workspace and keeps
+the existing prose, sources and local plotting scripts. The normal build handles the
+global figure number, caption bindings and Word placement. It skips unchanged drawing
+recipes when the baseline is supplied.
+
+The imported preview starts as `not-viewed`. After inspecting it, the host can pass
+`--viewed --observation-note "..."` during attachment, describing actual observations.
+This records an inspection, not author approval. Review the actual Word/PDF layout as
+well. A later definition or source change lists affected mechanisms and captions for
+host reconsideration; it does not automatically redraw conceptual arrows. Explicit
+`raster_concept` output is schematic-only and remains raster, not editable SVG.
 
 The result is an editable research candidate for author review. It does not establish
 solver convergence, physical comparability, experimental validation or publication readiness

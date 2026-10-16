@@ -8,9 +8,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from cfdpaper.publication.figure_recipes import execute_figure_recipes
-from cfdpaper.publication.figure_tasks import _asset
-from cfdpaper.publication.manuscript import assemble_manuscript, prepare_manuscript
-from cfdpaper.publication.section import _read, _stage, _write, export_section_docx
+from cfdpaper.publication.figure_tasks import _asset, _check_preview, _Delivery, _Task
+from cfdpaper.publication.manuscript import _inputs, assemble_manuscript, prepare_manuscript
+from cfdpaper.publication.section import _Draft, _read, _stage, _write, export_section_docx
 from cfdpaper.publication.surface_figures import _read_study
 
 _RESULTS = Path("sections/results")
@@ -75,6 +75,138 @@ def _study(path):
 def _distinct_output(source, output):
     if output.is_relative_to(source) or source.is_relative_to(output):
         raise ValueError("Use a fresh output outside the source workspace or material directory")
+
+
+def attach_imported_figure(
+    workspace_dir: Path,
+    imported_dir: Path,
+    output_dir: Path,
+    *,
+    section_id: str,
+    evidence_ids: list[str],
+    image_observation: str = "not-viewed",
+    observation_note: str = "",
+    paragraph_index: int | None = None,
+) -> Path:
+    """Attach an imported figure to a fresh authoring workspace, without replacing prose.
+
+    The delivery's body_reference must use its local ``{{figure:ID}}`` token. Its
+    caption and sizing enter the existing manuscript assembly and global numbering.
+    Only declared source/artwork files and import metadata are copied from the figure
+    package; bundled drawing Skills are not duplicated into manuscript sources.
+    Observation status/notes are caller declarations, never scientific approval.
+    ``paragraph_index`` inserts before that zero-based paragraph; None appends.
+    """
+    workspace_dir, imported_dir, output_dir = map(
+        lambda path: Path(path).resolve(), (workspace_dir, imported_dir, output_dir)
+    )
+    _distinct_output(workspace_dir, output_dir)
+    _distinct_output(imported_dir, output_dir)
+    manifest_path = _asset(workspace_dir, "manuscript-input.json")
+    manifest = _read(manifest_path)
+    _, loaded, _, _, _ = _inputs(manifest_path)
+    if section_id not in loaded:
+        raise ValueError(f"Unknown manuscript section: {section_id}")
+    available = {record.id for record in loaded[section_id][1].evidence}
+    if not isinstance(evidence_ids, list) or any(
+        not isinstance(key, str) or key not in available for key in evidence_ids
+    ):
+        raise ValueError("Figure paragraph evidence_ids must exist in the target section")
+    entry = next(item for item in manifest["sections"] if item["section_id"] == section_id)
+    source = _asset(workspace_dir, entry["input"])
+    section = _read(source)
+    drafts = _read(_asset(workspace_dir, "drafts.json"))
+    if section_id not in drafts:
+        raise ValueError(f"Missing draft mapping for section: {section_id}")
+    draft_path = _asset(workspace_dir, drafts[section_id])
+    draft = _read(draft_path)
+    if not isinstance(observation_note, str) or (observation_note and not observation_note.strip()):
+        raise ValueError("observation_note must be nonblank when provided")
+    if paragraph_index is not None and (
+        type(paragraph_index) is not int or not 0 <= paragraph_index <= len(draft["paragraphs"])
+    ):
+        raise ValueError("paragraph_index must be an insertion position within the draft")
+
+    task = _Task.model_validate(_read(_asset(imported_dir, "task.json")))
+    metadata = _read(_asset(imported_dir, "delivery.json"))
+    if metadata.get("status") != "imported_candidate":
+        raise ValueError("Use the candidate directory returned by import_figure_task")
+    delivery = _Delivery.model_validate(
+        {key: value for key, value in metadata.items() if key in _Delivery.model_fields}
+    )
+    figure_id = task.figure_id
+    if figure_id in {".", ".."} or delivery.figure_id != figure_id:
+        raise ValueError("Imported figure identity is invalid or does not match its task")
+    existing_ids = {
+        *[figure.id for figure in loaded[section_id][1].figures],
+        *draft["captions"],
+        *draft["image_observations"],
+        *draft.get("observation_notes", {}),
+    }
+    if figure_id.casefold() in {key.casefold() for key in existing_ids}:
+        raise ValueError(f"Figure already exists in section {section_id}: {figure_id}")
+    if "{{figure:" + figure_id + "}}" not in delivery.body_reference:
+        raise ValueError("body_reference must contain the imported figure's local figure token")
+    _check_preview(_asset(imported_dir, delivery.preview), task.final_width_mm)
+    names = list(
+        dict.fromkeys(
+            [
+                "task.json",
+                "delivery.json",
+                *[item.path for item in task.sources],
+                *delivery.editable_sources,
+                delivery.preview,
+                *delivery.exports,
+            ]
+        )
+    )
+    assets = {name: _asset(imported_dir, name) for name in names}
+    relative = Path("sources/figure-tasks") / figure_id
+    destination = source.parent / relative
+    if destination.exists():
+        raise FileExistsError(f"Refusing to overwrite author-owned figure sources: {destination}")
+    section["figures"].append(
+        {
+            "id": figure_id,
+            "path": (relative / delivery.preview).as_posix(),
+            "caption": delivery.caption,
+            "description": task.purpose,
+            "sizing": delivery.sizing.model_dump(),
+        }
+    )
+    section["source_files"] = list(
+        dict.fromkeys(
+            [*section.get("source_files", []), *[(relative / name).as_posix() for name in names]]
+        )
+    )
+    paragraph = {
+        "text": delivery.body_reference,
+        "evidence_ids": evidence_ids,
+        "figure_ids": [figure_id],
+    }
+    draft["paragraphs"].insert(
+        len(draft["paragraphs"]) if paragraph_index is None else paragraph_index, paragraph
+    )
+    draft["captions"][figure_id] = delivery.caption
+    draft["image_observations"][figure_id] = image_observation
+    if observation_note:
+        draft.setdefault("observation_notes", {})[figure_id] = observation_note
+    _Draft.model_validate(draft)
+    contract = next(
+        item for item in manifest["spine"]["sections"] if item["section_id"] == section_id
+    )
+    contract.setdefault("required_figure_ids", []).append(figure_id)
+    with _stage(output_dir) as staged:
+        shutil.copytree(workspace_dir, staged, dirs_exist_ok=True)
+        target_section = staged / source.parent.relative_to(workspace_dir)
+        for name, original in assets.items():
+            target = target_section / relative / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original, target)
+        _write(staged / entry["input"], section)
+        _write(staged / drafts[section_id], draft)
+        _write(staged / "manuscript-input.json", manifest)
+    return output_dir
 
 
 def _definition_text(data):

@@ -3,13 +3,17 @@
 ## Current direction: Research Workbench
 
 The author approved the [v0.21–v0.24 development plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md).
-The released baseline is v0.20.0. The v0.21 development branch has completed a connected
-four-case surface study and a selective-refresh exercise; it is not a released version.
+The v0.21.0 increment connects supplied surface results, physical-area diagnostics,
+complementary figures and a host-written research manuscript. A known four-case cooling
+study exercised the chain, followed by a source-grounded conceptual figure and selective
+refresh with author-asset preservation. The CLI and a runnable public synthetic example
+expose the same workflow; see the [release notes](releases/v0.21.0.md) and
+[surface tutorial](../examples/surface-research/README.md).
 Existing releases and their limitations are retained below as history.
 
 | Version | Complete user capability | Status |
 |---|---|---|
-| v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Local implementation and known-project task verified; release pending |
+| v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Spatial/temporal diagnostics and discriminating mechanism evidence, with tested native and neutral field extraction | Planned |
 | v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return | Planned |
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
@@ -82,6 +86,7 @@ run; independent cross-provider scientific comparison remains untested.
 | `v0.18.0` | Source-defined reference ranges, complementary numerical panels and joint-observation manuscript guidance | Implemented scope; paired first-draft results mixed; see release notes and release tag |
 | `v0.19.0` | Source-bound JSON parameters, paired model/reference contrasts and their numerical panels | Implemented scope; scientific exercise and exact-package checks described in release notes |
 | `v0.20.0` | Static method reads, saved history differences, inline metadata and section-end figures | Implemented scope; scientific exercise and exact-package checks described in release notes |
+| `v0.21.0` | Connected surface research, source-aware refresh, Studio concept-figure attachment and a runnable public example | Implemented scope; known-project scientific use and author-edit preservation described in release notes |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection

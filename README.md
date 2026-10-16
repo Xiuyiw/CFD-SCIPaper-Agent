@@ -17,17 +17,20 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.20.0 adds exact static method-definition reads, same-record history differences,
-optional bibliographic metadata and explicit section-end figure placement. Source-bound numerical
-methods and paired model/reference observations remain available. Specialist guidance emphasizes
-effective model settings, discriminating observations and connected scientific arguments.
-Start with the
-[materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md) and
-[v0.20.0 notes](docs/releases/v0.20.0.md) and
-[effective-methods tutorial](examples/effective-methods/README.md) and
-[中文工程试用指南](docs/tutorials/engineering-trial.md) and
-[paired-observation tutorial](examples/paired-observations/README.md) and
-[multi-observation tutorial](examples/multi-observation/README.md) and
+Version 0.21.0 connects supplied surface fields to area-weighted comparisons, original-face maps,
+exact exceedance distributions and an editable research manuscript. Source and definition updates
+refresh bound figures, tables and values while preserving author-local scripts and drafts.
+Paper-framework Studio guidance and `research --attach-figure` connect reviewed conceptual artwork
+to the manuscript; scientific interpretation remains with the host and author.
+Start with the [runnable surface research example](examples/surface-research/README.md),
+[research commands](docs/research-workspace.md) and [v0.21.0 notes](docs/releases/v0.21.0.md).
+
+Earlier workflows remain available: the
+[materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md),
+[effective-methods tutorial](examples/effective-methods/README.md),
+[中文工程试用指南](docs/tutorials/engineering-trial.md),
+[paired-observation tutorial](examples/paired-observations/README.md),
+[multi-observation tutorial](examples/multi-observation/README.md),
 [transient writing tutorial](docs/tutorials/transient-writing.md) and
 [scientific context guide](docs/scientific-context.md). The
 [connected-writing example](examples/connected-writing/README.md) covers long-table evidence;
@@ -49,6 +52,8 @@ covers whole-manuscript feedback and selected editing.
 | Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. v0.13 adds `.py` intake as source text, never execution. |
 | Materials-to-manuscript guidance | Available | Thin workflow entry coordinates four specialist skills; portable analysis packages include all five skills. `--outline` gathers selected inputs, dependencies and optional drafts without rebuilding numeric bindings. Missing prose remains pending. |
 | Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
+| Connected surface research | Available | Two to four declared NPZ face fields with physical areas and polygon geometry; weighted diagnostics, exact area-exceedance distributions, shared-scale field maps and four-section Word output. No native-solver extraction or inferred comparability. |
+| Research refresh and author-asset preservation | Available | Source/definition changes update affected recipes, bound values and review locations; local plotting scripts and drafts are retained. The host revisits interpretations and conceptual arrows. |
 | Saved transient evidence | Available | Exact sampled windows, nonuniform trapezoidal integrals/means, saved extrema and threshold samples; cumulative increments without double integration. No interpolation or native-event reconstruction. |
 | Reference-range evidence | Available | Model/reference deviations and signed distances from supplied bounds, with original range meaning and units; no combined model-validation score. |
 | Paired observation contrasts | Available | Model and reference changes from two explicit members, conservative endpoint subtraction and original records; contrast agreement does not erase absolute bias. |
@@ -62,7 +67,7 @@ covers whole-manuscript feedback and selected editing.
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
 | Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate; reassembly preserves unedited drafts. Word-only edits must be reconciled into the draft. |
-| External drawing tasks | Available | Host-facing data, conceptual and hybrid tasks; import Python, SVG or uncompressed draw.io editing sources with previews and listed supporting files. Import does not run scripts or approve figures. |
+| External drawing tasks and mechanism attachment | Available | Studio-guided conceptual/hybrid tasks, editable-source import and manuscript attachment. Explicit `raster_concept` is schematic-only and reports no editable source; it cannot replace computed fields. Import does not approve figures. |
 | Whole-paper review and selected editing | Available | Complete reports, exact targets and optional shared-evidence locations travel with editable drafts; the host evaluates and implements changes. |
 | Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
 
@@ -71,19 +76,37 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.20.0 checkout or its matching
-release wheel. From the checkout root, install with Word support:
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.21.0 checkout or source archive
+from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
+with Word support from its root:
 
 ```text
 python -m pip install ".[docs]"
 cfdpaper --help
 ```
 
-Start with the [seven-section literature tutorial](examples/literature-manuscript/README.md)
+Alternatively, download the matching release wheel and install it with Word support:
+
+```text
+python -m pip install "./cfd_paper_agent-0.21.0-py3-none-any.whl[docs]"
+```
+
+The examples live in the source checkout/archive, not the wheel. Run the connected synthetic
+surface example from the source root, choosing a new output directory:
+
+```text
+python examples/surface-research/run_example.py output/surface-demo
+```
+
+Open `output/surface-demo/candidate/manuscript.docx`. Add `--prepare-only` for an empty
+host-writing workspace instead of replaying the supplied example prose. See the
+[surface tutorial](examples/surface-research/README.md) for source/threshold refresh and relocation.
+
+The [seven-section literature tutorial](examples/literature-manuscript/README.md) shows how
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.20.0 notes](docs/releases/v0.20.0.md) for the current scope
-and the [v0.19.0 notes](docs/releases/v0.19.0.md) for the preceding baseline.
+remains available. See the [v0.21.0 notes](docs/releases/v0.21.0.md) for the current scope
+and the [v0.20.0 notes](docs/releases/v0.20.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -322,6 +345,9 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.21.0 release notes](docs/releases/v0.21.0.md)
+- [Surface research commands](docs/research-workspace.md)
+- [v0.20.0 release notes](docs/releases/v0.20.0.md)
 - [v0.15.0 development notes](docs/releases/v0.15.0.md)
 - [v0.13.0 development notes](docs/releases/v0.13.0.md)
 - [v0.12.0 notes](docs/releases/v0.12.0.md)

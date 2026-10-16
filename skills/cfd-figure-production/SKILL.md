@@ -1,6 +1,6 @@
 ---
 name: cfd-figure-production
-description: Select evidence and visual encoding for a CFD argument, assess scientific information density, and produce an author-accepted reproducible figure bundle.
+description: Select and render CFD evidence figures, or create paper-grounded mechanism diagrams with Paper Framework Figure Studio, preserving sources and author edits.
 ---
 
 # CFD figure production
@@ -12,6 +12,13 @@ claim.
 
 Also use when choosing or assessing figures for host-assisted analysis/subsections. The legacy
 approval CLI below applies only to its existing candidate pipeline, not to every supplied figure.
+
+For mechanism, paper-framework or method schematics, use
+[Paper Framework Figure Studio](references/paper-framework-studio.md) through the portable task
+route below. Prefer the installed `paper-framework-figure-studio-pro`; the bundled adaptation
+works without that installation. Read the actual paper/method/evidence, make core mechanism steps
+visible, and develop the figure and caption together. Default to one finished candidate, not a
+new approval sequence. Keep numerical CFD plots and real field images data-driven.
 
 ## Scientific figure selection
 
@@ -141,7 +148,7 @@ these settings together in `PLOT_STYLE`; editable local scripts retain priority 
 figure `sizing`; let the document layer choose the actual embedding width. Raster rounding can differ
 from the vector canvas by up to one pixel. Raising dpi does not increase the embedded text size.
 
-## External drawing tools: portable tasks and editable returns
+## External drawing tools: portable tasks and mechanism figures
 
 Use this route when the scientific argument needs a layout or schematic outside the existing
 data renderer. Read the packaged external-tool reference; choose the tool by the scientific
@@ -153,13 +160,21 @@ cfdpaper figure PROJECT_ROOT --package figure-package --delivery delivery.json -
 ```
 
 The task states `figure_id`, `kind` (`data`, `schematic`, or `hybrid`), `purpose`, `claim_ceiling`,
-source files and their roles, exact labels/units, optional relationships and final width. Follow
+source files and their roles, exact labels/units, optional relationships and final width. Supply
+relevant paper/method excerpts as `context` sources for a mechanism figure. Follow
 `prompt.md` and the bundled references using an available host drawing tool. Data charts must come
 from source records and runnable plotting code. Conceptual arrows convey only declared physical
 relationships; distinguish hypotheses from measured observations. A concept illustration must never
 be passed off as a CFD field. Keep original field images unchanged in mixed layouts.
 
-Return `delivery-template.json` with the actual editable source files, raster preview and caption.
+`output_mode` defaults to `editable`. For an explicitly requested pure conceptual raster figure,
+`kind: schematic` also accepts `output_mode: raster_concept`; the host's image tool may draw it,
+but an empty editable list is reported honestly. Data/hybrid tasks cannot use that mode.
+
+Return `delivery-template.json` with actual editable sources when available, raster preview and
+caption; optional `title`, `legend` and `body_reference` keep the explanatory text with the image.
+They do not automatically replace manuscript prose. The import reports `editable_available`
+separately from readable preview and never promotes a bitmap to editable artwork.
 Where known, set its `sizing.source_width_mm` and `sizing.minimum_source_font_pt` from the actual
 exported figure. `target_width_mm` inherits the task's final width; revise the task explicitly if
 that width changes. Import returns reusable `sizing` and a page-constrained `placement`, including

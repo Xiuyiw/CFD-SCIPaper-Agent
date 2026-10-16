@@ -51,6 +51,74 @@ def csv_rows(output, filename):
         return list(csv.DictReader(stream))
 
 
+@pytest.mark.parametrize("cases,y_scale", [(2, 2.0), (4, 1.0), (2, 8.0)])
+def test_colorbar_matches_equal_aspect_field_bounds(tmp_path, monkeypatch, cases, y_scale):
+    import cfdpaper.publication.surface_figures as surface_figures
+
+    path, _ = study(tmp_path, cases=cases)
+    for source in (tmp_path / "sources").iterdir():
+        with np.load(source, allow_pickle=False) as bundle:
+            arrays = {key: bundle[key].copy() for key in bundle.files}
+        arrays["vertices_m"][:, 1] *= y_scale
+        arrays["area_m2"] *= y_scale
+        np.savez(source, **arrays)
+
+    def inspect(fig, output, figure_id, style):
+        fig.canvas.draw()
+        if figure_id == "field":
+            axes, colorbar = fig.axes[:-1], fig.axes[-1]
+            assert len(axes) == cases
+            bottom = min(ax.get_window_extent().y0 for ax in axes)
+            top = max(ax.get_window_extent().y1 for ax in axes)
+            assert colorbar.get_window_extent().y0 == pytest.approx(bottom, abs=0.5)
+            assert colorbar.get_window_extent().y1 == pytest.approx(top, abs=0.5)
+            for ax in axes:
+                assert ax.get_xlim() == (0, 4)
+                assert ax.get_ylim() == (0, y_scale)
+                assert ax.get_aspect() == 1
+            assert fig.get_figwidth() * 25.4 == pytest.approx(style.width_mm)
+        return {
+            "source_width_mm": style.width_mm,
+            "target_width_mm": style.width_mm,
+            "minimum_source_font_pt": 8,
+        }
+
+    monkeypatch.setattr(surface_figures, "_export", inspect)
+    render_surface_study(path, tmp_path / "figures")
+
+
+def test_field_vertical_crop_preserves_width_and_distribution_size(tmp_path, monkeypatch):
+    from matplotlib.figure import Figure
+    from PIL import Image
+
+    path, _ = study(tmp_path)
+    for source in (tmp_path / "sources").iterdir():
+        with np.load(source, allow_pickle=False) as bundle:
+            arrays = {key: bundle[key].copy() for key in bundle.files}
+        arrays["vertices_m"][:, 1] *= 2
+        arrays["area_m2"] *= 2
+        np.savez(source, **arrays)
+    data_heights = []
+    savefig = Figure.savefig
+
+    def capture(self, filename, *args, **kwargs):
+        if str(filename).endswith("field.png"):
+            data_heights.append(self.axes[0].get_window_extent().height / self.dpi)
+        return savefig(self, filename, *args, **kwargs)
+
+    monkeypatch.setattr(Figure, "savefig", capture)
+    output = tmp_path / "figures"
+    figures = render_surface_study(path, output)
+    with Image.open(output / "field.png") as field:
+        assert field.width / 300 * 25.4 == pytest.approx(160, abs=0.1)
+        assert field.height / 300 * 25.4 < 60
+        assert data_heights[0] * 300 / field.height > 0.55
+    with Image.open(output / "distribution.png") as distribution:
+        assert distribution.width / 300 * 25.4 == pytest.approx(160, abs=0.1)
+        assert distribution.height / 300 * 25.4 == pytest.approx(110, abs=0.1)
+    assert figures[0]["sizing"]["minimum_source_font_pt"] == 8
+
+
 def test_exact_polygons_shared_scale_units_sources_and_formats(tmp_path, monkeypatch):
     from matplotlib.collections import PolyCollection
 

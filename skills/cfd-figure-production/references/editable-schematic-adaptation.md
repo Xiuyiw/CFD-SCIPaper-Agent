@@ -25,9 +25,11 @@ This is a modified instruction subset, not an unchanged upstream installation.
 ## Deliberate changes
 
 - Native SVG is accepted alongside draw.io; no custom canvas implementation.
-- Image generation is optional composition exploration, never mandatory or a
-  quantitative source. No generated CFD field, reconstructed measurement or
-  changed colorbar is permitted.
+- This is the editable fallback after the paper-grounded Studio procedure.
+  Here image generation is optional composition exploration, never a quantitative
+  source. Final pure conceptual raster illustrations use the Studio's explicit
+  `raster_concept` route instead; do not pretend they have editable geometry.
+  No generated CFD field, reconstructed measurement or changed colorbar is permitted.
 - Icon sourcing and model-specific steps are omitted. Optional external assets
   need their own license/attribution; this MIT notice does not license those assets.
 - One targeted author edit preserves all other topology, labels and style.

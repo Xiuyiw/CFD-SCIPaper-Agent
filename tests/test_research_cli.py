@@ -24,8 +24,12 @@ def workspace_backend(monkeypatch):
     def build(workspace_dir, output_dir, baseline_dir=None):
         calls.append(("build", workspace_dir, output_dir, baseline_dir))
 
+    def attach(workspace_dir, imported_dir, output_dir, **kwargs):
+        calls.append(("attach", workspace_dir, imported_dir, output_dir, kwargs))
+
     backend.prepare_surface_workspace = prepare
     backend.build_research_workspace = build
+    backend.attach_imported_figure = attach
     monkeypatch.setitem(sys.modules, backend.__name__, backend)
     return backend, calls
 
@@ -56,6 +60,84 @@ def test_build_thin_entrypoint_forwards_optional_baseline(
     assert calls == [("build", workspace, output, baseline)]
     assert "Research candidate assembled" in result.stdout
     assert "approved" not in result.stdout.lower()
+
+
+@pytest.mark.parametrize("viewed", [False, True])
+def test_attach_figure_forwards_host_choices_without_building(tmp_path, workspace_backend, viewed):
+    _, calls = workspace_backend
+    work, imported, output = (tmp_path / name for name in ("workspace", "imported", "attached"))
+    args = [
+        "research",
+        "--workspace",
+        str(work),
+        "--attach-figure",
+        str(imported),
+        "--section",
+        "discussion",
+        "--evidence",
+        "observation-A",
+        "--evidence",
+        "method",
+        "--paragraph-index",
+        "1",
+        "--output",
+        str(output),
+    ]
+    if viewed:
+        args.extend(["--viewed", "--observation-note", "Read labels and directional arrows."])
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls == [
+        (
+            "attach",
+            work,
+            imported,
+            output,
+            {
+                "section_id": "discussion",
+                "evidence_ids": ["observation-A", "method"],
+                "paragraph_index": 1,
+                "image_observation": "viewed" if viewed else "not-viewed",
+                "observation_note": "Read labels and directional arrows." if viewed else "",
+            },
+        )
+    ]
+    assert "Research workspace with figure ready" in result.stdout
+    assert "approved" not in result.stdout.lower()
+
+
+@pytest.mark.parametrize(
+    "options,detail",
+    [
+        (["--study", "study.json", "--attach-figure", "figure"], "requires --workspace"),
+        (["--workspace", "work", "--attach-figure", "figure"], "requires --section"),
+        (
+            [
+                "--workspace",
+                "work",
+                "--attach-figure",
+                "figure",
+                "--section",
+                "results",
+                "--baseline",
+                "old",
+            ],
+            "separate build",
+        ),
+        (["--workspace", "work", "--section", "results"], "require --attach-figure"),
+        (["--workspace", "work", "--evidence", "a"], "require --attach-figure"),
+        (["--workspace", "work", "--viewed"], "require --attach-figure"),
+        (["--workspace", "work", "--paragraph-index", "0"], "require --attach-figure"),
+        (["--workspace", "work", "--observation-note", "read"], "require --attach-figure"),
+    ],
+)
+def test_attach_options_reject_ignored_arguments(options, detail, workspace_backend):
+    _, calls = workspace_backend
+    result = runner.invoke(app, ["research", *options, "--output", "out"])
+    assert result.exit_code == 2
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout + result.stderr)
+    assert detail in plain
+    assert calls == []
 
 
 @pytest.mark.parametrize(
