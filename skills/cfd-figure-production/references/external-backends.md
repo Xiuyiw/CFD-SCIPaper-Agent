@@ -35,15 +35,26 @@ solver-native operator or appropriate polygon treatment when that assumption fai
 
 ## Conceptual layers
 
-Read [editable-schematic-adaptation.md](editable-schematic-adaptation.md).
-If installed, invoke `codex-paper-figure-skill` with that adaptation and task.json;
-otherwise its adapted executable host procedure is included locally. No API key,
-image service, icon download or framework installation is required. Existing SVG
-or draw.io tools are sufficient. Import never launches a returned script or CLI.
+Start with [paper-framework-studio.md](paper-framework-studio.md): recover the paper's
+method and evidence, make the core mechanism visible, and design the figure and caption
+together. Prefer the installed `paper-framework-figure-studio-pro` with this CFD task;
+the bundled adaptation provides the same working procedure when it is unavailable.
+Do not substitute a generic box diagram for the actual physical mechanism.
+
+Editable delivery is the default. Use the native SVG/draw.io fallback in
+[editable-schematic-adaptation.md](editable-schematic-adaptation.md), or an available
+`codex-paper-figure-skill` for this drawing step. For an explicitly requested pure
+conceptual raster illustration, set `output_mode: raster_concept` on a `schematic`
+task and use the host image tool; return an empty editable list when appropriate.
+Never claim a generated bitmap is editable or a CFD field. Data/hybrid tasks retain
+their real numerical script and source dependencies. No image service is mandatory;
+import never launches a drawing tool or a returned script.
 
 ## Return and local edits
 
-Use `delivery-template.json`. Artifact paths are relative to delivery.json and are
+Use `delivery-template.json`. Keep title, legend, caption and body-reference text
+aligned with the final artwork; optional companion fields travel with the delivery
+without overwriting the author's prose. Artifact paths are relative to delivery.json and are
 preserved on import. Keep unchanged input files in `sources/`; the importer copies
 them automatically. List any new supporting file in `exports`. A figure script
 should resolve its source paths relative to its own location, not the shell cwd.

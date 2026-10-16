@@ -1,4 +1,4 @@
-"""Portable host figure tasks and non-executing import of editable deliveries."""
+"""Portable host figure tasks and non-executing import of candidate artwork."""
 
 from __future__ import annotations
 
@@ -40,6 +40,7 @@ class _Relationship(_Record):
 class _Task(_Record):
     figure_id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     kind: Literal["data", "schematic", "hybrid"]
+    output_mode: Literal["editable", "raster_concept"] = "editable"
     purpose: str
     claim_ceiling: str
     sources: list[_Source] = Field(min_length=1)
@@ -49,6 +50,8 @@ class _Task(_Record):
 
     @model_validator(mode="after")
     def check_route(self):
+        if self.output_mode == "raster_concept" and self.kind != "schematic":
+            raise ValueError("raster_concept is only available for conceptual schematic tasks")
         ids = [s.id.casefold() for s in self.sources]
         if len(ids) != len(set(ids)) or any(key in {".", ".."} for key in ids):
             raise ValueError("Source IDs must be unique")
@@ -62,9 +65,12 @@ class _Task(_Record):
 
 class _Delivery(_Record):
     figure_id: str
-    editable_sources: list[str] = Field(min_length=1)
+    editable_sources: list[str] = Field(default_factory=list)
     preview: str
     caption: str
+    title: str = ""
+    legend: str = ""
+    body_reference: str = ""
     exports: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     sizing: FigureSizing = Field(default_factory=FigureSizing)
@@ -148,23 +154,48 @@ def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
         _write(staged / "task.json", task.model_dump(by_alias=True))
         shutil.copytree(skill, staged / "skills/cfd-figure-production")
         reference = "skills/cfd-figure-production/references/external-backends.md"
+        studio = "skills/cfd-figure-production/references/paper-framework-studio.md"
+        conceptual_guidance = (
+            f"Read {studio} for the paper-grounded mechanism workflow. If available, use "
+            "paper-framework-figure-studio-pro with these sources and constraints; otherwise "
+            "follow the bundled adapted procedure. First recover the method, physical entities "
+            "and source-supported mechanism; then make its essential steps visible in the "
+            "artwork. Produce one complete figure by default, not a gallery or staged approvals. "
+            "Develop its title, legend, caption and body_reference together.\n"
+            if task.kind in {"schematic", "hybrid"}
+            else ""
+        )
+        output_guidance = (
+            "Output mode: raster_concept (explicit opt-in for a conceptual schematic). "
+            "The host image-generation tool may produce final conceptual artwork. Return "
+            "editable_sources: [] if no genuine editable source exists; do not wrap a bitmap "
+            "in SVG and call it editable. Record this limitation in notes.\n"
+            if task.output_mode == "raster_concept"
+            else "Output mode: editable. Return genuine editable sources: SVG/draw.io for "
+            "schematics and the data plotting script for data/hybrid figures. Image generation "
+            "can inform conceptual composition, but cannot replace editable geometry or data. "
+            "If a hybrid includes a raster conceptual layer, disclose it in notes and retain "
+            "the composition script and all layer dependencies.\n"
+        )
         (staged / "prompt.md").write_text(
             f"# Figure task: {task.figure_id}\n\n"
-            f"Read task.json, {reference}, and the linked schematic adaptation when needed.\n"
+            f"Read task.json and {reference}.\n"
             f"Route: {task.kind}. Produce the relationship described in purpose, within "
             "claim_ceiling; preserve source rows, cases, exact labels and units.\n"
-            "Data layers use the existing Matplotlib/data-analysis route. Conceptual layers "
-            "use editable SVG or draw.io; distinguish observed, hypothesis and method arrows.\n"
+            + conceptual_guidance
+            + output_guidance
+            + "Data layers use the existing Matplotlib/data-analysis route. Conceptual layers "
+            "distinguish observed, hypothesis and method arrows.\n"
             "A field_image is a read-only real field export or reference: never ask an image "
             "model to synthesize, replace, or retouch its quantitative field/colorbar.\n"
             "Preserve supplied editable_source files and local author edits; for a requested "
             "label edit change only that label, not data, layout or other styles.\n"
-            "Image generation is optional composition exploration only, never a data source.\n"
+            "Image generation is never a scientific data source.\n"
             "Keep paths relative to this package and source dependencies in sources/. "
             "Declared input paths retain their hierarchy under sources/; source IDs do not "
             "determine paths. Resolve script inputs from __file__, not the shell directory. "
             "Include required native fields and helper modules, not only the final PNG. "
-            "Return delivery.json following delivery-template.json, with real editable files, "
+            "Return delivery.json following delivery-template.json, with the required sources, "
             "a nonblank PNG/TIFF preview and caption. Include other exports/dependencies in "
             "exports. Do not list unchanged sources/ files as delivery artifacts; they are "
             "preserved automatically. Do not overwrite task files or original sources.\n"
@@ -182,9 +213,12 @@ def prepare_figure_task(input_path: Path, output_dir: Path) -> Path:
             staged / "delivery-template.json",
             {
                 "figure_id": task.figure_id,
-                "editable_sources": [editable],
+                "editable_sources": [] if task.output_mode == "raster_concept" else [editable],
                 "preview": "figure.png",
                 "caption": "Replace with the evidence-bounded caption.",
+                "title": "",
+                "legend": "",
+                "body_reference": "",
                 "exports": [],
                 "notes": [],
                 "sizing": FigureSizing(target_width_mm=task.final_width_mm).model_dump(),
@@ -212,6 +246,8 @@ def import_figure_task(
     delivery = _load(delivery_path, _Delivery)
     if delivery.figure_id != task.figure_id:
         raise ValueError("Delivery figure_id does not match task")
+    if task.output_mode == "editable" and not delivery.editable_sources:
+        raise ValueError("Editable output mode requires genuine editable sources")
     target_width = delivery.sizing.target_width_mm
     if target_width is not None and not math.isclose(target_width, task.final_width_mm):
         raise ValueError("Delivery sizing.target_width_mm conflicts with task final_width_mm")
@@ -233,7 +269,11 @@ def import_figure_task(
     suffixes = {paths[name].suffix.lower() for name in delivery.editable_sources}
     if task.kind in {"data", "hybrid"} and ".py" not in suffixes:
         raise ValueError("Data and hybrid deliveries require the data plotting script")
-    if task.kind == "schematic" and not suffixes.intersection({".svg", ".drawio"}):
+    if (
+        task.kind == "schematic"
+        and (task.output_mode == "editable" or delivery.editable_sources)
+        and not suffixes.intersection({".svg", ".drawio"})
+    ):
         raise ValueError("Schematic deliveries require editable SVG or draw.io")
     preview_geometry = _check_preview(paths[delivery.preview], task.final_width_mm)
     config = style or PublicationStyle()
@@ -260,9 +300,14 @@ def import_figure_task(
             {
                 **delivery.model_dump(),
                 "kind": task.kind,
+                "output_mode": task.output_mode,
+                "editable_available": bool(delivery.editable_sources),
                 "status": "imported_candidate",
                 "scientific_approval": False,
-                "checks": {"editable_syntax": True, "preview_decoded_nonblank": True},
+                "checks": {
+                    "editable_syntax": bool(delivery.editable_sources),
+                    "preview_decoded_nonblank": True,
+                },
                 "preview_geometry": preview_geometry,
                 "placement": placement,
                 "placement_style": config.model_dump(),

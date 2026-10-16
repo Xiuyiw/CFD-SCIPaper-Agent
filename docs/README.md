@@ -51,6 +51,11 @@
 
 ## Project reference
 
+- [Research Workbench upgrade plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md): approved
+  v0.21–v0.24 direction, current implementation and retained historical context.
+- [Surface research workspace](research-workspace.md): development-branch workflow connecting
+  original face exports, weighted observations, author-local figures and manuscript updates.
+  The latest released baseline remains v0.20.0 until release validation is complete.
 - [Current limitations](limitations.md)
 - [Public roadmap](ROADMAP.md)
 - [v0.12 development and observed results](research/V0_12_DEVELOPMENT_PLAN.md)

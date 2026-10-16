@@ -77,6 +77,8 @@ class _ResultRef(_Record):
         "weighted_mean",
         "weighted_std",
         "weight_sum",
+        "measure_above",
+        "exceedance_fraction",
         "sample_count",
         "duration",
         "start_value",
@@ -178,6 +180,7 @@ class _TableCalculation(_Record):
         "scalar_select",
         "paired_change",
         "weighted_population",
+        "weighted_exceedance",
         "temporal",
         "temporal_difference",
         "reference_range",
@@ -208,10 +211,22 @@ class _TableCalculation(_Record):
     ) = None
     temporal_value_kind: Literal["instantaneous", "cumulative"] = "instantaneous"
     threshold: float | None = Field(default=None, allow_inf_nan=False)
+    exceedance_relation: Literal["above", "at-or-above"] = "above"
     crossing_direction: Literal["at-or-above", "at-or-below"] = "at-or-above"
     reference_kind: (
         Literal["reported-range", "figure-reading-envelope", "declared-bound"] | None
     ) = None
+
+    @field_validator("threshold", mode="before")
+    @classmethod
+    def numeric_exceedance_threshold(cls, value, info):
+        if (
+            info.data.get("operation") == "weighted_exceedance"
+            and value is not None
+            and type(value) not in (int, float)
+        ):
+            raise ValueError("Weighted exceedance threshold must be a numeric value")
+        return value
 
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
@@ -234,19 +249,24 @@ class _TableCalculation(_Record):
                 result.pop(key, None)
         if self.operation not in {"temporal", "temporal_difference"}:
             for key in ("time_window", "temporal_value_kind", "threshold", "crossing_direction"):
+                if key == "threshold" and self.operation == "weighted_exceedance":
+                    continue
                 result.pop(key, None)
+        if self.operation != "weighted_exceedance":
+            result.pop("exceedance_relation", None)
         if self.operation not in {"reference_range", "paired_reference_change"}:
             result.pop("reference_kind", None)
         if self.operation not in {
             "paired_change",
             "weighted_population",
+            "weighted_exceedance",
             "temporal",
             "temporal_difference",
             "reference_range",
             "paired_reference_change",
         } and not (self.operation == "scalar_select" and self.quantity_kind != "ordinary"):
             result.pop("quantity_kind", None)
-        if self.operation != "weighted_population":
+        if self.operation not in {"weighted_population", "weighted_exceedance"}:
             result.pop("weight_kind", None)
         return result
 
@@ -255,6 +275,7 @@ class _TableCalculation(_Record):
         required = {
             "partition": {"area", "rate"},
             "weighted_population": {"value", "weight"},
+            "weighted_exceedance": {"value", "weight"},
             "temporal": {"time", "value"},
             "temporal_difference": {"time", "reference", "comparison"},
         }.get(self.operation, {"value"})
@@ -291,10 +312,15 @@ class _TableCalculation(_Record):
         elif (
             self.time_window is not None
             or self.temporal_value_kind != "instantaneous"
-            or self.threshold is not None
+            or (self.threshold is not None and self.operation != "weighted_exceedance")
             or self.crossing_direction != "at-or-above"
         ):
             raise ValueError("Time window and event options are only for temporal calculations")
+        if self.operation == "weighted_exceedance":
+            if self.threshold is None:
+                raise ValueError("Weighted exceedance requires a finite threshold")
+        elif self.exceedance_relation != "above":
+            raise ValueError("exceedance_relation is only for weighted_exceedance")
         if any(not key.strip() for key in self.row_filters):
             raise ValueError("Row filter column names must not be blank")
         if self.unit_column is not None and "value" not in self.columns:
@@ -310,11 +336,11 @@ class _TableCalculation(_Record):
                 )
         elif self.region_complement:
             raise ValueError("Region complement requires region_fraction")
-        if self.operation == "weighted_population":
+        if self.operation in {"weighted_population", "weighted_exceedance"}:
             if self.weight_kind is None:
                 raise ValueError("Weighted population requires area or volume weight_kind")
         elif self.weight_kind is not None:
-            raise ValueError("weight_kind is only for weighted_population")
+            raise ValueError("weight_kind is only for weighted operations")
         if self.operation in {"paired_change", "paired_reference_change"}:
             if not all(paired) or self.reference == self.comparison:
                 raise ValueError("Paired change requires distinct reference/comparison and pair_by")
@@ -326,6 +352,7 @@ class _TableCalculation(_Record):
                 and self.operation
                 not in {
                     "weighted_population",
+                    "weighted_exceedance",
                     "scalar_select",
                     "temporal",
                     "temporal_difference",

@@ -10,3 +10,10 @@ NOTICE.
 
 No proprietary solver output, unpublished manuscript, confidential project data,
 or company-owned dataset is part of the public distribution.
+
+The paper-grounded mechanism figure guidance in
+skills/cfd-figure-production/references/paper-framework-studio.md is a modified
+subset of the locally supplied Paper Framework Figure Studio Pro 3.1.4a,
+licensed under MIT No Attribution (MIT-0). Its supplied license is retained in
+paper-framework-studio-MIT-0.txt in the same directory. This is an instruction
+adaptation, not a redistribution of the complete upstream Skill or a renderer.

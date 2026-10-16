@@ -1,9 +1,10 @@
 # Architecture overview
 
 CFD-Paper-Agent keeps project state local and separates file discovery from scientific evidence
-qualification. The established workflow connects mature structured CFD evidence to a bounded
-research direction, an approved quantity of interest (QoI), a discrete analysis, one reproducible
-figure, and one results paragraph.
+qualification. The structured-record workflow connects mature CFD evidence to a bounded
+research direction, an approved quantity of interest (QoI), discrete analysis and a figure.
+The declared-evidence workflow also supports host-written multi-section manuscripts,
+shared literature, numerical bindings and targeted change reports.
 
 `write --artifact results-section` also accepts a portable declared evidence
 package with existing figures. The host AI writes the subsection; the CLI resolves
@@ -55,11 +56,26 @@ link back to the analyzed records.
 | Topic planner | Propose and rank bounded research directions | Author selects the direction |
 | Scientific qualifier | Check comparability, evidence, QoI definition, and reporting limits | Missing evidence remains missing |
 | QoI analyzer | Evaluate declared scalar sequences and allowable trends | Observed discrete cases only |
-| Figure pipeline | Produce one evidence-linked figure package | No undeclared transformation or general field plotting |
-| Table evidence | Calculate declared CSV populations and partitions; resolve current numeric tokens | No automatic choice of scientific operator or missing-value inference |
-| Writing pipeline | Assemble numeric paragraphs or host-authored multi-evidence subsections | No complete manuscript or autonomous claim expansion |
+| Figure pipeline | Produce evidence-linked figures and finite complementary panels | No undeclared transformation or arbitrary native field interpretation |
+| Table evidence | Calculate declared CSV/NPZ populations, partitions and supported spatial/temporal diagnostics; resolve current numeric tokens | No automatic choice of scientific operator or missing-value inference |
+| Writing pipeline | Assemble host-authored sections and multi-section manuscripts with shared evidence and literature | No autonomous claim expansion or guarantee of submission readiness |
 | Subsection export | Place figures, native tables and structured mathematics in editable DOCX | Finite elements and configurable layouts, not an arbitrary journal template engine |
 
-Native Fluent and STAR-CCM+ extraction, general field analysis, full-manuscript production,
-literature management, pre-submission review and reviewer-response workflows remain future work.
+## Research workspace (v0.21 development)
+
+The new `research` route reuses those calculation, binding and manuscript functions. A
+surface-study declaration locates original face values, physical areas, polygon geometry
+and methods. Preparation supplies relative-path inputs, editable local figure scripts and
+empty host-writing drafts. Building computes observations, refreshes declared figure recipes,
+assembles the host's drafts and exports editable Word. A previous build can identify changed
+dependencies while preserving author prose and scripts; interpretation remains a host task.
+Large provenance-index lists in writing context use exact pointers to the retained full reports.
+
+This concrete surface route has been exercised locally on one known real project; it is not
+yet a released v0.21 capability. See the [workspace guide](../research-workspace.md).
+
+Finite manuscript/literature/review/revision support already exists; it must not be confused
+with autonomous scientific validation or complete journal compliance. Native Fluent and
+STAR-CCM+ extraction, broader field diagnosis, general author-edited Word return and
+cross-host heterogeneous validation remain incomplete.
 See the [public roadmap](../ROADMAP.md) and [current limitations](../limitations.md).

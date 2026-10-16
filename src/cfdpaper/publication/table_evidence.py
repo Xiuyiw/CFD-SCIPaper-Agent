@@ -4,6 +4,7 @@ import csv
 import math
 import re
 import statistics
+from bisect import bisect_left, bisect_right
 from decimal import ROUND_HALF_EVEN, Decimal
 from pathlib import Path
 
@@ -46,6 +47,7 @@ _TABLE_DECLARATION_KEYS = {
     "temporal_value_kind",
     "threshold",
     "crossing_direction",
+    "exceedance_relation",
     "reference_kind",
 }
 
@@ -109,6 +111,7 @@ def calculate_table(
     temporal_value_kind="instantaneous",
     threshold: float | None = None,
     crossing_direction="at-or-above",
+    exceedance_relation="above",
     reference_kind: str | None = None,
 ):
     """Calculate over explicitly selected records, retaining original source locations.
@@ -121,6 +124,7 @@ def calculate_table(
     range_ops = {"reference_range", "paired_reference_change"}
     paired_ops = {"paired_change", "paired_reference_change"}
     temporal_ops = {"temporal", "temporal_difference"}
+    weighted_ops = {"weighted_population", "weighted_exceedance"}
     range_roles = {"value", "reference", "lower", "upper"}
     if operation in range_ops:
         if set(columns) not in (range_roles, {"value", "reference", "half_width"}):
@@ -146,18 +150,18 @@ def calculate_table(
         else {"time", "value"}
         if operation == "temporal"
         else {"value", "weight"}
-        if operation == "weighted_population"
+        if operation in weighted_ops
         else {"value"}
         if operation in scalar_ops
         else {"area", "rate"}
     )
     if (
-        operation
-        not in scalar_ops | range_ops | temporal_ops | {"partition", "weighted_population"}
+        operation not in scalar_ops | range_ops | temporal_ops | weighted_ops | {"partition"}
         or set(columns) != required
     ):
         raise ValueError(
-            "Use scalar/value, weighted_population/value,weight, partition/area,rate "
+            "Use scalar/value, weighted_population or weighted_exceedance/value,weight, "
+            "partition/area,rate "
             "or temporal/time,value or reference_range/paired_reference_change/"
             "value,reference,bounds or temporal_difference/time,reference,comparison"
         )
@@ -180,15 +184,28 @@ def calculate_table(
     elif (
         time_window is not None
         or temporal_value_kind != "instantaneous"
-        or threshold is not None
+        or (threshold is not None and operation != "weighted_exceedance")
         or crossing_direction != "at-or-above"
     ):
         raise ValueError("Temporal options require operation temporal or temporal_difference")
-    if operation == "weighted_population":
+    if operation == "weighted_exceedance":
+        if type(threshold) not in (int, float) or not math.isfinite(threshold):
+            raise ValueError("Weighted exceedance requires a finite threshold in the value unit")
+        if exceedance_relation not in {"above", "at-or-above"}:
+            raise ValueError("exceedance_relation must be above or at-or-above")
+        if any(
+            option is not None for option in (pair_by, reference, comparison, temperature_reference)
+        ):
+            raise ValueError(
+                "Weighted exceedance does not accept paired-member or temperature_reference options"
+            )
+    elif exceedance_relation != "above":
+        raise ValueError("exceedance_relation requires operation weighted_exceedance")
+    if operation in weighted_ops:
         if weight_kind not in {"area", "volume"}:
-            raise ValueError("Weighted population requires weight_kind area or volume")
+            raise ValueError("Weighted calculation requires weight_kind area or volume")
         if not isinstance(units, dict) or set(units) != {"value", "weight"}:
-            raise ValueError("Weighted population requires declared value and weight units")
+            raise ValueError("Weighted calculation requires declared value and weight units")
         measure = units["weight"]
         power = r"(?:\^?2|²)" if weight_kind == "area" else r"(?:\^?3|³)"
         if not isinstance(measure, str) or not re.fullmatch(r"(?:m|cm|mm)" + power, measure):
@@ -198,7 +215,7 @@ def calculate_table(
             raise ValueError("Paired change requires pair_by, reference and comparison")
         if reference == comparison:
             raise ValueError("Reference and comparison must differ")
-    if operation in paired_ops | range_ops | temporal_ops | {"weighted_population"} or (
+    if operation in paired_ops | range_ops | temporal_ops | weighted_ops or (
         operation == "scalar_select" and quantity_kind != "ordinary"
     ):
         unit = (units or {}).get("reference" if operation == "temporal_difference" else "value")
@@ -213,7 +230,7 @@ def calculate_table(
         if quantity_kind == "absolute-temperature" and unit not in {"degC", "°C", "C", "K"}:
             raise ValueError("Absolute temperature requires Celsius or Kelvin units")
         if (
-            operation in range_ops | temporal_ops | {"weighted_population", "scalar_select"}
+            operation in range_ops | temporal_ops | weighted_ops | {"scalar_select"}
             and quantity_kind == "temperature-difference"
             and unit != "K"
         ):
@@ -286,6 +303,11 @@ def calculate_table(
     for name, items in groups.items():
         temporal_metadata = {}
         member_metadata = {}
+        threshold_metadata = (
+            {"threshold": threshold, "exceedance_relation": exceedance_relation}
+            if operation == "weighted_exceedance"
+            else {}
+        )
         if operation in temporal_ops:
             items = select_temporal_window(items, columns["time"], time_window)
             temporal_metadata = {
@@ -362,7 +384,7 @@ def calculate_table(
                     for (n, row), value in zip(items, difference_values, strict=True)
                 ],
             )
-        if operation == "weighted_population" and any(
+        if operation in weighted_ops and any(
             w is None or not math.isfinite(w) or w <= 0 for w in values["weight"]
         ):
             raise ValueError(f"Group {name!r}: weights must be finite and strictly positive")
@@ -387,6 +409,11 @@ def calculate_table(
             status = "computed"
         elif operation == "population":
             result, status = population_summary(values["value"]), "computed"
+        elif operation == "weighted_exceedance":
+            result = _weighted_exceedance_summary(
+                values["value"], values["weight"], threshold, exceedance_relation
+            )
+            status = "computed"
         elif operation == "weighted_population":
             weights = values["weight"]
             if region_fraction:
@@ -426,6 +453,7 @@ def calculate_table(
                 "result": result,
                 **temporal_metadata,
                 **member_metadata,
+                **threshold_metadata,
             }
         )
     return {
@@ -734,6 +762,60 @@ def _weighted_population_summary(values, weights):
     return {"weighted_mean": mean, "weighted_std": std, "weight_sum": total}
 
 
+def _weighted_exceedance_summary(values, weights, threshold, relation):
+    """Measure occupied by element values above an explicitly declared threshold."""
+    result = weighted_exceedance_curve(values, weights, [threshold], relation)[0]
+    result.pop("threshold")
+    return result
+
+
+def weighted_exceedance_curve(values, weights, thresholds, relation="above"):
+    """Evaluate an element-constant weighted distribution, without interpolation.
+
+    Sorting once and searching the suffix measures avoids rereading or reducing a
+    field for each threshold. Threshold order is preserved in the returned rows.
+    Values and thresholds must use the same unit; weights are positive measures.
+    """
+    values, weights, thresholds = list(values), list(weights), list(thresholds)
+    if not values or len(values) != len(weights):
+        raise ValueError("Weighted exceedance requires aligned nonempty values and weights")
+    if relation not in {"above", "at-or-above"}:
+        raise ValueError("exceedance_relation must be above or at-or-above")
+    if any(value is None or not math.isfinite(value) for value in values):
+        raise ValueError("Weighted exceedance values must be finite")
+    if any(weight is None or not math.isfinite(weight) or weight <= 0 for weight in weights):
+        raise ValueError("Weighted exceedance weights must be finite and strictly positive")
+    if not thresholds or any(
+        isinstance(threshold, bool) or not math.isfinite(threshold) for threshold in thresholds
+    ):
+        raise ValueError("Weighted exceedance requires finite thresholds in the value unit")
+    try:
+        total = math.fsum(weights)
+    except OverflowError as exc:
+        raise ValueError("Weighted exceedance produced a nonfinite measure") from exc
+    if not math.isfinite(total):
+        raise ValueError("Weighted exceedance produced a nonfinite measure")
+    ordered = sorted(zip(values, weights, strict=True))
+    ordered_values = [value for value, _ in ordered]
+    suffix = [0.0] * (len(ordered) + 1)
+    for index in range(len(ordered) - 1, -1, -1):
+        # Positive cumulative measures are monotone; cap only floating-point
+        # accumulation overshoot against the accurately summed whole measure.
+        suffix[index] = min(total, suffix[index + 1] + ordered[index][1])
+    suffix[0] = total
+    search = bisect_right if relation == "above" else bisect_left
+    return [
+        {
+            "threshold": threshold,
+            "weight_sum": total,
+            "measure_above": suffix[search(ordered_values, threshold)],
+            "exceedance_fraction": suffix[search(ordered_values, threshold)] / total,
+            "count": len(values),
+        }
+        for threshold in thresholds
+    ]
+
+
 def partition_summary(
     areas,
     rates,
@@ -825,6 +907,7 @@ def resolve_table_result(
     fields = {
         "population": {"count", "sum", "mean", "cv"},
         "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
+        "weighted_exceedance": {"weight_sum", "measure_above", "exceedance_fraction", "count"},
         "scalar_select": {"value"},
         "paired_change": {"difference", "relative_change", "relative_reduction"},
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
@@ -843,7 +926,13 @@ def resolve_table_result(
             raise ValueError(f"{location}: source_record must be a CSV record number >= 2")
     elif source_record is not None:
         raise ValueError(f"{location}: scalar fields do not accept source_record")
-    if percentage and field not in {"cv", "shares", "relative_change", "relative_reduction"}:
+    if percentage and field not in {
+        "cv",
+        "shares",
+        "relative_change",
+        "relative_reduction",
+        "exceedance_fraction",
+    }:
         raise ValueError(f"{location}: percentage is only supported for relative quantities")
     groups = [item for item in report["groups"] if item.get("group") == group]
     if len(groups) != 1:
@@ -925,7 +1014,7 @@ def resolve_table_result(
     units = report.get("units", {})
     required_units = (
         {"value", "weight"}
-        if operation == "weighted_population"
+        if operation in {"weighted_population", "weighted_exceedance"}
         else {"area", "rate"}
         if operation == "partition"
         else {"time", "value"}
@@ -954,7 +1043,14 @@ def resolve_table_result(
         unit = temporal_unit(field, value_unit, "ordinary")
     elif operation == "temporal":
         unit = temporal_unit(field, units["value"], report.get("quantity_kind", "ordinary"))
-    elif field in {"count", "cv", "shares", "relative_change", "relative_reduction"}:
+    elif field in {
+        "count",
+        "cv",
+        "shares",
+        "relative_change",
+        "relative_reduction",
+        "exceedance_fraction",
+    }:
         unit = ""
     elif field in {"sum", "mean", "value", "difference", "weighted_mean", "weighted_std"}:
         unit = units["value"]
@@ -963,7 +1059,7 @@ def resolve_table_result(
             and report.get("quantity_kind") == "absolute-temperature"
         ) or (field == "weighted_std" and report.get("quantity_kind") == "temperature-difference"):
             unit = "K"
-    elif field == "weight_sum":
+    elif field in {"weight_sum", "measure_above"}:
         unit = units["weight"]
     elif field in {"area", "rate"}:
         unit = units[field]

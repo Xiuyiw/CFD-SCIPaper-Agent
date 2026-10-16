@@ -53,6 +53,8 @@ def test_ships_four_specialists_and_workflow_entry_with_current_references() -> 
             "codex-paper-figure-MIT.txt",
             "editable-schematic-adaptation.md",
             "external-backends.md",
+            "paper-framework-studio-MIT-0.txt",
+            "paper-framework-studio.md",
         ],
     }
     for name in EXPECTED_SKILLS:
