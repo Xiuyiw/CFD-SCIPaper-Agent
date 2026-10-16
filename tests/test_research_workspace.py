@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 
 from cfdpaper.publication.figure_tasks import import_figure_task, prepare_figure_task
 from cfdpaper.publication.research_workspace import (
+    _figure_metadata,
     attach_imported_figure,
     build_research_workspace,
     prepare_surface_workspace,
@@ -192,6 +193,22 @@ def test_prepare_has_real_fields_definitions_and_empty_host_templates(assets):
     assert fraction["result_ref"]["percentage"] is True
     assert (prepared / "RESEARCH.md").is_file()
     assert not (prepared / "manuscript.docx").exists()
+
+
+def test_figure_metadata_normalizes_workspace_alias_before_relative_paths(assets, tmp_path):
+    work, _ = clone(assets, tmp_path)
+    section_path = work / "sections/results/input.json"
+    before = read(section_path)
+    alias = work / "sections" / ".."
+    assert alias != alias.resolve()
+
+    _figure_metadata(alias)
+
+    assert read(section_path) == before
+    assert [figure["path"] for figure in before["figures"]] == [
+        "figures/field.png",
+        "figures/distribution.png",
+    ]
 
 
 def test_build_native_word_table_and_cross_section_values(assets):

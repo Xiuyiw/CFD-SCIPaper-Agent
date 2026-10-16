@@ -335,7 +335,7 @@ def _recipe(data):
 
 
 def _figure_metadata(workspace, *, initial=False):
-    root = workspace / _RESULTS
+    root = (workspace / _RESULTS).resolve()
     summary = _read(root / "figures/surface-figures.json")
     figures = {item["id"]: item for item in summary["figures"]}
     if not {"field", "distribution"} <= figures.keys():
