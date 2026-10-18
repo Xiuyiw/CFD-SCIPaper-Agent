@@ -9,6 +9,7 @@ import typer
 from pydantic import ValidationError
 from rich.console import Console
 
+from cfdpaper import __version__
 from cfdpaper.indexing import ProjectIndexer
 from cfdpaper.planning import PlanningError, run_plan
 from cfdpaper.qualification.guided import (
@@ -816,5 +817,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.21.0.",
+        help=f"Roadmap command; not available in v{__version__}.",
     )(_placeholder_command(_command_name))
