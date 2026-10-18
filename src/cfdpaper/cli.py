@@ -9,6 +9,7 @@ import typer
 from pydantic import ValidationError
 from rich.console import Console
 
+from cfdpaper import __version__
 from cfdpaper.indexing import ProjectIndexer
 from cfdpaper.planning import PlanningError, run_plan
 from cfdpaper.qualification.guided import (
@@ -469,6 +470,13 @@ def research_workspace(
         Path | None,
         typer.Option("--baseline", help="Previous build for a targeted change comparison"),
     ] = None,
+    diagnostics: Annotated[
+        Path | None,
+        typer.Option(
+            "--diagnostics",
+            help="Attach declared regional/transport diagnostics to a workspace copy",
+        ),
+    ] = None,
     attach_figure: Annotated[
         Path | None,
         typer.Option("--attach-figure", help="Attach an imported figure to a new workspace copy"),
@@ -499,6 +507,12 @@ def research_workspace(
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
         if baseline is not None and workspace is None:
             raise WorkflowInputError("--baseline requires --workspace and a previous build.")
+        if diagnostics is not None and (
+            workspace is None or baseline is not None or attach_figure is not None
+        ):
+            raise WorkflowInputError(
+                "--diagnostics requires --workspace; attach before a separate baseline build."
+            )
         if attach_figure is not None:
             if workspace is None:
                 raise WorkflowInputError("--attach-figure requires --workspace.")
@@ -516,11 +530,17 @@ def research_workspace(
             raise WorkflowInputError("Figure attachment options require --attach-figure.")
         from cfdpaper.publication.research_workspace import (
             attach_imported_figure,
+            attach_research_diagnostics,
             build_research_workspace,
             prepare_surface_workspace,
         )
 
-        if attach_figure is not None:
+        if diagnostics is not None:
+            attach_research_diagnostics(workspace, diagnostics, output)
+            console.print(
+                f"Research workspace with physical diagnostics ready: {output}", markup=False
+            )
+        elif attach_figure is not None:
             attach_imported_figure(
                 workspace,
                 attach_figure,
@@ -797,5 +817,5 @@ for _command_name in (
 ):
     app.command(
         _command_name,
-        help="Roadmap command; not available in v0.21.0.",
+        help=f"Roadmap command; not available in v{__version__}.",
     )(_placeholder_command(_command_name))

@@ -296,7 +296,7 @@ def _declarations(data):
                         "calculation_id": calculation,
                         "group": "all",
                         "field": field,
-                        "places": 3,
+                        "places": 9 if field == "measure" else 3,
                         "percentage": field == "exceedance_fraction",
                     },
                 }
@@ -356,6 +356,41 @@ def _figure_metadata(workspace, *, initial=False):
 
 
 def _host_context(root, data):
+    diagnostics_path = root / _RESULTS / "diagnostics.json"
+    diagnostics = _read(diagnostics_path) if diagnostics_path.is_file() else None
+    reports_path = root / _RESULTS / "table-results.json"
+    summaries = []
+    for index, report in enumerate(_read(reports_path) if reports_path.is_file() else []):
+        summaries.append(
+            {
+                **{
+                    key: report[key]
+                    for key in (
+                        "id",
+                        "operation",
+                        "domain",
+                        "source",
+                        "reference_source",
+                        "units",
+                        "result_units",
+                        "quantity_kind",
+                        "support",
+                    )
+                    if key in report
+                },
+                "groups": [
+                    {
+                        "group": group["group"],
+                        "status": group["status"],
+                        "result": group["result"],
+                        "full_result": (
+                            f"{_RESULTS.as_posix()}/table-results.json#/{index}/groups/{gindex}"
+                        ),
+                    }
+                    for gindex, group in enumerate(report["groups"])
+                ],
+            }
+        )
     _write(
         root / "research-context.json",
         {
@@ -366,7 +401,17 @@ def _host_context(root, data):
             "definition": data["definition"],
             "study": "sections/results/study.json",
             "results": "sections/results/table-results.json",
+            "result_summary": summaries,
             "figure_script": "sections/results/figures/plot.py",
+            **(
+                {
+                    "diagnostics": "sections/results/diagnostics.json",
+                    "diagnostic_figure_script": "sections/results/figures/diagnostics/plot.py",
+                    "mechanism_questions": diagnostics.get("mechanism_questions", []),
+                }
+                if diagnostics is not None
+                else {}
+            ),
         },
     )
     (root / "RESEARCH.md").write_text(
@@ -374,6 +419,8 @@ def _host_context(root, data):
         f"Question: {data['question']}\n\n"
         "Read research-context.json, TASK.md, and each section's TASK.md and "
         "manuscript-context.json. Source paths in the study are relative to sections/results/. "
+        "Use result_summary for the current scalar readings; full_result points to complete "
+        "source indices and definitions without copying large arrays into the reading context. "
         "Open both figures and read the definition material before interpreting the comparison.\n\n"
         "The generated spine and duties are provisional: study-definition is a scope fact, "
         "not a scientific central finding. Before writing, update the spine and duties to "
@@ -396,6 +443,252 @@ def _host_context(root, data):
         "into the drafts before another build; this workflow does not import Word edits.\n",
         encoding="utf-8",
     )
+    if diagnostics is not None:
+        with (root / "RESEARCH.md").open("a", encoding="utf-8") as stream:
+            stream.write(
+                "\n## Regional and transport diagnostics\n\n"
+                "Read sections/results/diagnostics.json and current table-results.json. "
+                "The local figures/diagnostics/plot.py refreshes these observations from "
+                "their declared sources. Compare regions, sign conventions and time supports "
+                "before combining evidence. A budget remainder and a reconstructed flux share "
+                "the same solution; neither becomes independent experimental validation. "
+                "Use mechanism_questions to select discriminating observations, then write "
+                "the physical argument rather than a list of every available scalar.\n"
+            )
+
+
+def _diagnostic_sources(config):
+    names = []
+    for calculation in config["field_calculations"]:
+        source = calculation["source"]
+        names.append(source)
+        reference = calculation.get("field_options", {}).get("reference_source")
+        if reference:
+            names.append((Path(source).parent / reference).as_posix())
+    return list(dict.fromkeys([*names, *config.get("source_files", [])]))
+
+
+def _diagnostic_evidence(config, reports):
+    if "evidence" in config:
+        return config["evidence"]
+    evidence = []
+    declarations = {item["id"]: item for item in config["field_calculations"]}
+    for report in reports:
+        declaration = declarations[report["id"]]
+        fields = {
+            "field_integral": ["net", "positive", "negative", "measure"],
+            "field_difference": ["reference_mean", "comparison_mean", "difference_mean"],
+            "energy_budget": ["input", "output", "source", "storage", "residual"],
+        }[report["operation"]]
+        if declaration.get("field_options", {}).get("integrand") == "weighted_mean":
+            fields = ["weighted_mean", "measure"]
+        for group in report["groups"]:
+            if group["status"] != "computed":
+                continue
+            for field in fields:
+                if group["result"].get(field) is None:
+                    continue
+                evidence.append(
+                    {
+                        "id": f"{report['id']}-{group['group']}-{field}",
+                        "kind": "metric",
+                        "text": f"{report['domain']}: {group['group']} {field}",
+                        "source": report["source"],
+                        "evidence_role": "same-solution-diagnostic",
+                        "result_ref": {
+                            "calculation_id": report["id"],
+                            "group": group["group"],
+                            "field": field,
+                            "places": 9 if field == "measure" else 3,
+                        },
+                    }
+                )
+    return evidence
+
+
+def _sync_diagnostics(workspace):
+    """Refresh configured diagnostic declarations without replacing author prose/scripts."""
+    config_path = workspace / _RESULTS / "diagnostics.json"
+    if not config_path.is_file():
+        return
+    from .table_evidence import calculate_declared_table
+
+    config = _read(config_path)
+    root = config_path.parent
+    reports = [
+        calculate_declared_table(root / c["source"], c) for c in config["field_calculations"]
+    ]
+    evidence = _diagnostic_evidence(config, reports)
+    data = _read(root / "input.json")
+    current_calculations = {item["id"] for item in config["field_calculations"]}
+    current_evidence = {item["id"] for item in evidence}
+    retired_calculations = set(config.get("managed_calculation_ids", current_calculations))
+    retired_evidence = set(config.get("managed_evidence_ids", current_evidence))
+    report_path = root / "table-results.json"
+    previous_reports = _read(report_path) if report_path.is_file() else []
+    _write(
+        report_path,
+        [
+            report
+            for report in previous_reports
+            if report["id"] not in retired_calculations | current_calculations
+        ]
+        + reports,
+    )
+    data["table_calculations"] = [
+        item
+        for item in data.get("table_calculations", [])
+        if item["id"] not in retired_calculations | current_calculations
+    ] + config["field_calculations"]
+    data["evidence"] = [
+        item for item in data["evidence"] if item["id"] not in retired_evidence | current_evidence
+    ] + evidence
+    data["source_files"] = list(
+        dict.fromkeys(
+            [
+                *data.get("source_files", []),
+                *_diagnostic_sources(config),
+                "sources/cfdpaper-diagnostic-definitions.json",
+            ]
+        )
+    )
+    _write(
+        root / "sources/cfdpaper-diagnostic-definitions.json",
+        {
+            "calculations": config["field_calculations"],
+            "mechanism_questions": config.get("mechanism_questions", []),
+        },
+    )
+    _write(root / "input.json", data)
+    manifest = _read(workspace / "manuscript-input.json")
+    for entry in manifest["sections"]:
+        if entry["section_id"] == "results":
+            continue
+        bindings = entry.setdefault("evidence_bindings", {})
+        for identity in retired_evidence - current_evidence:
+            if bindings.get(identity) == f"results/{identity}":
+                bindings.pop(identity)
+        bindings.update({item["id"]: f"results/{item['id']}" for item in evidence})
+        context_path = workspace / "sections" / entry["section_id"] / "manuscript-context.json"
+        if context_path.is_file():
+            context = _read(context_path)
+            context["evidence_bindings"] = bindings
+            _write(context_path, context)
+    _write(workspace / "manuscript-input.json", manifest)
+    config["managed_calculation_ids"] = sorted(current_calculations)
+    config["managed_evidence_ids"] = sorted(current_evidence)
+    _write(config_path, config)
+    recipe_path = workspace / "figure-recipes.json"
+    if recipe_path.is_file():
+        recipes = _read(recipe_path)
+        for recipe in recipes:
+            if recipe["id"] == "physical-diagnostics":
+                recipe["inputs"] = [
+                    (_RESULTS / "diagnostics.json").as_posix(),
+                    *[(_RESULTS / name).as_posix() for name in _diagnostic_sources(config)],
+                ]
+        _write(recipe_path, recipes)
+
+
+def _diagnostic_metadata(workspace, *, initial=False):
+    root = (workspace / _RESULTS).resolve()
+    summary = root / "figures/diagnostics/diagnostic-figures.json"
+    if not summary.is_file():
+        return
+    figures = _read(summary)["figures"]
+    section = _read(root / "input.json")
+    existing = {item["id"]: item for item in section["figures"]}
+    for item in figures:
+        path = _asset(summary.parent, item["path"])
+        if initial:
+            if item["id"] in existing:
+                raise ValueError(f"Diagnostic figure ID already exists: {item['id']}")
+            section["figures"].append(
+                {
+                    **{key: item[key] for key in ("id", "caption", "description", "sizing")},
+                    "path": path.relative_to(root).as_posix(),
+                }
+            )
+        elif item["id"] in existing:
+            existing[item["id"]].update(
+                path=path.relative_to(root).as_posix(), sizing=item["sizing"]
+            )
+    _write(root / "input.json", section)
+
+
+def attach_research_diagnostics(workspace_dir, config_path, output_dir):
+    """Attach source-driven diagnostics and their local plotting recipe to a fresh workspace."""
+    from .diagnostic_figures import render_diagnostic_figures
+
+    workspace_dir, config_path, output_dir = (
+        Path(path).resolve() for path in (workspace_dir, config_path, output_dir)
+    )
+    _distinct_output(workspace_dir, output_dir)
+    config = _read(config_path)
+    if not config.get("field_calculations") or not config.get("panels"):
+        raise ValueError("Diagnostics need field_calculations and complementary panels")
+    existing = _read(workspace_dir / _RESULTS / "input.json")
+    if {c["id"] for c in config["field_calculations"]} & {
+        c["id"] for c in existing.get("table_calculations", [])
+    }:
+        raise ValueError("Diagnostic calculation IDs must not replace existing author calculations")
+    with _stage(output_dir) as staged:
+        shutil.copytree(workspace_dir, staged, dirs_exist_ok=True)
+        root = staged / _RESULTS
+        for name in _diagnostic_sources(config):
+            relative = Path(name)
+            if relative.parts[:1] != ("sources",) or ".." in relative.parts:
+                raise ValueError("Diagnostic sources must use relative sources/ paths")
+            source = _asset(config_path.parent, name)
+            target = root / relative
+            if target.is_file() and target.read_bytes() != source.read_bytes():
+                raise ValueError(f"Diagnostic source would replace an author source: {name}")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if not target.is_file():
+                shutil.copy2(source, target)
+        if (root / "diagnostics.json").exists():
+            raise ValueError("Workspace already has diagnostics; edit its current configuration")
+        _write(root / "diagnostics.json", config)
+        _sync_diagnostics(staged)
+        figures = render_diagnostic_figures(root / "diagnostics.json", root / "figures/diagnostics")
+        _diagnostic_metadata(staged, initial=True)
+        prefix = (_RESULTS / "figures/diagnostics").as_posix()
+        outputs = [
+            f"{prefix}/{f['id']}.{ext}" for f in figures for ext in ("png", "svg", "pdf", "tiff")
+        ]
+        outputs += [f"{prefix}/{f['id']}-source-data.csv" for f in figures]
+        outputs += [
+            f"{prefix}/{name}" for name in ("diagnostic-checks.json", "diagnostic-figures.json")
+        ]
+        recipes = _read(staged / "figure-recipes.json")
+        recipes.append(
+            {
+                "id": "physical-diagnostics",
+                "script": f"{prefix}/plot.py",
+                "section_id": "results",
+                "args": [
+                    "--config",
+                    (_RESULTS / "diagnostics.json").as_posix(),
+                    "--output",
+                    prefix,
+                ],
+                "inputs": [
+                    (_RESULTS / "diagnostics.json").as_posix(),
+                    *[(_RESULTS / name).as_posix() for name in _diagnostic_sources(config)],
+                ],
+                "outputs": outputs,
+            }
+        )
+        _write(staged / "figure-recipes.json", recipes)
+        drafts = _read(staged / "drafts.json")
+        draft_path = staged / drafts["results"]
+        draft = _read(draft_path)
+        for figure in figures:
+            draft["captions"][figure["id"]] = figure["caption"]
+            draft["image_observations"][figure["id"]] = "not-viewed"
+        _write(draft_path, draft)
+        _host_context(staged, _study(root / "study.json"))
+    return output_dir
 
 
 def prepare_surface_workspace(study_path: Path, output_dir: Path) -> Path:
@@ -597,17 +890,34 @@ def _sync_definitions(workspace, data):
     return previous_sources
 
 
-def _definition_changes(workspace, baseline, data):
+def _definition_changes(workspace, baseline, data, snapshot=None):
     if baseline is None or not (baseline / _RESULTS / "study.json").is_file():
         return []
-    before = _read(baseline / _RESULTS / "study.json")
+    before = (
+        snapshot["study"] if snapshot is not None else _read(baseline / _RESULTS / "study.json")
+    )
     changes = sorted(key for key in before.keys() | data.keys() if before.get(key) != data.get(key))
     name = data["definition"]["source"]
     old_name = before.get("definition", {}).get("source")
     if old_name:
         old = baseline / _RESULTS / old_name
-        if not old.is_file() or old.read_bytes() != _asset(workspace / _RESULTS, name).read_bytes():
+        current = _asset(workspace / _RESULTS, name).read_text(encoding="utf-8")
+        changed = (
+            snapshot["definition_text"] != current
+            if snapshot is not None
+            else (not old.is_file() or old.read_text(encoding="utf-8") != current)
+        )
+        if changed:
             changes.append("definition.source_content")
+    name = _RESULTS / "sources/cfdpaper-diagnostic-definitions.json"
+    current = _read(workspace / name) if (workspace / name).is_file() else None
+    previous = (
+        snapshot.get("diagnostics")
+        if snapshot is not None
+        else (_read(baseline / name) if (baseline / name).is_file() else None)
+    )
+    if previous != current:
+        changes.append("diagnostics")
     return changes
 
 
@@ -627,11 +937,19 @@ def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir
         if baseline is not None and (baseline / "workspace").is_dir()
         else baseline
     )
+    baseline_refresh = (
+        _read(baseline / "refresh.json")
+        if baseline is not None and (baseline / "refresh.json").is_file()
+        else {}
+    )
     with _stage(output_dir) as staged:
         workspace = staged / "workspace"
         shutil.copytree(workspace_dir, workspace)
+        _sync_diagnostics(workspace)
         data = _study(workspace / _RESULTS / "study.json")
-        definition_changes = _definition_changes(workspace, old_workspace, data)
+        definition_changes = _definition_changes(
+            workspace, old_workspace, data, baseline_refresh.get("observation_definition")
+        )
         previous_sources = _sync_definitions(workspace, data)
         recipes = _read(workspace / "figure-recipes.json")
         registered = next((item for item in recipes if item["id"] == "surface-study"), None)
@@ -649,8 +967,14 @@ def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir
         # Only the declared dependency paths change; the author's script, arguments
         # and output declarations remain the current execution entry point.
         _write(workspace / "figure-recipes.json", recipes)
-        statuses = execute_figure_recipes(workspace, recipes, baseline_root=old_workspace)
+        statuses = execute_figure_recipes(
+            workspace,
+            recipes,
+            baseline_root=old_workspace,
+            baseline_states=baseline_refresh.get("figure_recipes"),
+        )
         _figure_metadata(workspace)
+        _diagnostic_metadata(workspace)
         if baseline is not None:
             state = next(
                 (
@@ -708,6 +1032,19 @@ def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir
             staged / "refresh.json",
             {
                 "figure_recipes": statuses,
+                "observation_definition": {
+                    "study": data,
+                    "diagnostics": _read(
+                        workspace / _RESULTS / "sources/cfdpaper-diagnostic-definitions.json"
+                    )
+                    if (
+                        workspace / _RESULTS / "sources/cfdpaper-diagnostic-definitions.json"
+                    ).is_file()
+                    else None,
+                    "definition_text": _asset(
+                        workspace / _RESULTS, data["definition"]["source"]
+                    ).read_text(encoding="utf-8"),
+                },
                 "definition_changes": definition_changes,
                 "interpretation_review_required": review_required,
                 "interpretation_review_sections": sorted(changes["affected_sections"])

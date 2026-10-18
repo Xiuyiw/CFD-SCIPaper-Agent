@@ -59,6 +59,29 @@ def fixture(tmp_path, records=None, supports=None, **extra):
     )
 
 
+def test_excerpt_must_be_on_declared_lines_not_merely_in_document(tmp_path):
+    path = fixture(tmp_path, supports=[support(location={"kind": "lines", "start": 1, "end": 1})])
+    with pytest.raises(ValueError, match="declared source location"):
+        load_literature(path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["supports"][0]["location"] = {"kind": "lines", "start": 2, "end": 2}
+    write(path, data)
+    assert load_literature(path)["supports"][0]["location_check"] == "matched"
+
+
+def test_pdf_page_index_does_not_silently_follow_printed_label(tmp_path):
+    path = fixture(
+        tmp_path, supports=[support(location={"kind": "pdf-page", "page": 1, "printed_label": "5"})]
+    )
+    (tmp_path / "paper.md").write_text("Cover\fA synthetic source passage.", encoding="utf-8")
+    with pytest.raises(ValueError, match="declared source location"):
+        load_literature(path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["supports"][0]["location"]["page"] = 2
+    write(path, data)
+    assert load_literature(path)["supports"][0]["location"]["printed_label"] == "5"
+
+
 def test_doi_normalization_alias_and_preserved_metadata(tmp_path):
     path = fixture(
         tmp_path,

@@ -1,9 +1,12 @@
-# Surface research workspace
+# Surface and physical-diagnostics research workspace
 
 The `research` command connects supplied surface results, reproducible figures and a
 host-written manuscript candidate. It currently supports a concrete reference path:
 two to four cases with original face values, actual face areas and polygon geometry
-in NPZ files. It is not an arbitrary native-solver reader and does not start a solver.
+in NPZ files. Optional physical diagnostics add regional integrals, signed transfer,
+matched field differences and defined control-volume budgets to the same working draft.
+The research command consumes declared exports; the optional native adapter below provides
+a separate saved-results extraction step when those exports are unavailable.
 
 The author provides the research goal and existing materials. The host AI reads those
 materials, locates case and quantity definitions, prepares the study declaration and
@@ -14,6 +17,62 @@ established from the supplied sources.
 For a complete runnable example without private data or an AI API, start with the
 [synthetic surface study](../examples/surface-research/README.md). Its fixed sample
 prose demonstrates assembly; a real task still needs the host's scientific reading.
+
+## Read saved native results when necessary
+
+The optional Fluent reference path was exercised on Windows with Fluent 2023 R1 and
+PyFluent 0.20. It reads a saved CASE/DATA pair, original boundary polygons, face-associated
+temperature/heat flux and native surface integrals. Install the `fluent` extra in the Python
+environment that has access to the licensed solver. Core installation and neutral-field
+analysis do not require it. STAR-CCM+ currently provides native-file recognition and neutral
+export guidance rather than this extraction path.
+
+```python
+from pathlib import Path
+from cfdpaper.adapters import ExtractionRequest
+from cfdpaper.adapters.fluent_backend import export_fluent_surfaces
+
+request = ExtractionRequest(
+    Path("inputs/reference.cas.h5"),
+    variables=("temperature", "heat-flux"),
+    options={
+        "data_file": Path("inputs/reference.dat.h5"),
+        "output_dir": Path("derived/reference-native"),
+        "surfaces": {"wall": "heated-wall"},
+    },
+)
+manifest_path = export_fluent_surfaces(request)
+```
+
+`heated-wall` is illustrative: select the actual case zone from its setup/method records.
+`FluentAdapter.extract(request)` uses the same export and returns the existing
+`ExtractedRecord` objects for the native whole-surface reports. The manifest retains the
+actual field/surface inventory, report files, source pair and per-surface NPZ paths.
+`probe()` detects the optional Python backend without consuming a license; extraction
+establishes whether the saved case and actual backend work. A missing backend returns the
+minimum neutral-export recommendation rather than values.
+
+The NPZ includes `temperature` (K), `heat_flux` (W/m²), `face_area_m2`, `vertices_m`,
+`faces_connectivity`, `face_starts`, `centroid_m` and separate centroid coordinate arrays.
+Geometry is original, not reconstructed from an image; face ordinals are local to the export,
+not solver-global identities. Native heat-flow reports retain the selected boundary's sign.
+Define the physical positive direction in the calculation; do not automatically add wall
+and shadow or interpret a native normal array as a declared oriented area vector.
+
+For native coordinate clipping, an option such as
+`region_bounds={"selected": {"axes": {"x": [0.0, 0.01], "y": [0.0, 0.01]}}}`
+adds original-wall coordinate clips in m, followed by native area, area-weighted temperature
+and heat-flux integrals. Its values and report paths appear in `surfaces[].regions`.
+The bounds are illustrative, not a recommended physical region. `export_fields=False` keeps
+these native reports without re-exporting large full-wall arrays. This route also handles
+nonplanar wall sets that cannot use the planar polygon-clipping operator below.
+
+Use the optional `executable` setting when the solver cannot be located. For older Windows
+Fluent versions that cannot read Unicode absolute paths, `solver_case_file` and
+`solver_data_file` may reference existing ASCII aliases of the same source files; the adapter
+checks that they resolve to the original pair. It does not create a new source copy or run
+iterations. Derived files remain in the isolated output directory. Native reports and neutral
+polygon reductions are distinct postprocessing results and retain their physical definitions.
 
 ## Prepare the workspace
 
@@ -141,6 +200,90 @@ cfdpaper research --workspace research-workspace --output build-02 --baseline bu
 materials directory. The comparison identifies affected content; the host still revisits
 interpretations when their supporting values change. Preserve previous builds and current
 author edits. This command does not alter the existing `write` or refresh interfaces.
+
+## Attach regional, transfer and budget diagnostics
+
+Use an existing workspace and a host-prepared diagnostic configuration:
+
+```console
+cfdpaper research --workspace research-workspace --diagnostics materials/diagnostics.json --output research-with-diagnostics
+cfdpaper research --workspace research-with-diagnostics --output diagnostic-candidate
+```
+
+Attachment and build are separate actions. A diagnostic configuration contains
+`field_calculations` and selected `panels`; `mechanism_questions` optionally links a concrete
+question to the diagnostics that could distinguish its explanations. Sources use relative
+`sources/` paths beside the configuration. The operation copies needed inputs into a new
+workspace, adds calculations and bound evidence to the existing Results input, makes the
+same evidence available to the other sections, and retains author prose and existing figures.
+The host reads the resulting context and completes the argument.
+`research-context.json.result_summary` gives compact current scalar results and exact pointers
+into the full result reports; source element/record lists remain there instead of flooding
+the reading context. Attachment refreshes those reports and cross-section evidence bindings
+before writing, without requiring a preliminary manuscript build or manual recalculation.
+
+The supported operations use the ordinary table declaration and `result_ref` format:
+
+| Operation | Required physical choice | Useful reading |
+|---|---|---|
+| `field_integral` | Face/cell association; density, element total, vector flux or weighted mean; physical measure and sign | Regional level/area or positive, negative and net transfer |
+| `field_difference` | Compatible physical coordinates, element measures and original polygons when supplied | Both original means and comparison-minus-reference |
+| `energy_budget` | Independent input, output, source and storage terms for the stated control volume | Terms and `input + source - output - storage` residual |
+
+For power, a density in W/m² or W/m³ is multiplied by physical area or volume once. A supplied
+W-per-element total is summed directly. Vector flux requires a dot product with oriented area;
+temperature-area sums are not heat. A steady-state storage omission needs an actual method basis.
+The [physical diagnostic reference](../skills/cfd-evidence-writing/references/mechanism-subsections.md#original-fields-regions-signed-transfer-and-budgets)
+gives the supported declaration and interpretation details.
+
+Regions may use explicit overlap fractions, a declared centroid mask, or exact polygon overlap
+on a common planar original-face surface. Polygon clipping requires the `geometry` extra.
+It retains piecewise-constant original face values and actual area, including partial faces;
+it does not interpolate a new temperature field. Fixed-coordinate and source-following regions
+answer different questions. Keep complete complementary coverage when explaining redistribution.
+Different meshes require a valid common support; equal row counts cannot justify subtraction.
+
+The built-in diagnostic panels are `regional`, `signed_flux`, `budget` and
+`matched_difference`. They consume selected calculations, not manually copied final metrics.
+A signed-flux panel requires a reader-visible `sign_convention`. Source data, a standalone
+author-local `plot.py`, editable SVG/PDF and PNG/TIFF are produced under
+`sections/results/figures/diagnostics/`. The workspace uses the same computed quantities for
+its numeric evidence and writing context. For example, generated IDs can be used as
+`{{value:flux-A-all-net}}` in prose/captions/native tables, with an ordinary figure token
+such as `{{figure:transfers}}`. Current table results retain source positions and definitions.
+
+Continue from `candidate/workspace/`. Edit its `sections/results/diagnostics.json`, copied
+sources or current diagnostic `plot.py`, then build to a fresh directory with the previous
+candidate as `--baseline`. A definition or numeric change recomputes the diagnostics and bound
+values. The host reviews affected captions and mechanism interpretations; the build does not
+replace author reasoning or silently merge independent Word edits.
+
+The complete public [physical-diagnostics example](../examples/physical-diagnostics/README.md)
+can be run with `python examples/physical-diagnostics/run_example.py NEW_OUTPUT`. It combines
+unequal-area original faces, a boundary crossing partial faces, opposing signed fluxes,
+matched original states and a separate budget, then assembles four manuscript sections and
+complementary figures. Its arrays are constructed and its prose is a disclosed recorded host
+input. `--prepare-only` leaves draft templates for a host to write instead. It demonstrates
+the calculation-to-figure-to-document route without claiming a CFD mechanism was validated.
+
+## Keep comparisons and interpretations on their stated support
+
+An observation's optional `support` retains case identity, association, spatial domain,
+operator, named conditions with value/unit, and time state/origin/window. Result comparisons
+can declare `support_purpose` and `fixed_conditions`. The supported purposes are `same-state`,
+`event-relative` and `event-timing`: an event-relative comparison may use different physical
+times, whereas a same-state comparison must have the needed common time/window. Native-event
+and saved-sample crossing times remain different observations. Only conditions claimed fixed
+are matched; different design variables are allowed. Compatibility checks supplied definitions,
+not whether the underlying model is validated.
+
+Use the existing evidence roles: `algebraic`, `same-solution-diagnostic`, `condition-contrast`,
+`model-contrast` and `independent-validation`. A regional budget remainder and a reconstructed
+gradient integral from one numerical solution may cross-check postprocessing, but their agreement
+does not become independent experimental evidence. State the actual physical finding from the
+discriminating diagnostics and compare relevant method differences at that effect's scale.
+The host keeps the hypothesis, alternative explanation and missing observation in current
+`mechanism_questions`/evidence notes, and writes natural scientific prose rather than an execution log.
 
 ## Add a mechanism figure without rebuilding the quantitative figures
 

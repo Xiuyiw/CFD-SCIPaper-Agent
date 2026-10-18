@@ -47,6 +47,36 @@ def _comparison(reports, *, field="mean", **kwargs):
     )
 
 
+def test_field_temperature_comparisons_retain_absolute_and_difference_semantics(tmp_path):
+    from cfdpaper.publication.table_evidence import calculate_declared_table
+
+    reports = []
+    for identity, values in (("a", [300, 310]), ("b", [302, 314])):
+        path = tmp_path / f"{identity}.csv"
+        path.write_text("temperature,area\n" + "\n".join(f"{v},1" for v in values))
+        declaration = {
+            "id": identity,
+            "source": f"sources/{identity}.csv",
+            "operation": "field_integral",
+            "columns": {"value": "temperature", "measure": "area"},
+            "units": {"value": "K", "measure": "m2"},
+            "domain": "heated wall",
+            "quantity_kind": "absolute-temperature",
+            "field_options": {"association": "face", "integrand": "weighted_mean"},
+        }
+        reports.append(calculate_declared_table(path, declaration))
+    result = _comparison(reports, field="weighted_mean")
+    assert result["quantity_kind"] == "temperature-difference"
+    assert result["groups"][0]["result"]["difference"] == 3
+    assert result["groups"][0]["result"]["relative_change"] is None
+    result = _comparison(reports, field="measure")
+    assert result["quantity_kind"] == "ordinary"
+    assert result["units"]["value"] == "m2"
+    for field in ("net", "positive", "negative", "absolute"):
+        with pytest.raises(ValueError, match="temperature origin"):
+            _comparison(reports, field=field)
+
+
 def test_comparison_uses_raw_values_and_independent_source_records(tmp_path):
     reports = [_report(tmp_path, "a", [4.345369441169341]), _report(tmp_path, "b", [5.67891])]
     before = copy.deepcopy(reports)

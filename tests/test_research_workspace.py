@@ -89,6 +89,97 @@ def fill_drafts(workspace):
         write(path, draft)
 
 
+def test_attach_field_diagnostics_uses_existing_research_and_refresh(tmp_path):
+    from cfdpaper.publication.research_workspace import attach_research_diagnostics
+
+    materials = tmp_path / "materials"
+    materials.mkdir()
+    workspace = prepare_surface_workspace(study(materials), tmp_path / "author")
+    fill_drafts(workspace)
+    (materials / "sources/heat.csv").write_text("heat,area\n20,1\n-4,3\n", encoding="utf-8")
+    config = {
+        "field_calculations": [
+            {
+                "id": "heat-path",
+                "source": "sources/heat.csv",
+                "operation": "field_integral",
+                "columns": {"value": "heat", "measure": "area"},
+                "units": {"value": "W/m2", "measure": "m2"},
+                "domain": "test wall",
+                "field_options": {"association": "face", "integrand": "density"},
+            }
+        ],
+        "panels": [
+            {
+                "id": "heat-path-figure",
+                "kind": "signed_flux",
+                "title": "Wall exchange",
+                "sign_convention": "Positive heat leaves the solid.",
+                "series": [{"calculation_id": "heat-path", "label": "Case A"}],
+            }
+        ],
+        "mechanism_questions": ["Does net flow conceal reverse exchange?"],
+    }
+    write(materials / "diagnostics.json", config)
+    attached = attach_research_diagnostics(
+        workspace, materials / "diagnostics.json", tmp_path / "attached"
+    )
+    result = read(attached / "sections/results/input.json")
+    assert any(e["id"] == "heat-path-all-net" for e in result["evidence"])
+    attached_reports = read(attached / "sections/results/table-results.json")
+    assert any(r["id"] == "heat-path" for r in attached_reports)
+    method_context = read(attached / "sections/methods/manuscript-context.json")
+    assert method_context["evidence_bindings"]["heat-path-all-net"] == "results/heat-path-all-net"
+    summary = read(attached / "research-context.json")["result_summary"]
+    heat = next(r for r in summary if r["id"] == "heat-path")
+    assert heat["groups"][0]["result"]["net"] == 8
+    assert "csv_records" not in heat["groups"][0]
+    assert heat["groups"][0]["full_result"].startswith("sections/results/table-results.json#/")
+    assert (attached / "sections/results/figures/diagnostics/plot.py").is_file()
+    assert read(workspace / "drafts.json") == read(attached / "drafts.json")
+    first = build_research_workspace(attached, tmp_path / "first")
+    author = first / "workspace"
+    (author / "sections/results/sources/heat.csv").write_text(
+        "heat,area\n30,1\n-4,3\n", encoding="utf-8"
+    )
+    second = build_research_workspace(author, tmp_path / "second", baseline_dir=first)
+    reports = read(second / "workspace/sections/results/table-results.json")
+    assert next(r for r in reports if r["id"] == "heat-path")["groups"][0]["result"]["net"] == 18
+    statuses = {
+        s["recipe_id"]: s["status"] for s in read(second / "refresh.json")["figure_recipes"]
+    }
+    assert statuses["surface-study"] == "unchanged"
+    assert statuses["physical-diagnostics"] == "executed"
+    assert read(author / "sections/methods/draft.json") == read(
+        second / "workspace/sections/methods/draft.json"
+    )
+    config_path = second / "workspace/sections/results/diagnostics.json"
+    changed = read(config_path)
+    changed["field_calculations"][0]["source"] = "sources/relocated-heat.csv"
+    write(config_path, changed)
+    new_source = config_path.parent / "sources/relocated-heat.csv"
+    new_source.write_text("heat,area\n30,1\n-4,3\n", encoding="utf-8")
+    third = build_research_workspace(second / "workspace", tmp_path / "third", baseline_dir=second)
+    assert "diagnostics" in read(third / "refresh.json")["definition_changes"]
+    recipe = next(
+        r
+        for r in read(third / "workspace/figure-recipes.json")
+        if r["id"] == "physical-diagnostics"
+    )
+    assert "sections/results/sources/relocated-heat.csv" in recipe["inputs"]
+    assert "sections/results/sources/heat.csv" not in recipe["inputs"]
+    continued = third / "workspace"
+    (continued / "sections/results/sources/relocated-heat.csv").write_text(
+        "heat,area\n40,1\n-4,3\n", encoding="utf-8"
+    )
+    fourth = build_research_workspace(continued, tmp_path / "fourth", baseline_dir=third)
+    statuses = {
+        s["recipe_id"]: s["status"] for s in read(fourth / "refresh.json")["figure_recipes"]
+    }
+    assert statuses["physical-diagnostics"] == "executed"
+    assert statuses["surface-study"] == "unchanged"
+
+
 @pytest.fixture(scope="module")
 def assets(tmp_path_factory):
     root = tmp_path_factory.mktemp("research-assets")

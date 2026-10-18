@@ -279,6 +279,30 @@ def load_literature(path: Path) -> dict:
         text = source.read_bytes().decode("utf-8-sig")
         if support["excerpt"] not in text:
             raise ValueError(f"Literature excerpt not found exactly in source: {support['source']}")
+        location = support.get("location")
+        if location is not None:
+            if not isinstance(location, dict):
+                raise ValueError("Literature location must be a structured source location")
+            kind = location.get("kind")
+            if kind == "lines":
+                start, end = location.get("start"), location.get("end")
+                lines = text.splitlines()
+                if not all(type(value) is int for value in (start, end)) or not (
+                    1 <= start <= end <= len(lines)
+                ):
+                    raise ValueError("Literature line location is outside the source")
+                located = "\n".join(lines[start - 1 : end])
+            elif kind == "pdf-page":
+                page = location.get("page")
+                pages = text.split("\f")
+                if type(page) is not int or not 1 <= page <= len(pages):
+                    raise ValueError("Literature PDF page location is outside the extracted text")
+                located = pages[page - 1]
+            else:
+                raise ValueError("Literature location kind must be lines or pdf-page")
+            if support["excerpt"] not in located:
+                raise ValueError("Literature excerpt is not at its declared source location")
+            support["location_check"] = "matched"
     return {**data, "records": records, "aliases": aliases, "supports": supports}
 
 

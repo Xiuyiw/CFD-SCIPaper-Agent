@@ -113,6 +113,24 @@ mechanism rewrite. If Word has independent author edits, retain that file and re
 them with the workspace first; this route does not silently merge arbitrary Word edits.
 The repository's `docs/research-workspace.md` gives the portable input and output layout.
 
+When a spatial observation leaves a transport explanation unresolved, attach the relevant
+original-field calculations to that workspace. Select the diagnostics from the question:
+fixed versus moving regions, opposing signed transfers, a defined budget, or a matched
+field difference. Read the QoI skill's physical-diagnostics guidance before choosing them.
+
+```text
+cfdpaper research --workspace work --diagnostics diagnostics.json --output work-with-diagnostics
+cfdpaper research --workspace work-with-diagnostics --output candidate-with-diagnostics
+```
+
+Read the resulting `diagnostics.json`, calculation results and `mechanism_questions` before
+updating the argument. The same sources drive figure data, table/value bindings and current
+writing context. A native saved-results extraction, where needed, precedes this workspace
+step and uses the intake skill's optional adapter route. Continue from the new workspace;
+use its author-local diagnostic script for later refreshes. The public
+`examples/physical-diagnostics/` tutorial demonstrates the complete route with disclosed
+constructed fields and recorded host prose, not an independently discovered mechanism.
+
 After the analysis selection command, `selected/section-input/writing/input.json`
 already contains the section identity, evidence IDs, calculations, source copies
 and result bindings. Point the manuscript manifest's section entry to that file.

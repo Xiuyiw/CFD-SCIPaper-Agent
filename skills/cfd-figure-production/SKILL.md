@@ -99,6 +99,23 @@ from a template. This keeps author style edits while recalculating the source da
 and figures together. Inspect both the map and distribution at the actual Word width;
 the complementary relationship, legibility and caption remain host responsibilities.
 
+## Connected physical diagnostics
+
+For attached physical diagnostics, `diagnostic_figures` consumes the declared
+`field_calculations` and selected `panels` rather than a second hand-entered metric table.
+Its implemented panel kinds are `regional`, `signed_flux`, `budget` and
+`matched_difference`. Choose the needed combination: regional mean with area support,
+positive/negative exchange with its net, independent budget terms with the residual,
+or original means beside their matched difference. The temperature field and distribution
+remain useful spatial context. A difference or residual alone cannot identify its cause.
+
+Keep the `signed_flux` panel's `sign_convention` explicit. A `budget` panel needs actual
+input, output, source and storage definitions; a prescribed example budget does not close
+an unrelated field. Output source data and the author-local diagnostic `plot.py` travel with
+SVG/PDF/PNG/TIFF. Inspect them at their actual manuscript width and preserve that script
+on refresh. A conceptual Studio arrow may illustrate the interpretation; quantitative arrow
+widths or claims of a resolved path require actual compatible transport evidence.
+
 ## Do not trigger
 
 Do not use to change QoI values, case order, units, claim strength, chart semantics, or infer a

@@ -17,13 +17,15 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.21.0 connects supplied surface fields to area-weighted comparisons, original-face maps,
-exact exceedance distributions and an editable research manuscript. Source and definition updates
-refresh bound figures, tables and values while preserving author-local scripts and drafts.
-Paper-framework Studio guidance and `research --attach-figure` connect reviewed conceptual artwork
-to the manuscript; scientific interpretation remains with the host and author.
-Start with the [runnable surface research example](examples/surface-research/README.md),
-[research commands](docs/research-workspace.md) and [v0.21.0 notes](docs/releases/v0.21.0.md).
+Version 0.22.0 connects regional field reductions, signed transport, matched spatial differences
+and control-volume budgets to complementary figures and an editable research manuscript.
+An optional Fluent saved-results reader supplies original surface geometry and native reports;
+neutral NPZ/CSV inputs use the same analysis chain. Explicit observation supports distinguish
+shared-time, event-relative and event-timing comparisons. Source and definition updates preserve
+author-local scripts and drafts while locating the interpretations that need revision.
+Start with the [physical diagnostics example](examples/physical-diagnostics/README.md),
+[research commands](docs/research-workspace.md) and [v0.22.0 notes](docs/releases/v0.22.0.md).
+Paper-framework Studio guidance remains available for the conceptual layer, not fabricated fields.
 
 Earlier workflows remain available: the
 [materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md),
@@ -52,7 +54,9 @@ covers whole-manuscript feedback and selected editing.
 | Existing materials to subsection analysis | Available | CSV/method profiling, bounded large-CSV previews and NPZ metadata; portable host-AI proposals; author-selected calculations and source-linked writing. v0.13 adds `.py` intake as source text, never execution. |
 | Materials-to-manuscript guidance | Available | Thin workflow entry coordinates four specialist skills; portable analysis packages include all five skills. `--outline` gathers selected inputs, dependencies and optional drafts without rebuilding numeric bindings. Missing prose remains pending. |
 | Spatially weighted evidence | Available | Weighted mean, population SD and measure sum from declared positive area/volume weights, optionally restricted by supplied overlap fractions; source-linked prose and native Word tables. Domain coverage remains an author/host judgment. |
-| Connected surface research | Available | Two to four declared NPZ face fields with physical areas and polygon geometry; weighted diagnostics, exact area-exceedance distributions, shared-scale field maps and four-section Word output. No native-solver extraction or inferred comparability. |
+| Connected surface research | Available | Two to four declared NPZ face fields with physical areas and polygon geometry; weighted diagnostics, exact area-exceedance distributions, shared-scale field maps and four-section Word output. Comparability remains explicit. |
+| Physical diagnostics and mechanism evidence | Available | Region-weighted quantities, density/element-total/vector-flux integrals, opposing signed contributions, matched original geometry and defined budgets; complementary figures and source-bound writing. Planar polygon clipping is optional; curved walls need suitable native reports or supplied fractions. |
+| Saved Fluent surface extraction | Experimental | Optional PyFluent reference reader for saved CASE/DATA, boundary temperature/heat flux, original polygons and native surface/coordinate-clip reports. Tested on Windows with Fluent 2023 R1/PyFluent 0.20; not arbitrary solver or field support. |
 | Research refresh and author-asset preservation | Available | Source/definition changes update affected recipes, bound values and review locations; local plotting scripts and drafts are retained. The host revisits interpretations and conceptual arrows. |
 | Saved transient evidence | Available | Exact sampled windows, nonuniform trapezoidal integrals/means, saved extrema and threshold samples; cumulative increments without double integration. No interpolation or native-event reconstruction. |
 | Reference-range evidence | Available | Model/reference deviations and signed distances from supplied bounds, with original range meaning and units; no combined model-validation score. |
@@ -69,14 +73,14 @@ covers whole-manuscript feedback and selected editing.
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate; reassembly preserves unedited drafts. Word-only edits must be reconciled into the draft. |
 | External drawing tasks and mechanism attachment | Available | Studio-guided conceptual/hybrid tasks, editable-source import and manuscript attachment. Explicit `raster_concept` is schematic-only and reports no editable source; it cannot replace computed fields. Import does not approve figures. |
 | Whole-paper review and selected editing | Available | Complete reports, exact targets and optional shared-evidence locations travel with editable drafts; the host evaluates and implements changes. |
-| Native Fluent, STAR-CCM+, and other solver ingestion | Roadmap | Export structured neutral inputs for this release. |
+| Broader native solver ingestion | Roadmap | The Fluent surface reference path above is available; STAR-CCM+ and other unsupported native quantities still require structured neutral exports. |
 
 Autonomous full-paper reasoning and journal revision are not provided: the host and author develop
 the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.21.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.22.0 checkout or source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -88,7 +92,7 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.21.0-py3-none-any.whl[docs]"
+python -m pip install "./cfd_paper_agent-0.22.0-py3-none-any.whl[docs]"
 ```
 
 The examples live in the source checkout/archive, not the wheel. Run the connected synthetic
@@ -105,8 +109,10 @@ host-writing workspace instead of replaying the supplied example prose. See the
 The [seven-section literature tutorial](examples/literature-manuscript/README.md) shows how
 to prepare shared tasks, assemble the supplied analytical drafts, export Word and continue from
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
-remains available. See the [v0.21.0 notes](docs/releases/v0.21.0.md) for the current scope
-and the [v0.20.0 notes](docs/releases/v0.20.0.md) for the preceding baseline.
+remains available. For region clipping and signed-transfer figures, install `.[docs,geometry]`
+and run `python examples/physical-diagnostics/run_example.py output/physical-demo`.
+See the [v0.22.0 notes](docs/releases/v0.22.0.md) for the current scope and the
+[v0.21.0 notes](docs/releases/v0.21.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
 install [Pandoc](https://pandoc.org/installing.html) separately and put `pandoc` on PATH.
@@ -345,6 +351,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.22.0 release notes](docs/releases/v0.22.0.md)
 - [v0.21.0 release notes](docs/releases/v0.21.0.md)
 - [Surface research commands](docs/research-workspace.md)
 - [v0.20.0 release notes](docs/releases/v0.20.0.md)

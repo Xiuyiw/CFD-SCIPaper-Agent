@@ -92,6 +92,66 @@ class FluentAdapter(_NativeSolverAdapter):
         "case ID, and zone/location."
     )
 
+    def __init__(self, *, executable=None, session_factory=None):
+        self.executable = executable
+        self.session_factory = session_factory
+
+    def probe(self, source: Path) -> ProbeResult:
+        result = super().probe(source)
+        if not result.supported:
+            return result
+        from .fluent_backend import pyfluent_available
+
+        available = self.session_factory is not None or pyfluent_available()
+        return ProbeResult(
+            self.name,
+            result.source,
+            True,
+            available,
+            "available" if available else "unsupported",
+            "PyFluent backend available; license and saved CASE/DATA checked on extraction"
+            if available
+            else result.reason,
+            self.export_instruction,
+        )
+
+    def extract(self, request: ExtractionRequest) -> list:
+        if not request.options.get("data_file"):
+            raise UnsupportedExtractionError(
+                "Fluent read-only extraction needs data_file, output_dir and surfaces; "
+                + self.export_instruction
+            )
+        from .fluent_backend import extract_fluent_records
+
+        options = dict(request.options)
+        if self.executable is not None:
+            options.setdefault("executable", self.executable)
+        return extract_fluent_records(
+            ExtractionRequest(request.source, request.variables, options),
+            session_factory=self.session_factory,
+        )
+
+    def inventory(self, source: Path) -> Inventory:
+        inventory = super().inventory(source)
+        if not self.probe(source).available:
+            return inventory
+        return Inventory(
+            self.name,
+            inventory.source,
+            "requires-extraction",
+            source_hash=inventory.source_hash,
+            companions=inventory.companions,
+            recommendation=(
+                "Read the saved CASE/DATA pair with output_dir and exact surfaces; "
+                "extraction records the available native fields and surface inventory."
+            ),
+            metadata={
+                "read_only": True,
+                "python_backend_available": True,
+                "native_license_verified": False,
+            },
+        )
+
 
 class StarCCMAdapter(_NativeSolverAdapter):
     name = "star-ccm+"

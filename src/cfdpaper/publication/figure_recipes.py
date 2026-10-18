@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 import subprocess
@@ -98,7 +99,7 @@ def _check_output(root, name):
         json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def execute_figure_recipes(working_root, recipes, *, baseline_root=None):
+def execute_figure_recipes(working_root, recipes, *, baseline_root=None, baseline_states=None):
     """Run only changed registered recipes, using the CURRENT local script verbatim.
 
     Paths are relative to ``working_root``; the script runs with that root as cwd.
@@ -152,10 +153,20 @@ def execute_figure_recipes(working_root, recipes, *, baseline_root=None):
             raise ValueError("Figure recipe output must not replace its registry")
 
     statuses = []
+    saved_states = {item["recipe_id"]: item for item in (baseline_states or [])}
     for recipe in definitions:
         changed = old.get(recipe["id"]) != recipe
+        current_inputs = {
+            name: hashlib.sha256(_asset(working_root, name).read_bytes()).hexdigest()
+            for name in dict.fromkeys([recipe["script"], *recipe["inputs"]])
+        }
+        saved = saved_states.get(recipe["id"], {}).get("input_fingerprints")
+        if saved is not None:
+            # The author may edit baseline/workspace in place after a build. Its
+            # saved render inputs, rather than today's mutable files, are the baseline.
+            changed = changed or saved != current_inputs
         if not changed:
-            for name in [recipe["script"], *recipe["inputs"]]:
+            for name in [] if saved is not None else [recipe["script"], *recipe["inputs"]]:
                 before = _path(baseline_root, name)
                 if (
                     not before.is_file()
@@ -170,6 +181,7 @@ def execute_figure_recipes(working_root, recipes, *, baseline_root=None):
             "recipe_id": recipe["id"],
             "status": "executed" if changed else "unchanged",
             "outputs": list(recipe["outputs"]),
+            "input_fingerprints": current_inputs,
             **{key: recipe[key] for key in ("section_id", "figure_id") if key in recipe},
         }
         if changed:

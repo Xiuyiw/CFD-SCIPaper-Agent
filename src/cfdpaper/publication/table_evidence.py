@@ -54,9 +54,18 @@ _TABLE_DECLARATION_KEYS = {
 
 def calculate_declared_table(path, declaration: dict) -> dict:
     """Forward calculation options only, without adding report identity or metadata."""
-    return calculate_table(
-        path, **{key: value for key, value in declaration.items() if key in _TABLE_DECLARATION_KEYS}
-    )
+    if declaration["operation"] in {"field_integral", "field_difference", "energy_budget"}:
+        from .field_diagnostics import calculate_field_diagnostic
+
+        result = calculate_field_diagnostic(path, declaration)
+    else:
+        result = calculate_table(
+            path,
+            **{key: value for key, value in declaration.items() if key in _TABLE_DECLARATION_KEYS},
+        )
+    if declaration.get("support") is not None:
+        result["support"] = declaration["support"]
+    return result
 
 
 def display_unit(unit: str) -> str:
@@ -537,11 +546,23 @@ _COMPARABLE_FIELDS = {
     "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
     "partition": {"area", "rate", "mean_flux"},
     "temporal": TEMPORAL_FIELDS,
+    "field_integral": {"net", "positive", "negative", "absolute", "measure", "weighted_mean"},
+    "field_difference": {"reference_mean", "comparison_mean", "difference_mean"},
+    "energy_budget": {"input", "output", "source", "storage", "residual"},
 }
 
 
 def calculate_result_comparison(
-    reports, *, id, reference, comparison, domain, definition_source, temperature_reference=None
+    reports,
+    *,
+    id,
+    reference,
+    comparison,
+    domain,
+    definition_source,
+    temperature_reference=None,
+    support_purpose=None,
+    fixed_conditions=(),
 ) -> dict:
     """Compare two explicitly chosen, definition-compatible computed scalars.
 
@@ -593,8 +614,20 @@ def calculate_result_comparison(
                 kind = "ordinary"
             elif field == "change" and kind == "absolute-temperature":
                 kind = "temperature-difference"
-        if field in {"weight_sum", "area", "rate", "mean_flux"}:
+        if field in {"weight_sum", "area", "rate", "mean_flux", "measure"}:
             kind = "ordinary"
+        elif operation == "field_integral" and field != "weighted_mean":
+            if kind == "absolute-temperature":
+                raise ValueError(
+                    "Absolute-temperature measure-integral comparisons depend on temperature origin"
+                )
+            kind = "ordinary"
+        elif (
+            operation == "field_difference"
+            and field == "difference_mean"
+            and kind == "absolute-temperature"
+        ):
+            kind = "temperature-difference"
         elif field == "weighted_std" and kind == "absolute-temperature":
             kind = "temperature-difference"
         if kind not in {"ordinary", "absolute-temperature", "temperature-difference"}:
@@ -613,9 +646,25 @@ def calculate_result_comparison(
             "weight_kind": parent.get("weight_kind"),
             "quantity_kind": kind,
             "definition_source": parent.get("definition_source"),
+            **({"support": parent["support"]} if parent.get("support") is not None else {}),
             **temporal_metadata,
         }
     baseline, compared = upstream["reference"], upstream["comparison"]
+    support_check = None
+    if support_purpose is not None or baseline.get("support") or compared.get("support"):
+        from .comparison_support import compare_observation_support
+
+        support_check = compare_observation_support(
+            baseline.get("support"),
+            compared.get("support"),
+            purpose=support_purpose or "same-state",
+            fixed_conditions=fixed_conditions,
+        )
+        if support_check["status"] != "compatible":
+            issues = support_check["conflicts"] + support_check["missing"]
+            raise ValueError(
+                "Comparison support " + support_check["status"] + ": " + "; ".join(issues)
+            )
     for key in ("operation", "field", "weight_kind", "quantity_kind", "unit"):
         if baseline[key] != compared[key]:
             raise ValueError(f"Result comparison requires matching {key}")
@@ -648,6 +697,7 @@ def calculate_result_comparison(
         "temperature_reference": temperature_reference,
         "parents": {"reference": dict(reference), "comparison": dict(comparison)},
         "upstream": upstream,
+        **({"comparison_support": support_check} if support_check is not None else {}),
         "groups": [{"group": "all", "status": "computed", "result": result}],
     }
 
@@ -904,6 +954,12 @@ def resolve_table_result(
     if len(matches) != 1:
         raise ValueError(f"{location}: expected one calculation ID, found {len(matches)}")
     report = matches[0]
+    if report.get("operation") in {"field_integral", "field_difference", "energy_budget"}:
+        from .field_diagnostics import resolve_field_result
+
+        if source_record is not None:
+            raise ValueError("Field diagnostic references select a group, not source_record")
+        return resolve_field_result(report, group, field, places, percentage=percentage)
     fields = {
         "population": {"count", "sum", "mean", "cv"},
         "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
