@@ -14,7 +14,7 @@ Existing releases and their limitations are retained below as history.
 | Version | Complete user capability | Status |
 |---|---|---|
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
-| v0.22 | Spatial/temporal diagnostics and discriminating mechanism evidence, with tested native and neutral field extraction | Planned |
+| v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Detailed plan recorded; implementation not started |
 | v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return | Planned |
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
 
@@ -22,6 +22,14 @@ Each release must improve an actual research task. Later task ordering can chang
 results, but scientific depth, readable publication output and author-edit preservation cannot be
 silently removed. The [contribution principles](../CONTRIBUTING.md#product-and-development-principles)
 apply across hosts and contributors. No universal solver support or publication readiness is implied.
+
+The [v0.21 assessment and v0.22 execution plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md#14-v021目标复评与v022实施计划2026-10-16)
+retain the delivered research chain and target its observed interpretation gap. The next cooling
+task reuses existing regional and off-center heat-path evidence, adding only the missing comparable
+post-processing from saved solutions. Native extraction, reconstructed flux and independent
+validation remain distinct. Existing temporal diagnostics are reused to correct common-time versus
+own-event comparisons at the point of scientific use. Broader Word collaboration and a second host
+remain v0.23/v0.24 work, not prerequisites for this increment.
 
 ## Release principle
 
