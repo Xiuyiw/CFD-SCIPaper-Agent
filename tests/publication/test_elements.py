@@ -3,6 +3,28 @@ import pytest
 from cfdpaper.publication.elements import MathNode, SectionTable, math_text, math_xml
 
 
+def test_table_caption_separates_adjacent_tables():
+    from docx import Document
+
+    from cfdpaper.publication.elements import SectionTable, add_table
+    from cfdpaper.publication.style import PublicationStyle
+
+    doc = Document()
+    table = SectionTable(
+        table_id="1",
+        caption="First observations",
+        columns=["Case", "Value"],
+        rows=[["A", "2"]],
+        after_section_id="results",
+    )
+    add_table(doc, table, PublicationStyle())
+    table.table_id = "2"
+    add_table(doc, table, PublicationStyle())
+    second = doc.paragraphs[-1].paragraph_format
+    assert second.space_before.pt >= 6
+    assert second.space_after.pt >= 4
+
+
 @pytest.mark.parametrize(
     "source,expected",
     [

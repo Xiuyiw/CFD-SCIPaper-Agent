@@ -240,6 +240,8 @@ def add_table(document, table: SectionTable, style):
     )
     caption.paragraph_format.keep_with_next = True
     caption.paragraph_format.keep_together = True
+    caption.paragraph_format.space_before = Pt(6)
+    caption.paragraph_format.space_after = Pt(4)
 
     # Only bind tables whose conservative wrapped-text estimate occupies at most
     # half a page. Long tables must remain free to paginate with repeated headers.

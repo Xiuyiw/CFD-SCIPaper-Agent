@@ -78,7 +78,27 @@ below when an initialized project already has declared scientific records and ob
 
 4. Hand the chosen proposal to `cfd-qoi-physics`. This is a subsection-analysis choice, not a new
    manuscript-topic approval, locked QoI contract or checkpoint. It does not bypass an existing
-   comparison restriction. Do not run a solver or invent missing definitions.
+   comparison restriction. Do not advance a solution or invent missing definitions.
+
+## Saved native results
+
+When an authorized task needs unavailable exports, the optional Fluent reference adapter
+can read an existing CASE/DATA pair. Install the package's `fluent` extra in the executing
+environment and use `FluentAdapter.extract(ExtractionRequest(...))`, or
+`cfdpaper.adapters.fluent_backend.export_fluent_surfaces`. Supply `data_file`, an isolated
+`output_dir`, and `surfaces` mapping useful labels to exact native zone names recovered
+from the materials. Default fields are face-associated `temperature` in K and `heat-flux`
+in W/m²; the export retains original polygons, physical areas and native report files.
+Read the returned manifest's actual field/surface inventory and physical definitions.
+
+For a native rectangular coordinate region, `region_bounds` declares axes and bounds in m;
+`export_fields=False` obtains native whole-wall and clipped-region reports without another
+large field export. Heat-flow signs retain the selected wall side. Never count wall and
+shadow as separate heat paths. Python backend detection alone does not establish a working
+license or successful extraction. The tested native reference is Windows Fluent 2023 R1
+with PyFluent 0.20; absent backends should lead to the stated minimal neutral export.
+STAR-CCM+ remains an export-guidance adapter. This route reads saved results without advancing
+equations or writing back CASE/DATA; it does not authorize executing a setup or solve script.
 
 ## Existing strict qualification pathway
 
@@ -88,7 +108,7 @@ from already available material.
 
 ## Do not trigger
 
-Do not use to infer missing values, redesign a simulation, run a solver, select a manuscript topic
+Do not use to infer missing values, redesign a simulation, advance a solution, select a manuscript topic
 without the author, or draft publication claims.
 
 ## Inputs

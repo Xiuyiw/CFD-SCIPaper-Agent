@@ -94,6 +94,19 @@ class _ResultRef(_Record):
         "reference_lower",
         "reference_upper",
         "outside_distance",
+        "net",
+        "positive",
+        "negative",
+        "absolute",
+        "measure",
+        "reference_mean",
+        "comparison_mean",
+        "difference_mean",
+        "residual",
+        "input",
+        "output",
+        "source",
+        "storage",
     ]
     source_record: int | None = Field(default=None, strict=True, ge=2)
     places: int = Field(default=3, strict=True, ge=0, le=12)
@@ -119,6 +132,16 @@ class _Evidence(_Record):
     result_ref: _ResultRef | None = None
     json_value_ref: _JsonValueRef | None = None
     citation_record: dict | None = None
+    evidence_role: (
+        Literal[
+            "algebraic",
+            "same-solution-diagnostic",
+            "condition-contrast",
+            "model-contrast",
+            "independent-validation",
+        ]
+        | None
+    ) = None
 
     @field_validator("citation_record")
     @classmethod
@@ -136,6 +159,8 @@ class _Evidence(_Record):
             result.pop("json_value_ref", None)
         if self.citation_record is None:
             result.pop("citation_record", None)
+        if self.evidence_role is None:
+            result.pop("evidence_role", None)
         return result
 
     @model_validator(mode="after")
@@ -189,6 +214,7 @@ class _TableCalculation(_Record):
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
+    support: dict | None = None
     group_by: str | None = None
     pair_by: StrictStr | None = None
     reference: StrictStr | None = None
@@ -231,6 +257,8 @@ class _TableCalculation(_Record):
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if self.support is None:
+            result.pop("support", None)
         if not self.row_filters:
             result.pop("row_filters", None)
         if self.unit_column is None:
@@ -364,6 +392,29 @@ class _TableCalculation(_Record):
         return self
 
 
+class _FieldCalculation(_Record):
+    id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
+    source: str
+    operation: Literal["field_integral", "field_difference", "energy_budget"]
+    columns: dict[str, StrictStr]
+    units: dict[str, StrictStr]
+    domain: str = Field(min_length=1)
+    quantity_kind: Literal["ordinary", "absolute-temperature", "temperature-difference"] = (
+        "ordinary"
+    )
+    field_options: dict = Field(default_factory=dict)
+    support: dict | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_field(self, handler):
+        result = handler(self)
+        if self.support is None:
+            result.pop("support", None)
+        if self.quantity_kind == "ordinary":
+            result.pop("quantity_kind", None)
+        return result
+
+
 class _ScalarResult(_Record):
     calculation_id: StrictStr = Field(min_length=1)
     group: StrictStr = Field(min_length=1)
@@ -388,6 +439,19 @@ class _ScalarResult(_Record):
         "peak_time",
         "first_crossing_time",
         "sample_count",
+        "net",
+        "positive",
+        "negative",
+        "absolute",
+        "measure",
+        "reference_mean",
+        "comparison_mean",
+        "difference_mean",
+        "residual",
+        "input",
+        "output",
+        "source",
+        "storage",
     ]
 
 
@@ -400,6 +464,8 @@ class _ResultComparison(_Record):
     comparison_scope: StrictStr = Field(min_length=1)
     status: Literal["supported", "unknown", "not-comparable"]
     temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
+    support_purpose: Literal["same-state", "event-relative", "event-timing"] | None = None
+    fixed_conditions: list[StrictStr] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def explicit_comparison(self):
@@ -412,7 +478,21 @@ class _ResultComparison(_Record):
     def engine_arguments(self):
         if self.status != "supported":
             raise ValueError(f"{self.id}: result comparison is {self.status}")
-        return self.model_dump(exclude={"status", "comparison_scope"})
+        result = self.model_dump(exclude={"status", "comparison_scope"})
+        if self.support_purpose is None:
+            result.pop("support_purpose", None)
+        if not self.fixed_conditions:
+            result.pop("fixed_conditions", None)
+        return result
+
+    @model_serializer(mode="wrap")
+    def serialize_comparison(self, handler):
+        result = handler(self)
+        if self.support_purpose is None:
+            result.pop("support_purpose", None)
+        if not self.fixed_conditions:
+            result.pop("fixed_conditions", None)
+        return result
 
 
 class _Input(_Record):
@@ -424,7 +504,7 @@ class _Input(_Record):
     duties: list[_Duty] = Field(min_length=1)
     context: str = ""
     source_files: list[str] = Field(default_factory=list)
-    table_calculations: list[_TableCalculation] = Field(default_factory=list)
+    table_calculations: list[_TableCalculation | _FieldCalculation] = Field(default_factory=list)
     result_comparisons: list[_ResultComparison] = Field(default_factory=list)
     style: PublicationStyle = Field(default_factory=PublicationStyle)
 
@@ -517,6 +597,12 @@ def _load_input(
     for calculation in data.table_calculations:
         if calculation.source not in data.source_files:
             data.source_files.append(calculation.source)
+        if isinstance(calculation, _FieldCalculation):
+            companion = calculation.field_options.get("reference_source")
+            if companion:
+                name = (Path(calculation.source).parent / companion).as_posix()
+                if name not in data.source_files:
+                    data.source_files.append(name)
     for record in data.evidence:
         if record.json_value_ref is not None:
             name = record.json_value_ref.source

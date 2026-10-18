@@ -9,12 +9,16 @@ study exercised the chain, followed by a source-grounded conceptual figure and s
 refresh with author-asset preservation. The CLI and a runnable public synthetic example
 expose the same workflow; see the [release notes](releases/v0.21.0.md) and
 [surface tutorial](../examples/surface-research/README.md).
+The v0.22 candidate extends this chain with original-field regions, signed heat paths,
+matched changes, budgets and an actual saved-Fluent surface reader. A real cooling task,
+paired first writing, temporal-support counterexamples and author-preserving refresh have
+run; final platform integration is in progress. See the [v0.22 notes](releases/v0.22.0.md).
 Existing releases and their limitations are retained below as history.
 
 | Version | Complete user capability | Status |
 |---|---|---|
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
-| v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Detailed plan recorded; implementation not started |
+| v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Real-task diagnostics, figure/Word consumption and targeted refresh completed; supported-platform CI and release integration in progress |
 | v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return | Planned |
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
 

@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.22.0] — 2026-10-18
+
+### Added
+
+- Reduce declared original fields by physical regions, density or element-total integrals,
+  oriented vector flux, opposing signed contributions, matched spatial differences and
+  control-volume budgets. Preserve actual element/record locations and missing quantities.
+- Read saved Fluent boundary temperature/heat flux, original polygons and native whole/region
+  reports through an optional PyFluent backend; no iteration or source write-back.
+- Attach diagnostics to the existing research workspace, generating complementary plots,
+  source data, editable exports, current scalar context and bound manuscript values.
+- Check explicit shared-state, event-relative and event-timing supports in computed comparisons,
+  and verify literature excerpts at declared source lines or extracted PDF pages.
+- Add the runnable constructed physical-diagnostics example and update the five bundled skills.
+
+### Fixed
+
+- Detect source changes when an author edits the returned baseline workspace in place;
+  refresh current recipe inputs after a diagnostic source-path change.
+- Publish attached diagnostic results and cross-section aliases before first writing, rather
+  than leaving only old surface statistics in the prepared reading context.
+- Verify geometric polygon partitions by actual intersections/unions; reject origin-dependent
+  absolute-temperature integral comparisons while retaining ordinary mean-temperature changes.
+- Separate adjacent Word table captions from the preceding table without resetting body styles.
+
+### Evaluation
+
+- A real four-case cooling task exercised regional temperatures, native interface budgets,
+  signed reconstructed paths, complementary figures, Word output and targeted refresh.
+- Isolated first writers using the preceding and candidate tools reached similar supported
+  scientific interpretations. The new tools replaced task-specific mathematical processing
+  and a scalar bridge; no unmeasured time saving or superior autonomous discovery is claimed.
+- Existing transient thermal-model records demonstrated the difference between common-time
+  and own-event comparisons. This is not multiphase CFD or independent model validation.
+- See the [release notes](docs/releases/v0.22.0.md) for supported scope and actual limitations.
+
 ## [0.21.0] — 2026-10-16
 
 ### Added

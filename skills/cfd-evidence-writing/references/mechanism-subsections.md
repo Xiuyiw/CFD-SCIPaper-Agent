@@ -438,3 +438,128 @@ Design each figure at its intended Word width, with common scales, clear units, 
 unobstructed discrete data. The DOCX exporter offers after-text (default) or near-reference layout
 through `--layout`. Inspect actual rendered pages; neither image DPI nor a successful export
 certifies readability. Keep renderer/font notes out of the scientific prose.
+
+## Original fields, regions, signed transfer and budgets
+
+Use these diagnostics to resolve the current physical question. A selected raw field,
+its location/association, method source and comparison conditions are the starting inputs;
+the author need not provide a hand-calculated answer or a second evidence registry.
+
+### Choose the quantity and measure together
+
+`field_integral` uses the existing table declaration: `id`, `source`, `domain`, `operation`,
+`columns`, `units` and `field_options`. For example, an original-face heat-flux export:
+
+```json
+{
+  "id": "wall-transfer",
+  "source": "sources/wall.npz",
+  "domain": "selected physical wall",
+  "operation": "field_integral",
+  "columns": {"value": "heat_flux", "measure": "face_area_m2"},
+  "units": {"value": "W/m2", "measure": "m2"},
+  "field_options": {"association": "face", "integrand": "density", "orientation": 1}
+}
+```
+
+Here `density` multiplies W/m² by physical face area once. Cell density in W/m³ similarly
+requires physical volume and `association: cell`. `element_total` sums supplied W, kW or
+MW per element without multiplying by measure again. `vector_flux` requires aligned
+`qx/qy/qz` in W/m² and oriented `ax/ay/az` in m², then evaluates their dot product.
+Velocity magnitude alone is neither a signed mass flow nor an enthalpy flow.
+
+For `weighted_mean`, temperature in K or degC uses the declared area/volume and returns
+`weighted_mean` in that original scale. Its intermediate temperature-measure sum is not
+heat. Bind the physically appropriate result field; do not label every `net` as a power.
+The returned positive and negative terms preserve their signs; `absolute` is their
+absolute total, not net transport. `orientation: -1` reverses a signed transfer convention,
+not an absolute temperature field. State the chosen positive direction once for the reader.
+
+`signed_totals` accepts separately supplied nonnegative `positive` and nonpositive `negative`
+integrated powers, retaining opposing exchange when consuming an existing aggregate export.
+Such input is already integrated; it cannot recreate the spatial field or unresolved pathways.
+Do not count coupled wall and shadow reports twice. Keep the selected side and its definition.
+
+### Match the region to the question
+
+A region fixed in physical coordinates asks where the field changed. A region moving with
+a heat source asks how the source neighborhood responds. Both can be useful; equal area
+does not make them the same observation.
+
+The supported assignments are explicit fractions, half-open centroid boxes, or
+`region_assignment: polygon-clip` for original **planar** face geometry. A centroid box uses
+lower-inclusive/upper-exclusive bounds. Polygon clipping needs original vertices, packed
+connectivity and starts, and uses the overlapping fraction of each original face's physical
+area. It retains that face's constant value; it does not recover a within-face gradient.
+Curved/nonplanar walls need an applicable native region report or externally defined fractions,
+not a planar projection passed off as physical area. Declare the method in Methods/captions.
+
+Keep the whole domain and appropriate complementary region when explaining redistribution.
+`partition_complete: true` checks supplied regional fractions for overlap and coverage.
+That numerical coverage check does not establish that the chosen regions answer the question.
+A heat integral, region area and mean flux can expose `Q = A × mean flux`; this is a useful
+accounting identity, not a separation of causal area and flow effects.
+
+### Compare fields and budgets at their actual support
+
+`field_difference` reports comparison minus reference after matching physical coordinates,
+element measures and original polygons when present. It retains both original means and
+exact source positions alongside the difference. Equal array lengths or identical row numbers
+do not establish matching geometry. For different meshes, use compatible common-region
+statistics unless a declared mapping establishes the needed pointwise support; display
+interpolation must not silently become conservative integration.
+
+`energy_budget` takes independent `input`, `output`, `source` and `storage` power columns
+and computes `input + source − output − storage`. Input/output are nonnegative directional
+magnitudes; source and storage may be signed. Omitting storage requires an explicit,
+source-supported `steady_state: true`. Do not insert a remainder as an independently supplied
+path to make the same budget close by construction. The residual is a diagnostic of the
+declared terms and control volume, not experimental or whole-model validation.
+
+When two quantities are compared, retain each calculation's optional `support`: `case_id`,
+`association`, `spatial_domain`, `operator`, named `conditions` with value/unit, and `time`.
+The existing result comparison accepts `support_purpose` and `fixed_conditions`:
+
+- `same-state` compares steady states, a common physical time, or a common observed window.
+- `event-relative` compares the same defined event and relative offset for each case; the
+  underlying physical times may differ and remain in the records.
+- `event-timing` compares consistently defined native events or saved-sample events, not one
+  type against the other.
+
+`compare_observation_support` checks the supplied definitions and reports concrete conflicts
+or missing fields. Compatible declarations still need truthful source definitions. An own-event
+thermal difference cannot establish equal heating exposure merely by sharing an event label.
+Use a saved common time/window where that is the scientific question; preserve the event-relative
+comparison for its distinct purpose. Design variables may differ; only conditions claimed fixed
+are required to match.
+
+### Turn diagnostics into an argument and reusable figure
+
+The research workspace accepts a `diagnostics.json` with `field_calculations`, selected `panels`
+and optional `mechanism_questions`. The latter records the question, relevant calculations
+and working interpretation for the host; it does not assert a discovered cause.
+`attach_research_diagnostics` generates source-bound metric evidence, plot sources and a current
+writing context. Generated IDs follow calculation–group–field, for example
+`region-A-left-weighted_mean` or `flux-A-all-negative`; use their exact `result_ref` and value
+tokens in text, captions and native tables. Whole-paper figure numbering remains automatic.
+
+Select a complementary visual: original field/distribution with regional support;
+positive/negative transfer with its net; defined budget terms with residual; or original
+states beside a matched difference. The implemented diagnostic panel kinds are `regional`,
+`signed_flux`, `budget` and `matched_difference`. Refer to the original states when they
+distinguish an interpretation; a difference is a derived reading, not new independent evidence.
+Use the current local diagnostic script for refreshes, then inspect the actual Word/PDF page.
+
+Retain evidence roles such as algebraic, same-solution diagnostic, condition/model contrast
+and independent validation. For example, integrating a reconstructed `−k∇T` through a section
+and computing a balance remainder use different postprocessing methods on the same solution.
+Their agreement can support a direction or magnitude; it is not independent experimental
+validation or the solver's conservative discrete face flux. Compare their discrepancy with
+the particular effect being explained before resolving a fine ordering. A geometric/flux
+decomposition alone does not establish enhanced coolant mixing or a local heat-transfer
+coefficient without the required transport and reference-temperature evidence.
+
+The public `examples/physical-diagnostics/` tutorial is a minimal complete success example:
+constructed unequal-area faces, exact planar overlap, opposing flux and an explicitly separate
+budget feed complementary figures and a research draft. Its recorded prose demonstrates
+product consumption of those definitions, not a scientific discovery or a CFD validation case.

@@ -491,7 +491,12 @@ def _writing_resolution(resolved: dict, reports: list[dict], report_path: str) -
     projected = copy.deepcopy(resolved)
 
     def project(item):
-        for key in ("array_indices", "csv_records"):
+        for key in (
+            "array_indices",
+            "csv_records",
+            "reference_array_indices",
+            "reference_csv_records",
+        ):
             indices = item.get(key)
             if not isinstance(indices, list) or len(indices) <= 64:
                 continue
@@ -510,7 +515,7 @@ def _writing_resolution(resolved: dict, reports: list[dict], report_path: str) -
             item[f"{key}_summary"] = {
                 "count": len(indices),
                 "kind": key,
-                "index_base": 0 if key == "array_indices" else 1,
+                "index_base": 0 if key.endswith("array_indices") else 1,
                 "details": {"path": report_path, "json_pointer": locations[0]},
             }
         for parent in item.get("supporting_results", []):
@@ -950,6 +955,8 @@ def _relocate_result_sources(value, prefix):
     relocated = dict(value)
     if "source" in value:
         relocated["source"] = (prefix / value["source"]).as_posix()
+    if "reference_source" in value:
+        relocated["reference_source"] = (prefix / value["reference_source"]).as_posix()
     if "supporting_results" in value:
         relocated["supporting_results"] = [
             _relocate_result_sources(parent, prefix) for parent in value["supporting_results"]

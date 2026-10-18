@@ -27,11 +27,57 @@ def workspace_backend(monkeypatch):
     def attach(workspace_dir, imported_dir, output_dir, **kwargs):
         calls.append(("attach", workspace_dir, imported_dir, output_dir, kwargs))
 
+    def diagnostics(workspace_dir, config, output_dir):
+        calls.append(("diagnostics", workspace_dir, config, output_dir))
+
     backend.prepare_surface_workspace = prepare
     backend.build_research_workspace = build
     backend.attach_imported_figure = attach
+    backend.attach_research_diagnostics = diagnostics
     monkeypatch.setitem(sys.modules, backend.__name__, backend)
     return backend, calls
+
+
+def test_diagnostic_attachment_forwards_without_building(tmp_path, workspace_backend):
+    _, calls = workspace_backend
+    workspace, config, output = (
+        tmp_path / name for name in ("workspace", "diagnostics.json", "out")
+    )
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            str(workspace),
+            "--diagnostics",
+            str(config),
+            "--output",
+            str(output),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls == [("diagnostics", workspace, config, output)]
+    assert "physical diagnostics ready" in result.stdout
+
+
+@pytest.mark.parametrize("other", [["--baseline", "old"], ["--attach-figure", "figure"]])
+def test_diagnostic_attachment_rejects_combined_actions(other, workspace_backend):
+    _, calls = workspace_backend
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            "work",
+            "--diagnostics",
+            "config.json",
+            "--output",
+            "out",
+            *other,
+        ],
+    )
+    assert result.exit_code == 2
+    assert calls == []
 
 
 def test_prepare_thin_entrypoint_explains_host_writing(tmp_path, workspace_backend):

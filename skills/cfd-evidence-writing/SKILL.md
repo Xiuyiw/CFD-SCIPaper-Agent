@@ -160,6 +160,23 @@ scientific revisions. Keep missing physical definitions in notes, not invented p
 every section ID to its host-authored draft path. Preserve drafts and inputs; assembling existing
 text does not demonstrate independent scientific writing.
 
+For an attached regional/transport study, read its `diagnostics.json`, current table results
+and `mechanism_questions` with the
+[physical diagnostic reference](references/mechanism-subsections.md#original-fields-regions-signed-transfer-and-budgets).
+Use the generated metric IDs and ordinary value/figure tokens in prose, tables and captions.
+Methods defines the actual region, sign and support; Results connects visible field changes
+to selected quantities; Discussion tests the relevant explanation and alternative. Keep these
+roles distinct without forcing the same paragraph template on every finding.
+
+An evidence item's optional `evidence_role` can be `algebraic`, `same-solution-diagnostic`,
+`condition-contrast`, `model-contrast` or `independent-validation`. Select it from the source's
+actual role; multiple displays or postprocessing methods on one solution stay complementary.
+Read the relevant literature passage at its stated page/section/line before using it for a
+mechanism comparison. Metadata and a matching keyword do not establish that support.
+Retain a necessary limitation where it changes the claim, and use the remaining space for
+the positive physical finding. Refresh values mechanically; re-read changed interpretations
+and captions as the host, preserving author prose and the recorded first draft.
+
 Use supported figure/table/equation/citation tokens for cross-references. Workspace assembly
 rebinds them to global numbering in spine order; local free-text numbers are not silently rewritten.
 For an object in another section, qualify its ID, for example

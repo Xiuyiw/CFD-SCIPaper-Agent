@@ -182,6 +182,28 @@ metric always means better performance or that discrete cases define a continuou
 Compilation is deterministic numerical evaluation, not automatic physical validation or author
 approval. No new approval registry is introduced.
 
+## Original-field diagnostics
+
+Use `field_integral`, `field_difference` or `energy_budget` through the same table declarations
+and `result_ref` bindings when they distinguish a current physical explanation. Read
+[physical diagnostic definitions](../cfd-evidence-writing/references/mechanism-subsections.md#original-fields-regions-signed-transfer-and-budgets)
+for density versus element totals, regional overlap, signed transport and budget terms.
+Temperature-area weighting produces a temperature statistic, not a heat rate. Use actual
+element geometry for matched differences; equal array lengths do not establish a match.
+
+For comparisons with declared observation `support`, use `support_purpose` and named
+`fixed_conditions` on the existing result comparison. The supports retain case, association,
+spatial domain, operator and time origin/state/window. `same-state`, `event-relative` and
+`event-timing` answer different questions. Compatibility checks those declarations; the host
+still establishes their truth from the source methods. Keep missing/conflicting support with
+the affected comparison while continuing independently defined work.
+
+Choose a diagnostic for its discriminating role. A balance remainder and a reconstructed
+gradient integral from one solution can test postprocessing agreement, but cannot become two
+independent validations. Compare their difference with the effect actually being explained,
+using the same cases and domain. The public `examples/physical-diagnostics/` route connects
+these calculations to figures and a research workspace without manual metric transcription.
+
 ## Existing locked-QoI route
 
 The remaining requirements apply to the original locked-contract path and remain unchanged.
