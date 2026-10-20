@@ -470,6 +470,12 @@ def research_workspace(
         Path | None,
         typer.Option("--baseline", help="Previous build for a targeted change comparison"),
     ] = None,
+    author_candidate: Annotated[
+        Path | None,
+        typer.Option(
+            "--author-candidate", help="Recovered manuscript candidate to preserve in this build"
+        ),
+    ] = None,
     diagnostics: Annotated[
         Path | None,
         typer.Option(
@@ -507,6 +513,10 @@ def research_workspace(
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
         if baseline is not None and workspace is None:
             raise WorkflowInputError("--baseline requires --workspace and a previous build.")
+        if author_candidate is not None and (
+            workspace is None or diagnostics is not None or attach_figure is not None
+        ):
+            raise WorkflowInputError("--author-candidate requires a research --workspace build.")
         if diagnostics is not None and (
             workspace is None or baseline is not None or attach_figure is not None
         ):
@@ -565,7 +575,10 @@ def research_workspace(
                 markup=False,
             )
         else:
-            build_research_workspace(workspace, output, baseline_dir=baseline)
+            author_options = (
+                {"author_candidate": author_candidate} if author_candidate is not None else {}
+            )
+            build_research_workspace(workspace, output, baseline_dir=baseline, **author_options)
             console.print(
                 f"Research candidate assembled from current author script and drafts: {output}",
                 markup=False,
@@ -752,6 +765,59 @@ def _write_section_action(
         from cfdpaper.publication.preview import preview_docx
 
         console.print(f"LibreOffice PDF preview: {preview_docx(result)}", markup=False)
+
+
+@app.command("author")
+def author_manuscript(
+    package: Annotated[Path, typer.Option("--package", exists=True, file_okay=False)],
+    output: Annotated[
+        Path, typer.Option("--output", help="Fresh author workspace or return directory")
+    ],
+    return_docx: Annotated[
+        Path | None, typer.Option("--return-docx", exists=True, dir_okay=False)
+    ] = None,
+    profile: Annotated[
+        str, typer.Option("--profile", help="research, report or conference")
+    ] = "research",
+    template: Annotated[
+        Path | None, typer.Option("--template", exists=True, dir_okay=False)
+    ] = None,
+    export_format: Annotated[
+        str | None,
+        typer.Option("--format", help="Export an existing managed candidate: docx, md, tex"),
+    ] = None,
+) -> None:
+    """Edit a formal Word manuscript and recover author changes with current evidence."""
+    from cfdpaper.publication.author_workspace import (
+        import_author_manuscript,
+        prepare_author_manuscript,
+    )
+    from cfdpaper.publication.formal_export import export_formal_manuscript
+
+    try:
+        if return_docx is not None:
+            if template is not None or export_format is not None:
+                raise ValueError("--return-docx cannot be combined with --template or --format")
+            result = import_author_manuscript(return_docx, package, output)
+            status = json.loads((result / "merge.json").read_text(encoding="utf-8"))["status"]
+            console.print(f"Author return: {status}; {result}", markup=False)
+        elif export_format is not None:
+            if (
+                export_format not in {"docx", "md", "tex"}
+                or output.suffix.lower() != "." + export_format
+            ):
+                raise ValueError("--format must match the docx, md or tex output suffix")
+            result = export_formal_manuscript(
+                package, output, profile=profile, template_path=template
+            )
+            console.print(f"Formal manuscript exported: {result}", markup=False)
+        else:
+            result = prepare_author_manuscript(
+                package, output, profile=profile, template_path=template
+            )
+            console.print(f"Author Word workspace ready: {result}", markup=False)
+    except Exception as error:
+        _workflow_error(error)
 
 
 @app.command("review")

@@ -694,6 +694,15 @@ def _mark_draft(draft):
 
 
 def _markdown(data):
+    if any(data.get("section_orders", {}).values()):
+        from cfdpaper.publication.document_blocks import build_document
+        from cfdpaper.publication.formal_export import _markdown as ordered_markdown
+
+        document = build_document(data)
+        assets = {
+            b["id"]: b["content"]["path"] for b in document["blocks"] if b["kind"] == "figure"
+        }
+        return ordered_markdown(document, assets)
     from cfdpaper.publication.export import _markdown_table
 
     lines = [f"# {data['title']}"]
@@ -1090,6 +1099,8 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         "image_observations": {},
         "observation_notes": {},
         "section_objects": {},
+        "object_origins": {"figure": {}, "table": {}, "equation": {}},
+        "section_orders": {},
     }
     with _stage(output_dir) as staged:
         _copy_citation_style(data, package_dir, staged)
@@ -1207,6 +1218,31 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                 return text
 
             global_section = _strings(result, rebind)
+            # Preserve source-token identities; numbering is display, not paragraph identity.
+            from cfdpaper.publication.document_blocks import paragraph_identity, source_runs
+
+            seen_paragraphs = {}
+            for paragraph, original in zip(
+                global_section["paragraphs"], raw_drafts[sid]["paragraphs"], strict=True
+            ):
+                source_text = original["text"]
+                count = seen_paragraphs.get(source_text, 0)
+                seen_paragraphs[source_text] = count + 1
+                paragraph["paragraph_id"] = original.get("paragraph_id") or paragraph_identity(
+                    source_text, count
+                )
+                paragraph["section_id"] = sid
+                paragraph["source_text"] = source_text
+                paragraph["semantic_runs"] = source_runs(
+                    source_text, paragraph["semantic_runs"], cross_references
+                )
+            for figure in global_section["figures"]:
+                source_caption = raw_drafts[sid]["captions"][figure["id"]]
+                figure["source_caption"] = source_caption
+                figure["caption_runs"] = source_runs(
+                    source_caption, figure["caption_runs"], cross_references
+                )
+            combined["section_orders"][sid] = draft.block_order
             # Remove temporary token locators from independently usable local outputs.
             for name in ("section.json", "section.md", "review-packet/section.md"):
                 path = local / name
@@ -1216,7 +1252,11 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
             # Retain the prepared inputs, not the numbered output, for the next edit.
             # All figure/source paths already resolve in this section directory.
             # Keep the refreshed shared references rather than the historical bibliography text.
-            _write(local / "input.json", loaded[sid][1].model_dump())
+            retained_input = loaded[sid][1].model_dump()
+            copied_paths = {f["id"]: f["path"] for f in result["figures"]}
+            for image in retained_input["figures"]:
+                image["path"] = copied_paths[image["id"]]
+            _write(local / "input.json", retained_input)
             _section_context(local, data, contract, library, science_source)
             _copy_science(science_source, local / "review-packet", [sid])
             entry = next(s for s in data.sections if s.section_id == sid)
@@ -1266,6 +1306,10 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
                 for item in global_section[field]:
                     original = item[id_field]
                     item[id_field] = mapping[kind][original]
+                    combined["object_origins"][kind][item[id_field]] = {
+                        "section_id": sid,
+                        "local_id": original,
+                    }
                     if "evidence_ids" in item:
                         item["evidence_ids"] = [
                             mapping["evidence"][key] for key in item["evidence_ids"]
@@ -1289,6 +1333,8 @@ def assemble_manuscript(package_dir: Path, drafts_path: Path, output_dir: Path) 
         if data.citation_style:
             _format_references(combined, library, staged / data.citation_style)
         _write(staged / "section.json", combined)
+        if (package_dir / "author-edits.json").is_file():
+            shutil.copyfile(package_dir / "author-edits.json", staged / "author-edits.json")
         _write(staged / "writing-state.json", current)
         _write(staged / "changes.json", changes)
         change_lines = ["# Targeted manuscript updates", "", changes["notice"], ""]

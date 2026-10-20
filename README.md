@@ -17,15 +17,18 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.22.0 connects regional field reductions, signed transport, matched spatial differences
-and control-volume budgets to complementary figures and an editable research manuscript.
-An optional Fluent saved-results reader supplies original surface geometry and native reports;
-neutral NPZ/CSV inputs use the same analysis chain. Explicit observation supports distinguish
-shared-time, event-relative and event-timing comparisons. Source and definition updates preserve
-author-local scripts and drafts while locating the interpretations that need revision.
-Start with the [physical diagnostics example](examples/physical-diagnostics/README.md),
-[research commands](docs/research-workspace.md) and [v0.22.0 notes](docs/releases/v0.22.0.md).
-Paper-framework Studio guidance remains available for the conceptual layer, not fabricated fields.
+Version 0.23.0 adds formal manuscript views and managed Word author collaboration. Recover ordinary
+Word wording, supported formatting and comments against the generated baseline and current evidence,
+then export the continuing manuscript as DOCX, Markdown or LaTeX. Research, report and conference
+profiles share the same ordered scientific content. Source-number and physical-definition changes
+are located separately so the host can revise the affected interpretation without discarding author
+edits. Start with the [author collaboration example](examples/author-collaboration/README.md) and
+[v0.23.0 notes](docs/releases/v0.23.0.md).
+
+The existing [physical diagnostics workflow](examples/physical-diagnostics/README.md) connects
+regional field reductions, signed transport, matched changes and control-volume budgets to
+complementary figures and source-bound prose. Optional saved-Fluent extraction and neutral NPZ/CSV
+inputs use the same analysis chain. Studio guidance supplies conceptual diagrams, not invented fields.
 
 Earlier workflows remain available: the
 [materials-to-manuscript example](examples/material-analysis/MANUSCRIPT.md),
@@ -66,11 +69,13 @@ covers whole-manuscript feedback and selected editing.
 | Same-record history differences | Available | Comparison-minus-reference from two original columns, saved-window statistics and profiles; temperature differences in K, original readings and locations retained. |
 | Complementary numerical panels | Available | Declared saved profiles and model/reference-range panels with exact source CSV, standalone local plotting script and editable exports; not a general field or mechanism renderer. |
 | Linked computed comparisons | Available | Compare two compatible calculated scalars while retaining both sources; update bound prose, tables and cross-section values. Chained comparisons and inferred comparability are not supported. |
-| Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; role-specific host guidance, keywords, global figure/table/equation numbering and editable DOCX. |
+| Multi-section manuscript workspace | Available | Shared paper spine, terms and section duties; ordered paragraph/figure/table/equation blocks, global numbering and DOCX/Markdown/LaTeX views. |
+| Formal manuscript profiles | Available | Research, report and conference presentation over the same scientific content; native Word equations and tables. Explicit templates take precedence; style/last-section Word import is not arbitrary journal-template compliance. |
+| Managed Word author return | Available | Baseline/author/current reconciliation for prose, captions, supported formatting, local Figure/Fig. aliases, within-section moves and anchored comments. Numerical, formula, field, image-content and overlapping edits remain localized conflicts, not silent source changes. |
 | Shared literature workspace | Available | Local CSL JSON, DOI deduplication and aliases; claim-specific excerpts, locators, roles and author/host support decisions travel with the manuscript. Optional Pandoc imports BibLaTeX. |
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
 | Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
-| Portable continued editing | Available | Local drafts, sources and task context travel with the candidate; reassembly preserves unedited drafts. Word-only edits must be reconciled into the draft. |
+| Portable continued editing | Available | Local drafts, sources and task context travel with the candidate. Managed Word edits return through `cfdpaper author`; other detached Word files require host reconciliation. Original returns and unresolved comments are retained. |
 | External drawing tasks and mechanism attachment | Available | Studio-guided conceptual/hybrid tasks, editable-source import and manuscript attachment. Explicit `raster_concept` is schematic-only and reports no editable source; it cannot replace computed fields. Import does not approve figures. |
 | Whole-paper review and selected editing | Available | Complete reports, exact targets and optional shared-evidence locations travel with editable drafts; the host evaluates and implements changes. |
 | Broader native solver ingestion | Roadmap | The Fluent surface reference path above is available; STAR-CCM+ and other unsupported native quantities still require structured neutral exports. |
@@ -80,7 +85,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.22.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.23.0 checkout or source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -92,11 +97,33 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.22.0-py3-none-any.whl[docs]"
+python -m pip install "./cfd_paper_agent-0.23.0-py3-none-any.whl[docs]"
 ```
 
-The examples live in the source checkout/archive, not the wheel. Run the connected synthetic
-surface example from the source root, choosing a new output directory:
+The examples live in the source checkout/archive, not the wheel. For the managed Word workflow,
+run the source-checkout command below, or copy `examples/author-collaboration` anywhere writable
+and use the absolute path to that standalone script against the installed package:
+
+```text
+python examples/author-collaboration/run_example.py output/author-demo
+```
+
+Open `output/author-demo/recovered/manuscript.docx`. The replay preserves a clearly labelled
+automation wording edit and comment while applying current CSV values; it is not human approval.
+For your own manuscript, prepare and return the author copy with:
+
+```text
+cfdpaper author --package CANDIDATE --output AUTHOR_WORKSPACE
+cfdpaper author --package CURRENT_CANDIDATE --return-docx AUTHOR_RETURN.docx --output NEW_RETURN
+cfdpaper author --package NEW_RETURN/candidate --format tex --profile conference --output paper.tex
+cfdpaper research --workspace RESEARCH_WORKSPACE --baseline PREVIOUS_BUILD --author-candidate NEW_RETURN/candidate --output UPDATED_RESEARCH
+```
+
+Keep the complete author workspace and save the edited Word under a new name. Read the returned
+`CONTINUE.md` for conflicts and interpretation work. See the
+[author tutorial](examples/author-collaboration/README.md) for supported edits and profile exports.
+
+Run the connected synthetic surface example from the source root, choosing a new output directory:
 
 ```text
 python examples/surface-research/run_example.py output/surface-demo
@@ -111,7 +138,8 @@ to prepare shared tasks, assemble the supplied analytical drafts, export Word an
 a moved workspace. The smaller [manuscript workspace tutorial](examples/manuscript-workspace/README.md)
 remains available. For region clipping and signed-transfer figures, install `.[docs,geometry]`
 and run `python examples/physical-diagnostics/run_example.py output/physical-demo`.
-See the [v0.22.0 notes](docs/releases/v0.22.0.md) for the current scope and the
+See the [v0.23.0 notes](docs/releases/v0.23.0.md) for author collaboration and the
+[v0.22.0 notes](docs/releases/v0.22.0.md) for physical diagnostics, with
 [v0.21.0 notes](docs/releases/v0.21.0.md) for the preceding baseline.
 
 The default bibliography needs no additional tool. For BibLaTeX import or journal-style references,
@@ -342,7 +370,9 @@ support in literature, export submission packages, or submit to a journal. Multi
 export and subsection review-suggestion import are available through `write`. Root `review`
 supports complete manuscript packages, lossless report return and
 selected editing-task preparation (`--actions`). The host edits a separate ordinary manuscript
-workspace and reassembles it; this is not automatic scientific revision.
+workspace and reassembles it; managed Word author returns also use the generated baseline and
+current candidate. Neither route makes scientific revision automatic or supports arbitrary
+lossless Word reconstruction.
 Root `revise` and `export` remain unavailable. External drawing-task exchange does not add
 automatic complex mechanism graphics or establish broad heterogeneous CFD validation.
 
@@ -351,6 +381,8 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.23.0 release notes](docs/releases/v0.23.0.md)
+- [Managed Word author collaboration](examples/author-collaboration/README.md)
 - [v0.22.0 release notes](docs/releases/v0.22.0.md)
 - [v0.21.0 release notes](docs/releases/v0.21.0.md)
 - [Surface research commands](docs/research-workspace.md)

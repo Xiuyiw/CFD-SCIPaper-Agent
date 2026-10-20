@@ -21,8 +21,8 @@ def workspace_backend(monkeypatch):
     def prepare(study_path, output_dir):
         calls.append(("prepare", study_path, output_dir))
 
-    def build(workspace_dir, output_dir, baseline_dir=None):
-        calls.append(("build", workspace_dir, output_dir, baseline_dir))
+    def build(workspace_dir, output_dir, baseline_dir=None, **kwargs):
+        calls.append(("build", workspace_dir, output_dir, baseline_dir, kwargs))
 
     def attach(workspace_dir, imported_dir, output_dir, **kwargs):
         calls.append(("attach", workspace_dir, imported_dir, output_dir, kwargs))
@@ -103,9 +103,39 @@ def test_build_thin_entrypoint_forwards_optional_baseline(
         args.extend(["--baseline", str(baseline)])
     result = runner.invoke(app, args)
     assert result.exit_code == 0, result.stdout + result.stderr
-    assert calls == [("build", workspace, output, baseline)]
+    assert calls == [("build", workspace, output, baseline, {})]
     assert "Research candidate assembled" in result.stdout
     assert "approved" not in result.stdout.lower()
+
+
+def test_research_build_forwards_recovered_author_candidate(tmp_path, workspace_backend):
+    _, calls = workspace_backend
+    workspace, output, author = (tmp_path / p for p in ("workspace", "build", "author"))
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            str(workspace),
+            "--output",
+            str(output),
+            "--author-candidate",
+            str(author),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls == [("build", workspace, output, None, {"author_candidate": author})]
+
+
+def test_author_candidate_does_not_get_ignored_in_prepare(workspace_backend):
+    _, calls = workspace_backend
+    result = runner.invoke(
+        app,
+        ["research", "--study", "study.json", "--author-candidate", "author", "--output", "out"],
+    )
+    assert result.exit_code == 2
+    assert "--author-candidate requires" in result.stdout
+    assert calls == []
 
 
 @pytest.mark.parametrize("viewed", [False, True])
