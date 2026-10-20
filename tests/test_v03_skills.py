@@ -42,6 +42,7 @@ def test_ships_four_specialists_and_workflow_entry_with_current_references() -> 
     references = {
         "cfd-evidence-writing": [
             "abstract-conclusions.md",
+            "author-word.md",
             "literature-sections.md",
             "manuscript-review.md",
             "mechanism-subsections.md",

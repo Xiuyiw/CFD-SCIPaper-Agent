@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.23.0] — 2026-10-20
+
+### Added
+
+- Ordered scientific document blocks shared by DOCX, Markdown and LaTeX exports; research,
+  report and conference profiles with distinct body, caption, equation and table presentation.
+- `cfdpaper author` prepares an editable Word copy and recovers supported prose, caption,
+  formatting and anchored-comment edits against the export baseline and current scientific draft.
+- Retain original returns and combine non-overlapping author/current edits. Changed bound
+  values, formulas, fields, image content and overlapping changes are localized for reconciliation.
+- Identify source-number updates separately from definition changes and supply the affected
+  locations for host interpretation. Preserve continuing drafts, author-local artwork and comments.
+- A standalone public analytical example demonstrates source rows, native Word equation/table,
+  clearly labelled automation edits, source refresh and three-profile output through installed APIs.
+
+### Fixed
+
+- Preserve copied figure paths through manuscript continuation and research-workspace refresh.
+- Keep Word metadata compact rather than embedding complete raw source arrays.
+- Recover local `Figure`/`Fig.` presentation changes and unambiguous complete bound-clause
+  deletions without treating changed identifiers or numbers as ordinary wording.
+- Preserve Word-localized style identities and distinguish unit typography from changed values.
+- Keep LaTeX captions with their figures and separate table notes from bottom rules.
+
+### Evaluation
+
+- A real five-page cooling manuscript completed an actual author Word return: wording, local
+  reference abbreviations, caption deletion and an anchored caption comment were recovered.
+  The host shortened the commented caption in the continuing source; this is host writing,
+  not automatic scientific revision. Actual Word pages and a five-page IEEEtran-based TeX
+  output were inspected. Template-specific compliance and arbitrary Word round-trip are not implied.
+- See the [release notes](docs/releases/v0.23.0.md) for validation results and supported boundaries.
+
 ## [0.22.0] — 2026-10-18
 
 ### Added

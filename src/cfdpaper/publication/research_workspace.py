@@ -921,11 +921,35 @@ def _definition_changes(workspace, baseline, data, snapshot=None):
     return changes
 
 
-def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir=None) -> Path:
+def _apply_author_candidate(workspace: Path, candidate: Path) -> None:
+    """Continue recovered prose without replacing the workspace's science or scripts."""
+    from cfdpaper.publication.author_workspace import _draft_locations
+
+    original = _read(workspace / "manuscript-input.json")
+    authored = _read(candidate / "manuscript-input.json")
+    if (
+        original["title"] != authored["title"]
+        or original["spine"]["topic_id"] != authored["spine"]["topic_id"]
+    ):
+        raise ValueError("Author candidate does not belong to this research manuscript")
+    destinations, sources = _draft_locations(workspace), _draft_locations(candidate)
+    if destinations.keys() != sources.keys():
+        raise ValueError("Author candidate section identities do not match this workspace")
+    for sid, source in sources.items():
+        shutil.copy2(source, destinations[sid])
+    if (candidate / "author-edits.json").is_file():
+        shutil.copy2(candidate / "author-edits.json", workspace / "author-edits.json")
+
+
+def build_research_workspace(
+    workspace_dir: Path, output_dir: Path, baseline_dir=None, *, author_candidate=None
+) -> Path:
     """Build host-written drafts and changed local figure recipes into a new Word candidate.
 
     baseline_dir normally names a previous build root containing workspace/ and
-    manuscript/. The caller's workspace, drafts, scripts and baseline stay unchanged.
+    manuscript/. ``author_candidate`` optionally supplies recovered local-ID drafts
+    and presentation from a managed Word return. Science definitions and local plot
+    scripts still come from workspace_dir. All inputs remain unchanged.
     """
     workspace_dir, output_dir = Path(workspace_dir).resolve(), Path(output_dir).resolve()
     _distinct_output(workspace_dir, output_dir)
@@ -945,6 +969,8 @@ def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir
     with _stage(output_dir) as staged:
         workspace = staged / "workspace"
         shutil.copytree(workspace_dir, workspace)
+        if author_candidate is not None:
+            _apply_author_candidate(workspace, Path(author_candidate))
         _sync_diagnostics(workspace)
         data = _study(workspace / _RESULTS / "study.json")
         definition_changes = _definition_changes(
@@ -993,7 +1019,12 @@ def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir
         manuscript = assemble_manuscript(
             workspace, workspace / "drafts.json", staged / "manuscript"
         )
-        export_section_docx(manuscript, staged / "manuscript.docx", layout="near-reference")
+        if (workspace / "author-edits.json").is_file() or author_candidate is not None:
+            from cfdpaper.publication.formal_export import export_formal_manuscript
+
+            export_formal_manuscript(manuscript, staged / "manuscript.docx")
+        else:
+            export_section_docx(manuscript, staged / "manuscript.docx", layout="near-reference")
         # Keep the next authoring workspace's generated contexts/results current,
         # without copying rendered prose over the original local-ID draft files.
         for entry in _read(workspace / "manuscript-input.json")["sections"]:

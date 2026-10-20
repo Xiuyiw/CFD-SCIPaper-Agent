@@ -6,6 +6,7 @@ resolved numbers. Conflicts and ordinary comments remain actionable for the host
 
 from __future__ import annotations
 
+import re
 import shutil
 import tempfile
 from collections import defaultdict
@@ -147,11 +148,16 @@ def describe_author_refresh(baseline, current, *, current_source_state=None):
             continue
         definition_change = shared_changed or block["section_id"] in changed_sections
 
-        def canonical(text):
-            return text.replace("\u00a0", " ").replace("\u2060", "").replace("−", "-")
+        def canonical(span):
+            text = span["text"].replace("\u00a0", " ").replace("\u2060", "").replace("−", "-")
+            if span["token"].startswith("{{figure:"):
+                match = re.fullmatch(r"(?:Figure|Fig\.)\s+([0-9]+[A-Za-z]?)", text)
+                if match:
+                    return "Figure " + match[1]
+            return text
 
-        before = {s["token"]: canonical(s["text"]) for s in old.get("spans", [])}
-        after = {s["token"]: canonical(s["text"]) for s in block.get("spans", [])}
+        before = {s["token"]: canonical(s) for s in old.get("spans", [])}
+        after = {s["token"]: canonical(s) for s in block.get("spans", [])}
         if definition_change:
             category = "definition"
         elif old["text"] != block["text"]:
@@ -262,7 +268,7 @@ def _apply_blocks(working, blocks):
                 table["columns"] = block["content"]["columns"]
         visual = {
             key: deepcopy(block[key])
-            for key in ("formatting", "paragraph_format", "layout")
+            for key in ("formatting", "paragraph_format", "layout", "reference_labels")
             if key in block
         }
         if visual:

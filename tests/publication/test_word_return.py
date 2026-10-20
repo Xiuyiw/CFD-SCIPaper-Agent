@@ -39,13 +39,14 @@ def make_document(tmp_path, blocks=None):
         paragraph = document.add_paragraph()
         start_anchor(paragraph, item["id"])
         if item["spans"]:
-            span = item["spans"][0]
-            before, after = item["text"].split(span["token"])
-            paragraph.add_run(before)
-            start_anchor(paragraph, item["id"] + "::" + span["id"])
-            paragraph.add_run(span["text"])
-            end_anchor(paragraph, item["id"] + "::" + span["id"])
-            paragraph.add_run(after)
+            remainder = item["text"]
+            for span in item["spans"]:
+                before, remainder = remainder.split(span["token"], 1)
+                paragraph.add_run(before)
+                start_anchor(paragraph, item["id"] + "::" + span["id"])
+                paragraph.add_run(span["text"])
+                end_anchor(paragraph, item["id"] + "::" + span["id"])
+            paragraph.add_run(remainder)
         else:
             paragraph.add_run(item["rendered_text"])
         end_anchor(paragraph, item["id"])
@@ -539,3 +540,132 @@ def test_word_localized_style_ids_are_not_author_style_changes(tmp_path, legacy_
     document.save(path)
     returned = read_word_return(path)
     assert returned["blocks"][0]["paragraph_format"][0]["pStyle"] == {"name": "Heading 2"}
+
+
+def test_same_bound_figure_alias_keeps_token_and_author_label(tmp_path):
+    original = block(
+        "p1",
+        "See {{figure:field}}.",
+        rendered_text="See Figure 1.",
+        spans=[{"id": "fig", "token": "{{figure:field}}", "text": "Figure 1"}],
+    )
+    document, path = make_document(tmp_path, [original])
+    paragraphs(document)[0]._p.xpath(".//w:sdt//w:t")[0].text = "Fig. 1"
+    document.save(path)
+    returned = read_word_return(path)
+    assert returned["conflicts"] == []
+    assert returned["blocks"][0]["text"] == original["text"]
+    assert returned["blocks"][0]["reference_labels"] == {"figure": "Fig."}
+    changed = paragraphs(document)[0]._p.xpath(".//w:sdt//w:t")[0]
+    changed.text = "Fig. 11"
+    document.save(path)
+    assert any(c["type"] == "protected_span_modified" for c in read_word_return(path)["conflicts"])
+
+
+def test_same_caption_figure_alias_keeps_source_without_generated_label(tmp_path):
+    document = docx.Document()
+    paragraph = document.add_paragraph("Figure 1. An unchanged caption.")
+    start_anchor(paragraph, "cap1")
+    end_anchor(paragraph, "cap1")
+    original = block("cap1", "An unchanged caption.", kind="caption")
+    write_word_state(document, {"schema_version": 1, "baseline_id": "b", "blocks": [original]})
+    paragraph.runs[0].text = "Fig. 1. An unchanged caption."
+    path = tmp_path / "caption-alias.docx"
+    document.save(path)
+    returned = read_word_return(path)
+    assert returned["conflicts"] == []
+    assert returned["blocks"][0]["text"] == "An unchanged caption."
+    assert returned["blocks"][0]["reference_labels"] == {"figure": "Fig."}
+
+
+@pytest.mark.parametrize(
+    "token,display", [("{{value:threshold}}", "300 K"), ("{{cite:source}}", "[7]")]
+)
+def test_complete_clause_deletion_removes_its_protected_span(tmp_path, token, display):
+    text = "A retained sentence. The diagnostic threshold is " + token + ". A later sentence."
+    original = block(
+        "cap1",
+        text,
+        kind="caption",
+        rendered_text=text.replace(token, display),
+        spans=[{"id": "bound", "token": token, "text": display}],
+    )
+    document, path = make_document(tmp_path, [original])
+    paragraph = paragraphs(document)[0]
+    paragraph._p.remove(paragraph._p.xpath("./w:sdt")[0])
+    paragraph.runs[0].text = "A retained sentence. "
+    paragraph.runs[1].text = ""
+    document.save(path)
+    returned = read_word_return(path)
+    assert returned["conflicts"] == []
+    authored = returned["blocks"][0]
+    assert authored["text"] == "A retained sentence. "
+    assert authored["spans"] == []
+    merged = merge_word_blocks([original], [authored], [deepcopy(original)])
+    assert merged["conflicts"] == []
+    assert merged["blocks"][0]["spans"] == []
+
+
+@pytest.mark.parametrize(
+    "retained",
+    ["The diagnostic threshold is 300 K.", "A retained sentence. The diagnostic threshold is ."],
+)
+def test_missing_span_with_retained_number_or_partial_clause_stays_conflict(tmp_path, retained):
+    original = block(
+        "p1",
+        "A retained sentence. The diagnostic threshold is {{value:t}}.",
+        rendered_text="A retained sentence. The diagnostic threshold is 300 K.",
+        spans=[{"id": "t", "token": "{{value:t}}", "text": "300 K"}],
+    )
+    document, path = make_document(tmp_path, [original])
+    paragraph = paragraphs(document)[0]
+    paragraph._p.remove(paragraph._p.xpath("./w:sdt")[0])
+    paragraph.runs[0].text = retained
+    paragraph.runs[1].text = ""
+    document.save(path)
+    assert any(c["type"] == "missing_anchor" for c in read_word_return(path)["conflicts"])
+
+
+def test_clause_deletion_restores_other_tokens_and_preserves_current_bindings(tmp_path):
+    original = block(
+        "cap1",
+        "Maps in {{figure:f}} remain. Threshold is {{value:t}}.",
+        kind="caption",
+        rendered_text="Maps in Figure 1 remain. Threshold is 300 K.",
+        spans=[
+            {"id": "f", "token": "{{figure:f}}", "text": "Figure 1"},
+            {"id": "t", "token": "{{value:t}}", "text": "300 K"},
+        ],
+    )
+    document, path = make_document(tmp_path, [original])
+    paragraph = paragraphs(document)[0]
+    paragraph._p.remove(paragraph._p.xpath("./w:sdt")[1])
+    paragraph.runs[1].text, paragraph.runs[2].text = " remain. ", ""
+    document.save(path)
+    returned = read_word_return(path)
+    assert returned["conflicts"] == []
+    authored = returned["blocks"][0]
+    assert authored["text"] == "Maps in {{figure:f}} remain. "
+    assert [s["id"] for s in authored["spans"]] == ["f"]
+    current = deepcopy(original)
+    current["spans"][0]["text"] = "Figure 2"
+    current["spans"][1]["text"] = "301 K"
+    merged = merge_word_blocks([original], [authored], [current])
+    assert merged["conflicts"] == []
+    assert merged["blocks"][0]["rendered_text"] == "Maps in Figure 2 remain. "
+    assert merged["blocks"][0]["spans"] == [current["spans"][0]]
+
+
+def test_reference_label_override_survives_a_scientific_recompile():
+    original = block(
+        "p1",
+        "See {{figure:f}}.",
+        rendered_text="See Fig. 1.",
+        reference_labels={"figure": "Fig."},
+        spans=[{"id": "f", "token": "{{figure:f}}", "text": "Figure 1"}],
+    )
+    current = deepcopy(original)
+    current.pop("reference_labels")
+    merged = merge_word_blocks([original], [deepcopy(original)], [current])
+    assert merged["conflicts"] == []
+    assert merged["blocks"][0]["reference_labels"] == {"figure": "Fig."}

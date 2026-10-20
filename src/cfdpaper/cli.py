@@ -470,6 +470,12 @@ def research_workspace(
         Path | None,
         typer.Option("--baseline", help="Previous build for a targeted change comparison"),
     ] = None,
+    author_candidate: Annotated[
+        Path | None,
+        typer.Option(
+            "--author-candidate", help="Recovered manuscript candidate to preserve in this build"
+        ),
+    ] = None,
     diagnostics: Annotated[
         Path | None,
         typer.Option(
@@ -507,6 +513,10 @@ def research_workspace(
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
         if baseline is not None and workspace is None:
             raise WorkflowInputError("--baseline requires --workspace and a previous build.")
+        if author_candidate is not None and (
+            workspace is None or diagnostics is not None or attach_figure is not None
+        ):
+            raise WorkflowInputError("--author-candidate requires a research --workspace build.")
         if diagnostics is not None and (
             workspace is None or baseline is not None or attach_figure is not None
         ):
@@ -565,7 +575,10 @@ def research_workspace(
                 markup=False,
             )
         else:
-            build_research_workspace(workspace, output, baseline_dir=baseline)
+            author_options = (
+                {"author_candidate": author_candidate} if author_candidate is not None else {}
+            )
+            build_research_workspace(workspace, output, baseline_dir=baseline, **author_options)
             console.print(
                 f"Research candidate assembled from current author script and drafts: {output}",
                 markup=False,

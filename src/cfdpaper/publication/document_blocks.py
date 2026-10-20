@@ -61,7 +61,13 @@ def apply_author_edits(document: dict, edits: dict) -> dict:
     ]
     for block in document["blocks"]:
         visual = edits.get("blocks", {}).get(block["id"], {})
-        for key in ("formatting", "paragraph_format", "layout", "formatting_source_text"):
+        for key in (
+            "formatting",
+            "paragraph_format",
+            "layout",
+            "formatting_source_text",
+            "reference_labels",
+        ):
             if key in visual:
                 block[key] = copy.deepcopy(visual[key])
         comments = [c for c in edits.get("comments", []) if c.get("block_id") == block["id"]]
@@ -113,7 +119,7 @@ def _block(kind, section_id, local_id, content, *, text=None, rendered=None):
         "spans": spans,
         "content": copy.deepcopy(content),
     }
-    for field in ("formatting", "paragraph_format", "layout", "comments"):
+    for field in ("formatting", "paragraph_format", "layout", "comments", "reference_labels"):
         if field in content:
             result[field] = copy.deepcopy(content[field])
     return result

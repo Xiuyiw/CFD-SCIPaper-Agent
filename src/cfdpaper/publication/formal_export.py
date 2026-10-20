@@ -139,11 +139,22 @@ def _runs(block):
             from cfdpaper.publication.section import reference_source_suffix
 
             return [{"text": _plain(block) + reference_source_suffix(content)}]
-    return (
+    runs = (
         content.get("semantic_runs")
         or content.get("runs")
         or [{"text": block.get("rendered_text", content.get("text", ""))}]
     )
+    label = block.get("reference_labels", {}).get("figure")
+    if label is None:
+        return runs
+    if label not in {"Figure", "Fig."}:
+        raise ValueError("Figure reference label must be Figure or Fig.")
+    return [
+        {**run, "text": re.sub(r"^(?:Figure|Fig\.)\s+", label + " ", run["text"])}
+        if run.get("token", "").startswith("{{figure:") and "text" in run
+        else run
+        for run in runs
+    ]
 
 
 def _plain(block):
@@ -153,7 +164,10 @@ def _plain(block):
 def _prefix(block):
     content = _content(block)
     if block["kind"] == "caption":
-        return f"Figure {content['id']}. "
+        label = block.get("reference_labels", {}).get("figure", "Figure")
+        if label not in {"Figure", "Fig."}:
+            raise ValueError("Figure reference label must be Figure or Fig.")
+        return f"{label} {content['id']}. "
     if block["kind"] == "reference":
         return f"[{content['number']}] "
     if block["kind"] == "keywords":
@@ -303,7 +317,9 @@ def _latex(document, assets, template=None):
                         *rows[1:],
                         r"\bottomrule",
                         r"\end{tabularx}",
-                        r"\par\small " + _latex_escape(content.get("note", "")),
+                        r"\par\smallskip\noindent\small "
+                        + _latex_escape(content.get("note", ""))
+                        + r"\par",
                         "\\end{" + table_environment + "}",
                     ]
                 )
@@ -402,7 +418,47 @@ def _set_styles(document, config, template):
         page.top_margin = page.bottom_margin = Mm(config.margin_mm)
 
 
-def _paragraph_overrides(paragraph, values):
+def _word_style_roles(document, template):
+    """Use the retained template's existing body/title/caption roles."""
+    from docx.enum.style import WD_STYLE_TYPE
+
+    names = {style.name.casefold(): style for style in document.styles}
+    roles = {}
+    for role, aliases in {
+        "Normal": ("Normal",),
+        "Title": ("Title", "paper title"),
+        "Caption": ("Caption", "figure caption"),
+        "Heading 1": ("Heading 1",),
+    }.items():
+        match = next((names[name.casefold()] for name in aliases if name.casefold() in names), None)
+        if match is None:
+            raise ValueError(f"Word template is missing its {role} paragraph style")
+        roles[role] = match
+    if template and "body text" in names:
+        body = names["body text"]
+        if any(p.style == body for p in document.paragraphs):
+            roles["Normal"] = body
+    # Existing table and returned-paragraph helpers use these semantic aliases.
+    # Derive missing aliases from the original style rather than replacing it.
+    for role in ("Title", "Caption"):
+        if role.casefold() not in names:
+            alias = document.styles.add_style(role, WD_STYLE_TYPE.PARAGRAPH)
+            alias.base_style = roles[role]
+    return roles
+
+
+def _style_size(style):
+    """Resolve an inherited font size without modifying a template style."""
+    visited = set()
+    while style is not None and style.style_id not in visited:
+        visited.add(style.style_id)
+        if style.font.size is not None:
+            return style.font.size.pt
+        style = style.base_style
+    return None
+
+
+def _paragraph_overrides(paragraph, values, style_roles=None):
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
     from docx.shared import Pt
@@ -414,7 +470,7 @@ def _paragraph_overrides(paragraph, values):
                 if name not in {"pStyle", "jc", "ind", "spacing", "keepNext", "keepLines"}:
                     continue
                 if name == "pStyle" and "name" in attrs:
-                    paragraph.style = attrs["name"]
+                    paragraph.style = (style_roles or {}).get(attrs["name"], attrs["name"])
                     continue
                 old = props.find(qn("w:" + name))
                 if old is not None:
@@ -646,9 +702,16 @@ def _docx(document_data, source, output, template=None):
 
     document = Document(str(template)) if template else Document()
     config = _profile_style(document_data, template)
+    style_roles = _word_style_roles(document, template)
     # Keep profile outside the python-docx object, whose implementation may use slots.
     _set_styles(document, config, template)
     if template:
+        # Word 2003 compatibility removes managed rich-text controls on save.
+        # Upgrade only this generated view, leaving the retained template intact.
+        for setting in document.settings.element.findall(".//" + qn("w:compatSetting")):
+            if setting.get(qn("w:name")) == "compatibilityMode":
+                if int(setting.get(qn("w:val"), "15")) < 15:
+                    setting.set(qn("w:val"), "15")
         page = document.sections[0]
         config = config.model_copy(
             update={
@@ -656,19 +719,19 @@ def _docx(document_data, source, output, template=None):
                 "page_height_mm": page.page_height.mm,
                 "margin_mm": max(page.left_margin.mm, page.right_margin.mm),
                 **{
-                    key: document.styles[name].font.size.pt
+                    key: _style_size(style_roles[name])
                     for key, name in (
                         ("body_pt", "Normal"),
                         ("title_pt", "Title"),
                         ("heading_pt", "Heading 1"),
                         ("caption_pt", "Caption"),
                     )
-                    if document.styles[name].font.size is not None
+                    if _style_size(style_roles[name]) is not None
                 },
             }
         )
     column_width = _word_column_width(document)
-    document.add_paragraph(document_data["title"], "Title")
+    document.add_paragraph(document_data["title"], style_roles["Title"])
     state = copy.deepcopy(document_data)
     placements = []
     formatting_conflicts = []
@@ -744,7 +807,9 @@ def _docx(document_data, source, output, template=None):
             if kind == "reference" and not references_started:
                 document.add_heading("References", level=1)
                 references_started = True
-            paragraph = document.add_paragraph(style="Caption" if kind == "caption" else "Normal")
+            paragraph = document.add_paragraph(
+                style=style_roles["Caption" if kind == "caption" else "Normal"]
+            )
             if kind in {"caption", "keywords", "reference"}:
                 if not template:
                     paragraph.paragraph_format.first_line_indent = Pt(0)
@@ -803,7 +868,7 @@ def _docx(document_data, source, output, template=None):
                         span_by_id[span_id]["text"] = text
             end_anchor(paragraph, block["id"])
             block["rendered_text"] = "".join(visible)
-            _paragraph_overrides(paragraph, block.get("paragraph_format", {}))
+            _paragraph_overrides(paragraph, block.get("paragraph_format", {}), style_roles)
             comment_paragraphs.append((paragraph, block))
             if kind == "caption":
                 paragraph.paragraph_format.keep_with_next = False
@@ -816,14 +881,24 @@ def _docx(document_data, source, output, template=None):
             continue
         start_anchor(paragraph, block["id"])
         end_anchor(paragraph, block["id"])
-        _paragraph_overrides(paragraph, block.get("paragraph_format", {}))
+        _paragraph_overrides(paragraph, block.get("paragraph_format", {}), style_roles)
         comment_paragraphs.append((paragraph, block))
+    # Captions already have stable scientific labels. Template list numbering
+    # must not add a second Figure number or number an ordinary table note.
+    caption_styles = {style_roles["Caption"].style_id, document.styles["Caption"].style_id}
+    for element in document._element.body.iter(qn("w:p")):
+        props = element.find(qn("w:pPr"))
+        paragraph_style = None if props is None else props.find(qn("w:pStyle"))
+        if paragraph_style is not None and paragraph_style.get(qn("w:val")) in caption_styles:
+            numbers = props.get_or_add_numPr()
+            numbers.get_or_add_numId().val = 0
     comment_conflicts = _add_comments(document, comment_paragraphs)
     write_word_state(document, state)
     document.save(output)
     return {
         "style": config.model_dump(),
         "profile": document_data["profile"],
+        "template_style_roles": {key: value.name for key, value in style_roles.items()},
         "figures": placements,
         "column_width_mm": column_width,
         "formatting_conflicts": formatting_conflicts,

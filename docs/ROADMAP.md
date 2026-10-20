@@ -13,13 +13,19 @@ The v0.22 release extends this chain with original-field regions, signed heat pa
 matched changes, budgets and an actual saved-Fluent surface reader. A real cooling task,
 paired first writing, temporal-support counterexamples and author-preserving refresh have
 run. Platform checks and published assets are linked from the [v0.22 notes](releases/v0.22.0.md).
+The v0.23 increment adds ordered scientific document views, formal profiles and managed Word
+author return. A real cooling manuscript exercised actual author wording/caption edits and a
+comment, followed by product recovery and host caption revision; native Word pages and an
+IEEEtran-based LaTeX output were inspected. A portable public analytical replay is available in
+the [author tutorial](../examples/author-collaboration/README.md). Release validation and exact
+boundaries are recorded in the [v0.23 notes](releases/v0.23.0.md).
 Existing releases and their limitations are retained below as history.
 
 | Version | Complete user capability | Status |
 |---|---|---|
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Implemented; known-project diagnostics, figure/Word trial, targeted refresh and installed example described in v0.22.0 notes |
-| v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implementation in progress: shared exporters and bounded Word merge exercised on the cooling manuscript; actual author collaboration and release validation pending |
+| v0.23 | Ordered scientific document, research/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implemented scope; actual human Word return, native-page inspection and portable automation replay described in v0.23.0 notes |
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
 
 Each release must improve an actual research task. Later task ordering can change with observed
@@ -28,13 +34,12 @@ silently removed. The [contribution principles](../CONTRIBUTING.md#product-and-d
 apply across hosts and contributors. No universal solver support or publication readiness is implied.
 
 The [Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section15, records the v0.22
-assessment and the v0.23 implementation sequence. The next complete task is a real author cycle:
-edit the generated Word manuscript and figure style, return it against its export baseline,
-reconcile concurrent scientific changes, and export readable manuscript/report/conference views.
-Existing diagnostics, native extraction, first drafts and valid tests are retained, not rerun.
-Word-only changes are not yet imported by the current release; protecting workspace drafts is a
-different capability. Arbitrary Word round-tripping, solver expansion, second-host evaluation and
-automatic submission are not added to this increment.
+assessment and the v0.23 implementation sequence. The actual author cycle is now exercised:
+generated Word wording and caption edits return against their baseline, supported edits can
+coexist with current source values, and unresolved comments and conflicts remain located.
+The host remains responsible for changed scientific meaning. Existing diagnostics, native
+extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
+solver expansion, second-host evaluation and automatic submission are not part of this increment.
 
 ## Release principle
 
@@ -100,6 +105,8 @@ run; independent cross-provider scientific comparison remains untested.
 | `v0.19.0` | Source-bound JSON parameters, paired model/reference contrasts and their numerical panels | Implemented scope; scientific exercise and exact-package checks described in release notes |
 | `v0.20.0` | Static method reads, saved history differences, inline metadata and section-end figures | Implemented scope; scientific exercise and exact-package checks described in release notes |
 | `v0.21.0` | Connected surface research, source-aware refresh, Studio concept-figure attachment and a runnable public example | Implemented scope; known-project scientific use and author-edit preservation described in release notes |
+| `v0.22.0` | Regional field quantities, signed transport, matched changes, budgets and an optional saved-Fluent surface reader | Implemented scope; real cooling diagnostics and installed example described in release notes |
+| `v0.23.0` | Ordered formal manuscript views, three presentation profiles and bounded Word author return against current evidence | Implemented scope; actual author collaboration and output validation described in release notes |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection

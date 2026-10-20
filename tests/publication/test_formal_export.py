@@ -104,6 +104,9 @@ def test_markdown_tex_share_order_and_values_with_portable_assets(tmp_path):
         assert "[1] Author. Thermal transport. 2020." in text
         assert str(tmp_path) not in text
     assert "\\frac" in latex and r"\text{out}" in latex
+    assert (
+        r"\end{tabularx}" + "\n" + r"\par\smallskip\noindent\small Same prescribed input.\par"
+    ) in latex
     assert list((md.parent / "paper_md_assets").glob("*.png"))
 
 
@@ -167,6 +170,64 @@ def test_explicit_word_template_preserves_page_and_normal_style(tmp_path):
     assert report["figures"][0]["width_mm"] <= report["column_width_mm"]
     assert report["column_width_mm"] < 90
     assert "Replace this placeholder" not in actual._element.xml
+    assert template.read_bytes() == original
+
+
+def test_word_template_uses_existing_named_roles_and_last_section_geometry(tmp_path):
+    from docx import Document
+    from docx.enum.section import WD_SECTION_START
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import Mm, Pt
+
+    root = fixture(tmp_path)
+    document = Document()
+    document.styles["Title"].name = "paper title"
+    document.styles["paper title"].element.set(qn("w:styleId"), "papertitle")
+    document.styles["paper title"].font.size = Pt(24)
+    document.styles["Caption"].name = "figure caption"
+    document.styles["figure caption"].element.set(qn("w:styleId"), "figurecaption")
+    document.styles["figure caption"].font.size = Pt(8)
+    numbers = OxmlElement("w:numPr")
+    number = OxmlElement("w:numId")
+    number.set(qn("w:val"), "9")
+    numbers.append(number)
+    document.styles["figure caption"].element.get_or_add_pPr().append(numbers)
+    for option in document.settings.element.findall(".//" + qn("w:compatSetting")):
+        if option.get(qn("w:name")) == "compatibilityMode":
+            option.set(qn("w:val"), "11")
+    document.styles["Body Text"].font.size = Pt(10)
+    document.add_paragraph("Replace the actual body slot", style="Body Text")
+    document.add_section(WD_SECTION_START.CONTINUOUS).left_margin = Mm(32)
+    template = tmp_path / "role-template.docx"
+    document.save(template)
+    original = template.read_bytes()
+    out = export_formal_manuscript(root, tmp_path / "report.docx", template_path=template)
+    actual = Document(out)
+    assert len(actual.sections) == 1
+    assert actual.sections[0].left_margin.mm == pytest.approx(32, abs=0.05)
+    assert actual.paragraphs[0].style.name == "paper title"
+    with zipfile.ZipFile(out) as archive:
+        xml = archive.read("word/document.xml").decode()
+    assert 'w:val="BodyText"' in xml
+    assert "<m:f>" in xml and "<w:tbl>" in xml and "w:tblHeader" in xml
+    assert actual.styles["paper title"].font.size.pt == 24
+    assert actual.styles["figure caption"].font.size.pt == 8
+    for option in actual.settings.element.findall(".//" + qn("w:compatSetting")):
+        if option.get(qn("w:name")) == "compatibilityMode":
+            assert option.get(qn("w:val")) == "15"
+    caption_ids = {actual.styles[name].style_id for name in ("Caption", "figure caption")}
+    for paragraph in actual._element.body.iter(qn("w:p")):
+        style = paragraph.find("./" + qn("w:pPr") + "/" + qn("w:pStyle"))
+        if style is not None and style.get(qn("w:val")) in caption_ids:
+            number = paragraph.find("./" + qn("w:pPr") + "/" + qn("w:numPr") + "/" + qn("w:numId"))
+            assert number is not None and number.get(qn("w:val")) == "0"
+    assert "Replace the actual body slot" not in xml
+    report = json.loads(out.with_suffix(".layout.json").read_text(encoding="utf-8"))
+    assert report["style"]["body_pt"] == 10
+    assert report["style"]["title_pt"] == 24
+    assert report["style"]["caption_pt"] == 8
+    assert report["template_style_roles"]["Title"] == "paper title"
     assert template.read_bytes() == original
 
 
@@ -284,3 +345,48 @@ def test_ambiguous_comments_and_character_ranges_remain_localized(tmp_path):
     assert report["comment_conflicts"][0]["block_id"] == block["id"]
     with zipfile.ZipFile(out) as archive:
         assert "Retain this note." in archive.read("word/comments.xml").decode()
+
+
+def test_local_figure_label_survives_object_renumber_without_fixed_scientific_text(tmp_path):
+    from cfdpaper.publication.document_blocks import build_document
+    from cfdpaper.publication.formal_export import _prefix, _runs
+
+    root = fixture(tmp_path)
+    data = json.loads((root / "section.json").read_text(encoding="utf-8"))
+    paragraph = data["paragraphs"][1]
+    paragraph.update(
+        {
+            "text": "See Figure 3.",
+            "source_text": "See {{figure:1}}.",
+            "semantic_runs": [
+                {"text": "See "},
+                {"text": "Figure 3", "token": "{{figure:1}}", "span_id": "figure-reference"},
+                {"text": "."},
+            ],
+        }
+    )
+    data["figures"][0]["id"] = "3"
+    paragraph["figure_ids"] = ["3"]
+    data["object_origins"] = {"figure": {"3": {"section_id": "methods", "local_id": "1"}}}
+    data.pop("block_order")
+    first = build_document(data)
+    edited = [
+        b for b in first["blocks"] if b["kind"] == "caption" or b["local_id"] == "explanation"
+    ]
+    labels = {b["id"]: {"reference_labels": {"figure": "Fig."}} for b in edited}
+    # Global numbering changes; local object identity is stable.
+    data["object_origins"] = {"figure": {"4": {"section_id": "methods", "local_id": "1"}}}
+    data["figures"][0]["id"] = "4"
+    paragraph["text"] = "See Figure 4."
+    paragraph["figure_ids"] = ["4"]
+    paragraph["semantic_runs"][1]["text"] = "Figure 4"
+    (root / "section.json").write_text(json.dumps(data), encoding="utf-8")
+    (root / "author-edits.json").write_text(json.dumps({"blocks": labels}), encoding="utf-8")
+    output = export_formal_manuscript(root, tmp_path / "renumbered.docx")
+    with zipfile.ZipFile(output) as archive:
+        xml = archive.read("word/document.xml").decode()
+    assert "Fig. 4" in xml
+    assert "Fig. 3" not in xml
+    untouched = next(b for b in build_document(data)["blocks"] if b["kind"] == "caption")
+    assert _prefix(untouched) == "Figure 4. "
+    assert _runs(untouched)[0]["text"] == "Interface temperature field."

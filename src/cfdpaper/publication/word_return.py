@@ -413,6 +413,10 @@ def write_word_state(document, state: dict) -> None:
             if len(match) != 1 or element not in match[0].iterancestors():
                 raise ValueError(f"Word export needs an internal anchor for {span['id']}")
             baseline[block["id"]]["spans"][span["id"]] = _plain(match[0])
+            _, positions = _element_positions(element)
+            baseline[block["id"]].setdefault("span_ranges", {})[span["id"]] = list(
+                positions[match[0]]
+            )
     stored["_word_baseline"] = baseline
     # Preserve pre-existing unanchored content as a boundary, not new author prose.
     stored["_word_unanchored"] = [
@@ -483,6 +487,80 @@ def _read_state(document):
 
 def _conflict(kind, block_id=None, **details):
     return {"type": kind, "block_id": block_id, **details}
+
+
+def _same_figure_label(before, after):
+    """Only the literal label may change; the complete object identifier may not."""
+    pattern = r"(Figure|Fig\.)\s*([0-9]+[A-Za-z]?)"
+    old, new = re.fullmatch(pattern, before), re.fullmatch(pattern, after)
+    return new[1] if old and new and old[2] == new[2] else None
+
+
+def _figure_prefix(before, text):
+    old = re.fullmatch(r"(Figure|Fig\.)\s*([0-9]+[A-Za-z]?)\.\s*", before)
+    new = re.match(r"(Figure|Fig\.)\s*([0-9]+[A-Za-z]?)\.\s*", text)
+    if old and new and old[2] == new[2]:
+        return new[0], new[1]
+    return None
+
+
+def _baseline_span_ranges(original, baseline):
+    """Upgrade old export metadata by an exact semantic-template projection.
+
+    This does not search for a displayed number: all literals, tokens and their
+    order must reproduce the complete original Word text exactly.
+    """
+    if "span_ranges" in baseline:
+        return baseline["span_ranges"]
+    from cfdpaper.publication.elements import display_scientific_text
+
+    chunks, ranges, cursor = [baseline.get("display_prefix", "")], {}, 0
+    pending = list(original.get("spans", []))
+    for match in re.finditer(r"\{\{[^{}]+\}\}", original["text"]):
+        chunks.append(display_scientific_text(original["text"][cursor : match.start()]))
+        if not pending or pending[0]["token"] != match[0]:
+            return {}
+        span = pending.pop(0)
+        start = sum(map(len, chunks))
+        value = baseline["spans"][span["id"]]
+        chunks.append(value)
+        ranges[span["id"]] = [start, start + len(value)]
+        cursor = match.end()
+    chunks.append(display_scientific_text(original["text"][cursor:]))
+    return ranges if not pending and "".join(chunks) == baseline["text"] else {}
+
+
+def _definite_clause_deletion(original, baseline, span, actual):
+    bounds = _baseline_span_ranges(original, baseline).get(span["id"])
+    if bounds is None:
+        return False
+    start, end = bounds
+    previous = [m.end() for m in re.finditer(r"[.!?;](?=\s|$)", baseline["text"][:start])]
+    clause_start = previous[-1] if previous else 0
+    while clause_start < start and baseline["text"][clause_start].isspace():
+        clause_start += 1
+    following = re.search(r"[.!?;](?=\s|$)", baseline["text"][end:])
+    clause_end = end + following.end() if following else len(baseline["text"])
+    deletions = [
+        (a, b)
+        for tag, a, b, _, _ in SequenceMatcher(
+            None, baseline["text"], actual, autojunk=False
+        ).get_opcodes()
+        if tag == "delete"
+    ]
+    if not any(a <= clause_start <= start < end <= clause_end <= b for a, b in deletions):
+        return False
+    # Refuse retained/copy-pasted displays; no lexical value is used to restore
+    # an anchor or to infer a scientific identity.
+    prefix = _figure_prefix(baseline.get("display_prefix", ""), actual)
+    remainder = actual[len(prefix[0]) :] if prefix else actual
+    displayed = baseline["spans"][span["id"]]
+    if displayed and re.sub(r"\s+", " ", displayed) in re.sub(r"\s+", " ", remainder):
+        return False
+    literals = re.findall(r"(?<!\w)\d+(?:\.\d+)?(?!\w)", displayed)
+    return not any(
+        re.search(r"(?<!\w)" + re.escape(value) + r"(?!\w)", remainder) for value in literals
+    )
 
 
 def _comments(document, element_blocks):
@@ -642,9 +720,14 @@ def read_word_return(path: str | Path) -> dict:
                 )
         # Restore semantic tokens by explicit span identity, never number matching.
         text, positions = _element_positions(text_element)
-        replacements = []
+        replacements, deleted_spans = [], set()
         for span in original.get("spans", []):
             matches = anchors.get(_tag(bid + "::" + span["id"]), [])
+            if (
+                not matches or (len(matches) == 1 and not _plain(matches[0]))
+            ) and _definite_clause_deletion(original, baseline, span, _plain(text_element)):
+                deleted_spans.add(span["id"])
+                continue
             if len(matches) != 1 or element not in matches[0].iterancestors():
                 local.append(
                     _conflict(
@@ -662,26 +745,41 @@ def read_word_return(path: str | Path) -> dict:
                 continue
             actual = _plain(matches[0])
             if actual != baseline["spans"][span["id"]]:
-                local.append(
-                    _conflict(
-                        "protected_span_modified",
-                        bid,
-                        span_id=span["id"],
-                        token=span["token"],
-                        baseline=span["text"],
-                        author=actual,
-                    )
+                label = (
+                    _same_figure_label(baseline["spans"][span["id"]], actual)
+                    if span["token"].startswith("{{figure:")
+                    else None
                 )
+                if label:
+                    block.setdefault("reference_labels", {})["figure"] = label
+                else:
+                    local.append(
+                        _conflict(
+                            "protected_span_modified",
+                            bid,
+                            span_id=span["id"],
+                            token=span["token"],
+                            baseline=span["text"],
+                            author=actual,
+                        )
+                    )
             start, end = positions[matches[0]]
             replacements.append((start, end, span["token"]))
         for start, end, token in sorted(replacements, reverse=True):
             text = text[:start] + token + text[end:]
         prefix = baseline.get("display_prefix", "")
         if prefix and not text.startswith(prefix):
-            local.append(
-                _conflict("generated_label_modified", bid, baseline=prefix, author=_plain(element))
-            )
-        elif prefix:
+            alias = _figure_prefix(prefix, text) if original["kind"] == "caption" else None
+            if alias:
+                prefix, label = alias
+                block.setdefault("reference_labels", {})["figure"] = label
+            else:
+                local.append(
+                    _conflict(
+                        "generated_label_modified", bid, baseline=prefix, author=_plain(element)
+                    )
+                )
+        if prefix and text.startswith(prefix):
             text = text[len(prefix) :]
         layout = _layout(element)
         if len(layout) != len(baseline["layout"]) or any(
@@ -690,6 +788,7 @@ def read_word_return(path: str | Path) -> dict:
         ):
             local.append(_conflict("image_aspect_ratio_modified", bid))
         if not local:
+            block["spans"] = [s for s in block.get("spans", []) if s["id"] not in deleted_spans]
             block["text"] = (
                 original["text"] if table or _plain(text_element) == baseline["text"] else text
             )
@@ -856,8 +955,24 @@ def _semantic_block(block):
     return {
         k: v
         for k, v in block.items()
-        if k not in {"rendered_text", "formatting", "paragraph_format", "layout"}
+        if k
+        not in {"rendered_text", "formatting", "paragraph_format", "layout", "reference_labels"}
     }
+
+
+def _removed_span_ids(base, author):
+    old = {s["id"]: s for s in base.get("spans", [])}
+    remaining = {s["id"]: s for s in author.get("spans", [])}
+    if any(
+        identifier not in old or value != old[identifier] for identifier, value in remaining.items()
+    ):
+        return None
+    removed = set(old) - set(remaining)
+    for token in {old[identifier]["token"] for identifier in removed}:
+        count = sum(old[identifier]["token"] == token for identifier in removed)
+        if author["text"].count(token) != base["text"].count(token) - count:
+            return None
+    return removed
 
 
 def merge_word_blocks(
@@ -919,7 +1034,14 @@ def merge_word_blocks(
                 continue
             av, bv, cv = a.get(field), b.get(field), c.get(field)
             if (
-                field in {"formatting", "paragraph_format", "layout", "formatting_source_text"}
+                field
+                in {
+                    "formatting",
+                    "paragraph_format",
+                    "layout",
+                    "formatting_source_text",
+                    "reference_labels",
+                }
                 and field not in c
                 and field in a
             ):
@@ -941,14 +1063,18 @@ def merge_word_blocks(
             elif av != bv:
                 result[field] = deepcopy(av)
         if a.get("spans", []) != b.get("spans", []) and a.get("spans") != c.get("spans"):
-            conflicts.append(
-                _conflict(
-                    "protected_binding_modified",
-                    bid,
-                    author=deepcopy(a["spans"]),
-                    current=deepcopy(c["spans"]),
+            removed = _removed_span_ids(b, a)
+            if removed is not None:
+                result["spans"] = [s for s in result.get("spans", []) if s["id"] not in removed]
+            else:
+                conflicts.append(
+                    _conflict(
+                        "protected_binding_modified",
+                        bid,
+                        author=deepcopy(a["spans"]),
+                        current=deepcopy(c["spans"]),
+                    )
                 )
-            )
         rendered = text
         for span in result.get("spans", []):
             rendered = rendered.replace(span["token"], span["text"])

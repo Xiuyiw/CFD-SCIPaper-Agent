@@ -146,3 +146,34 @@ def test_managed_author_copy_persists_ids_without_changing_original(tmp_path):
     assert (base / "sections/methods/draft.json").read_bytes() == original
     assert (managed / "manuscript.docx").is_file()
     assert (managed / "manuscript.md").is_file()
+
+
+def test_authored_figure_abbreviation_survives_source_return_and_reexport(tmp_path):
+    source, drafts = fixture(tmp_path)
+    prepared = prepare_manuscript(source, tmp_path / "prepared")
+    base = assemble_manuscript(prepared, drafts, tmp_path / "base")
+    word = export_formal_manuscript(base, tmp_path / "author.docx")
+    edited = tmp_path / "edited.docx"
+    _edit_word(word, edited, "Figure 1", "Fig. 1")
+    _edit_word(edited, edited, "Figure 1. ", "Fig. 1. ")
+    result = import_author_manuscript(edited, base, tmp_path / "returned")
+    assert read(result / "merge.json")["conflicts"] == []
+    labels = read(result / "candidate/author-edits.json")["blocks"]
+    assert sum(v.get("reference_labels") == {"figure": "Fig."} for v in labels.values()) == 2
+    first = read_word_return(result / "manuscript.docx")
+    assert not first["conflicts"]
+    abbreviated = [b for b in first["blocks"] if b.get("reference_labels")]
+    assert len(abbreviated) == 2
+    assert all("Fig. 1" in b["rendered_text"] for b in abbreviated)
+    assert "{{figure:same}}" in next(b for b in abbreviated if b["kind"] == "paragraph")["text"]
+    again = import_author_manuscript(
+        result / "manuscript.docx", result / "candidate", tmp_path / "again"
+    )
+    assert read(again / "merge.json")["conflicts"] == []
+    assert (
+        sum(
+            b.get("reference_labels") == {"figure": "Fig."}
+            for b in read_word_return(again / "manuscript.docx")["blocks"]
+        )
+        == 2
+    )

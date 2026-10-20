@@ -44,6 +44,11 @@ Read `CONTINUE.md` and unresolved conflicts before presenting the result as fina
   supported; cross-section moves and unsupported structures require reconciliation.
 - Simple table column labels can be recovered. Numerical cells, table geometry,
   formula/field changes and unknown objects are not silently flattened.
+- A local `Figure`/`Fig.` abbreviation keeps the same bound object and follows later
+  renumbering. It does not rename unrelated blocks or permit changing an object's number.
+- Deleting an entire bound sentence/clause can be recovered when its removal is
+  unambiguous from the saved baseline. An orphaned anchor or a changed numerical
+  value is still a localized conflict, not permission to infer a replacement.
 - Comments remain suggestions, not approval. Inspect their actual anchor after
   export; ambiguous placement is listed in the layout report.
 - An unaccepted tracked change remains unresolved. Do not accept it implicitly.
@@ -57,6 +62,19 @@ Separate numerical display updates from region/operator/weight/time-support chan
 A definition change can require revising Methods, captions, abstract and conclusions
 even when the resulting number happens to stay the same. Conversely, Word's unit
 spacing, minus glyph or localized style ID is not a new scientific observation.
+
+For a research workspace with executable local figure recipes, preserve recovered
+drafts and presentation while rebuilding current observations:
+
+```text
+cfdpaper research --workspace RESEARCH_WORKSPACE --baseline PREVIOUS_BUILD --author-candidate RETURN/candidate --output NEW_BUILD
+```
+
+The recovered candidate supplies local-ID drafts and presentation, not copied
+scientific numbers. The research workspace still supplies current inputs, region
+definitions and author-local plotting scripts. Its isolated new copy is retained
+under `NEW_BUILD/workspace/` for the next iteration. Do not paste compiled prose
+over those source drafts or replace the local script with an older template.
 
 ## One scientific content, ordered views
 
