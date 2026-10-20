@@ -9,7 +9,7 @@ study exercised the chain, followed by a source-grounded conceptual figure and s
 refresh with author-asset preservation. The CLI and a runnable public synthetic example
 expose the same workflow; see the [release notes](releases/v0.21.0.md) and
 [surface tutorial](../examples/surface-research/README.md).
-The v0.22 candidate extends this chain with original-field regions, signed heat paths,
+The v0.22 release extends this chain with original-field regions, signed heat paths,
 matched changes, budgets and an actual saved-Fluent surface reader. A real cooling task,
 paired first writing, temporal-support counterexamples and author-preserving refresh have
 run. Platform checks and published assets are linked from the [v0.22 notes](releases/v0.22.0.md).
@@ -19,7 +19,7 @@ Existing releases and their limitations are retained below as history.
 |---|---|---|
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Implemented; known-project diagnostics, figure/Word trial, targeted refresh and installed example described in v0.22.0 notes |
-| v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return | Planned |
+| v0.23 | Ordered scientific document, SCI/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implementation in progress: shared exporters and bounded Word merge exercised on the cooling manuscript; actual author collaboration and release validation pending |
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
 
 Each release must improve an actual research task. Later task ordering can change with observed
@@ -27,13 +27,14 @@ results, but scientific depth, readable publication output and author-edit prese
 silently removed. The [contribution principles](../CONTRIBUTING.md#product-and-development-principles)
 apply across hosts and contributors. No universal solver support or publication readiness is implied.
 
-The [v0.21 assessment and v0.22 execution plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md#14-v021目标复评与v022实施计划2026-10-16)
-retain the delivered research chain and target its observed interpretation gap. The next cooling
-task reuses existing regional and off-center heat-path evidence, adding only the missing comparable
-post-processing from saved solutions. Native extraction, reconstructed flux and independent
-validation remain distinct. Existing temporal diagnostics are reused to correct common-time versus
-own-event comparisons at the point of scientific use. Broader Word collaboration and a second host
-remain v0.23/v0.24 work, not prerequisites for this increment.
+The [Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section15, records the v0.22
+assessment and the v0.23 implementation sequence. The next complete task is a real author cycle:
+edit the generated Word manuscript and figure style, return it against its export baseline,
+reconcile concurrent scientific changes, and export readable manuscript/report/conference views.
+Existing diagnostics, native extraction, first drafts and valid tests are retained, not rerun.
+Word-only changes are not yet imported by the current release; protecting workspace drafts is a
+different capability. Arbitrary Word round-tripping, solver expansion, second-host evaluation and
+automatic submission are not added to this increment.
 
 ## Release principle
 

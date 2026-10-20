@@ -23,6 +23,9 @@ validation. Ask the author only for missing facts that change the interpretation
   [evidence writing](../cfd-evidence-writing/SKILL.md).
 - An assembled manuscript already exists: start with its `CONTINUE.md` and
   portable `drafts.json`, not the oldest proposal or an earlier chat.
+- The author edited a managed Word manuscript: use the writing skill's
+  `references/author-word.md` and `cfdpaper author --return-docx`; combine the
+  returned wording with current evidence rather than asking for manual JSON transcription.
 
 ## First manuscript from ordinary materials
 

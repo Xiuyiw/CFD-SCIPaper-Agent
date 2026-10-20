@@ -1007,7 +1007,16 @@ def build_research_workspace(workspace_dir: Path, output_dir: Path, baseline_dir
             ):
                 source = manuscript / "sections" / sid / name
                 if source.is_file():
-                    shutil.copy2(source, destination / name)
+                    if name == "input.json":
+                        retained = _read(destination / name)
+                        paths = {item["id"]: item["path"] for item in retained["figures"]}
+                        updated = _read(source)
+                        for image in updated["figures"]:
+                            if image["id"] in paths:
+                                image["path"] = paths[image["id"]]
+                        _write(destination / name, updated)
+                    else:
+                        shutil.copy2(source, destination / name)
         shutil.copy2(manuscript / "writing-state.json", workspace / "writing-state.json")
         _host_context(workspace, data)
         changes = _read(manuscript / "changes.json")

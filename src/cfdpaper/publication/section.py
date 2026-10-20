@@ -522,12 +522,18 @@ class _Paragraph(_Record):
     figure_ids: list[str]
     inline_math: dict[str, MathNode] = Field(default_factory=dict)
     shared_unit: StrictStr | None = None
+    paragraph_id: StrictStr | None = Field(default=None, pattern=r"^[A-Za-z0-9_.-]+$")
+    formatting: list[dict] = Field(default_factory=list)
+    paragraph_format: dict = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
     def serialize_paragraph(self, handler):
         result = handler(self)
         if self.shared_unit is None:
             result.pop("shared_unit", None)
+        for key in ("paragraph_id", "formatting", "paragraph_format"):
+            if not result.get(key):
+                result.pop(key, None)
         return result
 
 
@@ -540,6 +546,14 @@ class _Draft(_Record):
     observation_notes: dict[str, StrictStr] = Field(default_factory=dict)
     tables: list[SectionTable] = Field(default_factory=list)
     equations: list[SectionEquation] = Field(default_factory=list)
+    block_order: list[StrictStr] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def serialize_draft(self, handler):
+        result = handler(self)
+        if not self.block_order:
+            result.pop("block_order", None)
+        return result
 
     @field_validator("captions")
     @classmethod
@@ -927,6 +941,48 @@ def assemble_section(
         return resolved
 
     paragraphs = []
+    paragraph_counts = {}
+
+    def semantic_runs(text, allowed, images, shared_unit=None, inline_math=None):
+        segments, cursor, counts = [], 0, {}
+        for match in re.finditer(
+            r"(?P<marker>\ue000[^\ue001]+\ue001)?"
+            r"(?P<token>\{\{(?P<kind>value|figure|cite|table|equation|math):"
+            r"(?P<key>[A-Za-z0-9_.-]+)\}\})",
+            text,
+        ):
+            if match.start() > cursor:
+                segments.append(
+                    {"text": resolve(text[cursor : match.start()], allowed, images, shared_unit)}
+                )
+            kind, key = match.group("kind", "key")
+            occurrence = counts.get((kind, key), 0)
+            counts[kind, key] = occurrence + 1
+            segment = {"token": match.group("token"), "span_id": f"{kind}-{key}-{occurrence}"}
+            if kind == "math":
+                if inline_math is None or key not in inline_math:
+                    raise ValueError(f"Unknown inline math {key}")
+                expression = inline_math[key].model_dump()
+
+                def walk(node):
+                    if node["text"] is not None:
+                        node["text"] = resolve(node["text"], allowed, images)
+                    for child in node["children"]:
+                        walk(child)
+
+                walk(expression)
+                segment["math"] = expression
+                segment["text"] = math_text(MathNode.model_validate(expression))
+            else:
+                segment["text"] = (match.group("marker") or "") + resolve(
+                    match.group("token"), allowed, images, shared_unit
+                )
+            segments.append(segment)
+            cursor = match.end()
+        if cursor < len(text):
+            segments.append({"text": resolve(text[cursor:], allowed, images, shared_unit)})
+        return segments
+
     for paragraph in draft.paragraphs:
         if paragraph.shared_unit is not None and not re.search(
             r"(?<!\w)" + re.escape(paragraph.shared_unit) + r"(?!\w)", paragraph.text
@@ -976,7 +1032,27 @@ def assemble_section(
             run["text"] if "text" in run else math_text(MathNode.model_validate(run["math"]))
             for run in runs
         )
-        paragraphs.append({**paragraph.model_dump(), "text": text, "runs": runs})
+        from cfdpaper.publication.document_blocks import paragraph_identity
+
+        occurrence = paragraph_counts.get(paragraph.text, 0)
+        paragraph_counts[paragraph.text] = occurrence + 1
+        paragraphs.append(
+            {
+                **paragraph.model_dump(),
+                "text": text,
+                "runs": runs,
+                "paragraph_id": paragraph.paragraph_id
+                or paragraph_identity(paragraph.text, occurrence),
+                "source_text": paragraph.text,
+                "semantic_runs": semantic_runs(
+                    paragraph.text,
+                    paragraph.evidence_ids,
+                    paragraph.figure_ids,
+                    paragraph.shared_unit,
+                    paragraph.inline_math,
+                ),
+            }
+        )
     for duty in data.duties:
         if not set(duty.evidence_ids) <= used_evidence or not set(duty.figure_ids) <= used_figures:
             raise ValueError(f"Missing paragraph coverage for duty: {duty.purpose}")
@@ -1022,7 +1098,15 @@ def assemble_section(
             "section_id": data.section_id,
             "title": draft.title,
             "paragraphs": paragraphs,
-            "figures": [{**f.model_dump(), "caption": captions[f.id]} for f in data.figures],
+            "figures": [
+                {
+                    **f.model_dump(),
+                    "caption": captions[f.id],
+                    "source_caption": draft.captions[f.id],
+                    "caption_runs": semantic_runs(draft.captions[f.id], evidence, figures),
+                }
+                for f in data.figures
+            ],
             "evidence": [e.model_dump() for e in data.evidence],
             "resolved_values": resolved_values,
             "style": data.style.model_dump(),
@@ -1031,6 +1115,7 @@ def assemble_section(
             "references": references,
             "image_observations": draft.image_observations,
             "observation_notes": draft.observation_notes,
+            "block_order": draft.block_order,
         }
         _write(staged / "section.json", result)
         lines = [f"## {draft.title}", *[p["text"] for p in paragraphs]]

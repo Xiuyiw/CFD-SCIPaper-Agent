@@ -200,8 +200,10 @@ definitions. Keep the shared spine/terms current. Reconcile title and keywords w
 question and included results when the scope changes; an inherited keyword is not evidence of
 an included study. Report a specific replacement without silently editing author metadata.
 Source or definition changes require a fresh
-scientific reading of dependent claims, not only numeric replacement. Word-only edits are not
-automatically imported: reconcile them with the authoring draft before exporting again.
+scientific reading of dependent claims, not only numeric replacement. For a generated managed
+Word file, use [author-word.md](references/author-word.md) to recover body/caption edits,
+formatting and comments against the current scientific candidate. Arbitrary Word files without
+the generated baseline still need explicit reconciliation; do not overwrite either source.
 
 Use the packaged current dependency paragraphs, calculations/definitions, figures and located
 literature as the starting context, not an older assembled manuscript remembered from chat.
