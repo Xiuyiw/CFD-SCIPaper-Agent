@@ -94,7 +94,11 @@ the path suited to the materials; not every study is a surface-field study.
 
 Read the original reports and method definitions before selecting quantities.
 Then call `report_task` with case IDs, relative source paths and exact JSON
-pointers, for example:
+pointers. This example expects native reports with `/pressure/inlet` and
+`/pressure/outlet` in Pa, setup records with `/inlet/intensity`, and a shared
+`reference.json` with approximate pressure readings at `/figure/A` and `/figure/B`
+in Pa. `method.md` defines the endpoint difference and the numerical reference
+comparison; its pressure operator need not be assumed equivalent to the reference.
 
 ```python
 from pathlib import Path
@@ -102,21 +106,55 @@ from cfdpaper.host_tools import report_task
 
 prepared = report_task(
     output=Path("prepared"), root=Path("raw"),
-    title="Pressure-report comparison", question="How does the defined pressure difference vary?",
-    cases=[{"id": "A", "source": "A.json"}, {"id": "B", "source": "B.json"}],
-    quantities=[{"id": "dp", "label": "Static-pressure difference", "unit": "Pa",
-        "output_unit": "kPa", "domain": "matched area-weighted inlet and outlet reports",
-        "comparison": "/pressure/inlet", "reference": "/pressure/outlet"}],
-    support_files=[Path("method.md")],
+    title="Pressure-report comparison",
+    question="How do the saved pressure differences compare with the supplied readings?",
+    cases=[
+        {"id": "A", "source": "A.json",
+         "sources": {"setup": "A-setup.json", "reference": "reference.json"}},
+        {"id": "B", "source": "B.json",
+         "sources": {"setup": "B-setup.json", "reference": "reference.json"}},
+    ],
+    quantities=[
+        {"id": "dp", "label": "Area-weighted static-pressure difference", "unit": "Pa",
+         "output_unit": "kPa", "domain": "numerical pressure comparison at declared states",
+         "comparison": "/pressure/inlet", "reference": "/pressure/outlet"},
+        {"id": "intensity", "label": "Prescribed inlet turbulence intensity", "unit": "",
+         "domain": "saved inlet specification", "source_key": "setup",
+         "pointer": "/inlet/intensity", "table": False},
+        {"id": "figure", "label": "Approximate reading; pressure operator unspecified", "unit": "Pa",
+         "output_unit": "kPa", "domain": "numerical pressure comparison at declared states",
+         "source_key": "reference",
+         "pointer": {"A": "/figure/A", "B": "/figure/B"}, "table": False},
+    ],
+    derived=[{
+        "id": "excess_A", "label": "Relative excess over the reference reading",
+        "reference": "figure_A", "comparison": "dp_A", "field": "relative_change",
+        "percentage": True, "places": 2,
+        "domain": "numerical pressure comparison at declared states",
+        "comparison_scope": "Reference pressure operator unspecified; not direct validation",
+        "definition_source": "method.md:L1-L3",
+    }],
+    formulas={"pressure_difference": {
+        "source": "method.md:L1",
+        "expression": {"kind": "row", "children": [
+            {"kind": "symbol", "text": "Δp"}, {"kind": "text", "text": " = "},
+            {"kind": "sub", "children": [
+                {"kind": "symbol", "text": "p"}, {"kind": "text", "text": "in"}]},
+            {"kind": "text", "text": " − "},
+            {"kind": "sub", "children": [
+                {"kind": "symbol", "text": "p"}, {"kind": "text", "text": "out"}]},
+        ]},
+    }},
 )
-# Fill the three draft.json files named by the returned workspace/drafts.json.
+# Fill the three draft.json files named by workspace/drafts.json.
+# Use e.g. {{value:dp_A}}, {{value:excess_A}} and {{math:pressure_difference}}.
 candidate = report_task(output=Path("candidate"), workspace=Path("prepared"),
     drafts=Path("prepared/workspace/drafts.json"))
 ```
 
 The CLI uses the same function. Put the title, question, case/quantity declarations
-and optional context/support_files in `study.json` (source paths are relative to
-`--root`), then run:
+and optional `context`, `support_files`, `derived` and `formulas` in `study.json`
+(source paths are relative to `--root`), then run:
 
 ```console
 cfdpaper report --study study.json --root raw --output prepared
@@ -124,7 +162,35 @@ cfdpaper report --workspace prepared --drafts prepared/workspace/drafts.json --o
 ```
 
 A scalar uses `pointer` instead of the endpoint pair; a pair means comparison
-minus reference. Unit conversion is explicit, not inferred from the file name.
+minus reference. `case.sources` declares named extra JSON records and
+`quantity.source_key` selects one; omitting it uses the primary case source.
+A pointer or either endpoint can be an exact case-ID map, with an entry for every
+case; it is not a key search or fallback rule. The selected physical quantity
+must remain consistent across cases. Unit conversion is explicit, not inferred
+from the file name. Dimensionless method parameters use `unit: ""`;
+`table: false` keeps their evidence available without adding Results-table rows.
+
+Base evidence IDs are `QUANTITY_CASE`, such as `dp_A`. `derived` selects two
+existing base evidence IDs, not other derived entries or arbitrary expressions.
+Its four `field` choices are `difference` (comparison minus reference), `ratio`
+(comparison/reference), `relative_change` ((comparison−reference)/reference),
+and `relative_reduction` ((reference−comparison)/reference). The declared
+`reference` is the denominator for the latter three; `percentage: true` displays
+a relative result as percent once. Supply `domain`, `comparison_scope` and a
+located `definition_source` (`file:Lx-Ly`) for the physical meaning, not just a
+label. The comparison engine requires both parent domains and the declared
+derived domain to match. Here they share a numerical-comparison domain; the
+different observation definitions still belong in labels and `comparison_scope`,
+not an assertion that the reference pressure operator is equivalent. The compact
+result retains that denominator and both parent supports; no chained calculation
+DAG is implied.
+
+Each `formulas` entry supplies `source` and an existing structured `MathNode`
+`expression`, not a TeX string. Both definition and formula source files are
+retained automatically. A paragraph's `{{math:pressure_difference}}` token is
+connected to native editable Word mathematics during the second call; an
+author's existing paragraph-local `inline_math` entry takes priority.
+
 The tool retains raw JSON, exact pointers and method files, calculates through
 the existing table engine and provides an editable, bound Results table.
 The host writes the science in the prepared Methods/Results/Discussion drafts.

@@ -629,6 +629,8 @@ def report_workspace(
                 cases=data.get("cases"),
                 quantities=data.get("quantities"),
                 support_files=[Path(name) for name in data.get("support_files", [])],
+                derived=data.get("derived"),
+                formulas=data.get("formulas"),
             )
             console.print(f"Report workspace ready: {output}", markup=False)
             console.print(

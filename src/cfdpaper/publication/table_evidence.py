@@ -543,6 +543,7 @@ def _paired_result(baseline, compared, quantity_kind, temperature_reference):
 _COMPARABLE_FIELDS = {
     "population": {"mean", "sum"},
     "scalar_select": {"value"},
+    "paired_change": {"difference"},
     "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
     "partition": {"area", "rate", "mean_flux"},
     "temporal": TEMPORAL_FIELDS,
@@ -595,7 +596,14 @@ def calculate_result_comparison(
         if parent.get("domain") != domain:
             raise ValueError(f"{role}: parent domain must match the comparison domain")
         resolved = resolve_table_result(reports, **ref)
+        if (
+            operation == "paired_change"
+            and len(resolved.get("array_indices", resolved.get("csv_records", []))) != 2
+        ):
+            raise ValueError(f"{role}: unsupported parent paired change without two source records")
         kind = parent.get("quantity_kind", "ordinary")
+        if operation == "paired_change" and kind == "absolute-temperature":
+            kind = "temperature-difference"
         temporal_metadata = {}
         if operation == "temporal":
             if field == "integral" and kind == "absolute-temperature":
@@ -665,7 +673,13 @@ def calculate_result_comparison(
             raise ValueError(
                 "Comparison support " + support_check["status"] + ": " + "; ".join(issues)
             )
+    scalar_pair = {(item["operation"], item["field"]) for item in (baseline, compared)} == {
+        ("scalar_select", "value"),
+        ("paired_change", "difference"),
+    }
     for key in ("operation", "field", "weight_kind", "quantity_kind", "unit"):
+        if scalar_pair and key in {"operation", "field"}:
+            continue
         if baseline[key] != compared[key]:
             raise ValueError(f"Result comparison requires matching {key}")
     if baseline["operation"] == "temporal":
@@ -944,6 +958,9 @@ def resolve_table_result(
     through their denominator; regional flux depends only on the selected record.
     Dimensionless results use an empty unit. Percentage display changes neither
     raw_value nor the stored report, and rounds only after multiplying by 100.
+    Result-comparison ratios use retained raw parent values. Paired-change ratios
+    have no retained endpoints and use 1 + relative_change at its stored precision.
+    Absolute temperatures retain the declared same-origin temperature-rise ratio.
     """
     location = f"calculation {calculation_id!r}, group {group!r}, field {field!r}"
     if type(places) is not int or not 0 <= places <= 12:
@@ -965,9 +982,9 @@ def resolve_table_result(
         "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
         "weighted_exceedance": {"weight_sum", "measure_above", "exceedance_fraction", "count"},
         "scalar_select": {"value"},
-        "paired_change": {"difference", "relative_change", "relative_reduction"},
+        "paired_change": {"difference", "relative_change", "relative_reduction", "ratio"},
         "partition": {"area", "rate", "mean_flux", "regional_flux", "shares"},
-        "result_comparison": {"difference", "relative_change", "relative_reduction"},
+        "result_comparison": {"difference", "relative_change", "relative_reduction", "ratio"},
         "temporal": TEMPORAL_FIELDS,
         "temporal_difference": TEMPORAL_FIELDS,
         "reference_range": REFERENCE_RANGE_FIELDS,
@@ -997,9 +1014,15 @@ def resolve_table_result(
     result = selected.get("result")
     if selected.get("status") != "computed" or not isinstance(result, dict):
         raise ValueError(f"{location}: result unavailable ({selected.get('status')})")
-    if operation == "result_comparison":
+    if field == "ratio" and operation == "paired_change":
+        relative_change = result.get("relative_change")
+        raw_value = 1 + relative_change if type(relative_change) in (int, float) else None
+    else:
         raw_value = result.get(field)
-        if type(raw_value) not in (int, float) or not math.isfinite(raw_value):
+    if operation == "result_comparison":
+        if field != "ratio" and (
+            type(raw_value) not in (int, float) or not math.isfinite(raw_value)
+        ):
             raise ValueError(f"{location}: missing or nonfinite numeric value")
         unit = report.get("units", {}).get("value") if field == "difference" else ""
         if not isinstance(unit, str):
@@ -1023,9 +1046,27 @@ def resolve_table_result(
                 or not records
                 or any(type(n) is not int or n < minimum for n in records)
                 or len(set(records)) != len(records)
+                or (parent.get("operation") == "paired_change" and len(records) != 2)
             ):
                 raise ValueError(f"{location}: invalid supporting result for {role}")
             supporting.append({**parent, records_key: list(records)})
+        if field == "ratio":
+            denominator, numerator = [parent.get("raw_value") for parent in supporting]
+            if any(
+                type(value) not in (int, float) or not math.isfinite(value)
+                for value in (denominator, numerator)
+            ):
+                raise ValueError(f"{location}: missing or nonfinite numeric value")
+            if supporting[0].get("quantity_kind") == "absolute-temperature":
+                origin = report.get("temperature_reference")
+                if type(origin) not in (int, float) or not math.isfinite(origin):
+                    raise ValueError(f"{location}: missing or nonfinite temperature origin")
+                denominator, numerator = denominator - origin, numerator - origin
+            if not math.isfinite(denominator) or not math.isfinite(numerator):
+                raise ValueError(f"{location}: missing or nonfinite numeric value")
+            raw_value = numerator / denominator if denominator else None
+            if raw_value is None or not math.isfinite(raw_value):
+                raise ValueError(f"{location}: missing or nonfinite numeric value")
         display_value = Decimal(str(raw_value)) * 100 if percentage else raw_value
         return {
             "value": format_value(display_value, places),
@@ -1053,9 +1094,8 @@ def resolve_table_result(
         or len(set(records)) != len(records)
     ):
         raise ValueError(f"{location}: missing or invalid supporting csv_records")
-    if field not in result:
+    if field not in result and field != "ratio":
         raise ValueError(f"{location}: missing result field")
-    raw_value = result[field]
     supporting_records = list(records)
     if regional:
         if source_record not in records:
@@ -1105,6 +1145,7 @@ def resolve_table_result(
         "shares",
         "relative_change",
         "relative_reduction",
+        "ratio",
         "exceedance_fraction",
     }:
         unit = ""

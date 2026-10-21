@@ -38,7 +38,32 @@ For raw JSON reports, prefer `report_task` over manufacturing a generic proposal
 Supply `root`, case IDs and relative JSON paths, and quantities with `id`, `label`,
 `unit`, `domain`, plus either `pointer` or the pair `reference` and `comparison`.
 A pair means comparison minus reference; optional `output_unit` performs unit
-conversion. The same pointers must identify the same physical quantity in all cases.
+conversion. Selected pointers must identify the same physical quantity in all cases.
+Use `case.sources` to name additional JSON records and `quantity.source_key` to
+select one; without it the primary case source is read. A scalar pointer or either
+paired endpoint may instead be an exact case-ID map containing every case. For
+dimensionless method inputs use `unit: ""`; `table: false` retains their bound
+evidence without filling the Results table with method parameters.
+
+Optional `derived` entries compare existing base evidence IDs (`QUANTITY_CASE`),
+not other derived entries. Select `field` from `difference`, `ratio`,
+`relative_change` or `relative_reduction`; these mean comparison−reference,
+comparison/reference, (comparison−reference)/reference and
+(reference−comparison)/reference, respectively. Declare the reference denominator,
+`domain`, `comparison_scope` and `definition_source` as `file:Lx-Ly`; use
+`percentage: true` only when the selected relative result should display as percent.
+This is a bounded comparison route, not arbitrary formulas or a chained DAG.
+Both parent domains and the derived domain must match for this calculation.
+A shared numerical-comparison domain does not establish equivalent physical
+observation operators; retain their differences in labels and comparison scope.
+
+Optional `formulas` maps IDs to `source` plus an `expression` using the existing
+`MathNode` structure. Write `{{math:ID}}` directly in the paragraph: report assembly
+supplies native editable Word math, while the author's paragraph-local
+`inline_math` takes priority. No TeX parsing or manual AST copying into each draft
+is needed. The [Python/CLI example](../../../docs/portable-workbench.md#saved-reports-to-writing-in-two-calls)
+shows these declarations together.
+
 Read the returned `writing_task` and compact `metrics`, fill its three `draft.json`
 files, and call `report_task(workspace=PREPARED, drafts=PREPARED/workspace/drafts.json,
 output=FRESH)`. That call rereads retained JSON and assembles DOCX/Markdown using
@@ -46,6 +71,8 @@ the supplied prose. Keep the bound table; do not retype its numbers. A value tok
 already includes its unit. Original records and method/support files remain in
 the prepared workspace. This narrow route does not infer solver definitions,
 reconstruct absent fields, or prove a mechanism from endpoint differences.
+After source values or definitions change, re-read the affected physical
+interpretation; token refresh alone does not update that reasoning.
 
 For an existing CSV/NPZ comparison, `prepare_analysis_task` returns a proposal
 example and schema. Adapt them to the actual columns and physical definitions,

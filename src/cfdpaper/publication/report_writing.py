@@ -10,6 +10,8 @@ from types import SimpleNamespace
 
 from cfdpaper.publication.manuscript import prepare_manuscript
 from cfdpaper.publication.parameter_evidence import resolve_json_value
+from cfdpaper.publication.report_derivations import compile_report_derivations
+from cfdpaper.publication.report_math import normalize_report_formulas
 from cfdpaper.publication.section import (
     _copy_sources,
     _fresh,
@@ -91,7 +93,7 @@ def _projection_evidence(root: Path, projection: dict):
                 "calculation_id": qid,
                 "group": case,
                 "field": "difference" if paired else "value",
-                "places": 3,
+                "places": quantity.get("places", 3),
             }
             resolved = resolve_table_result(reports, **reference)
             locators = []
@@ -123,13 +125,16 @@ def _projection_evidence(root: Path, projection: dict):
                     "evidence_id": eid,
                     "case_id": case,
                     "quantity": qid,
+                    "label": quantity["label"],
+                    "domain": quantity["domain"],
                     "operation": calculation["operation"],
                     **resolved,
                     "original_sources": locators,
                 }
             )
-            table_rows.append([case, quantity["label"], operation, "{{value:" + eid + "}}"])
-    return calculations, evidence, metrics, table_rows, len(rows)
+            if quantity.get("table", True):
+                table_rows.append([case, quantity["label"], operation, "{{value:" + eid + "}}"])
+    return calculations, reports, evidence, metrics, table_rows, len(rows)
 
 
 def _task(question: str) -> str:
@@ -155,6 +160,13 @@ def _task(question: str) -> str:
         "Additional ratios or relative errors need an explicit calculation and reference "
         "denominator. Numbers typed into prose are not automatically refreshed merely "
         "because nearby value tokens are bound; reconsider them after source changes.\n\n"
+        "The metric summary retains each observation's domain and exact sources. A derived "
+        "comparison also names its reference denominator and both parent supports. A relation "
+        "at one location, operator or time support does not establish it elsewhere. Read a "
+        "nonzero identity residual as a diagnostic result, not a closed physical budget.\n\n"
+        "If report-writing.json lists a formula ID, use {{math:ID}} directly. The report "
+        "builder supplies that declared native expression automatically; paragraph-local "
+        "author mathematics takes priority. Do not rewrite it as Re^(...) text.\n\n"
         "For editable inline math, put {{math:quantity}} in a paragraph and add this "
         "object to that paragraph (not a TeX string):\n\n"
         '```json\n{"inline_math": {"quantity": {"kind": "sub", "children": '
@@ -191,8 +203,25 @@ def prepare_report_writing(
     with TemporaryDirectory(prefix="cfdpaper-report-writing-") as temporary:
         root = Path(temporary)
         _copy_sources(SimpleNamespace(source_files=files), projection_dir, root)
-        calculations, evidence, metrics, rows, row_count = _projection_evidence(root, projection)
-        _write(root / _DEFINITION, {"question": question, "quantities": projection["quantities"]})
+        calculations, reports, evidence, metrics, rows, row_count = _projection_evidence(
+            root, projection
+        )
+        comparisons, derived_evidence, derived_metrics, derived_rows = compile_report_derivations(
+            projection.get("derived", []), metrics, reports
+        )
+        evidence.extend(derived_evidence)
+        metrics.extend(derived_metrics)
+        rows.extend(derived_rows)
+        formulas = normalize_report_formulas(projection.get("formulas"))
+        _write(
+            root / _DEFINITION,
+            {
+                "question": question,
+                "quantities": projection["quantities"],
+                "derived": projection.get("derived", []),
+                "formulas": formulas,
+            },
+        )
         files.append(_DEFINITION)
         evidence.append(
             {
@@ -202,10 +231,10 @@ def prepare_report_writing(
                 "source": _DEFINITION + "#/question",
             }
         )
-        evidence_ids = [item["id"] for item in evidence]
+        table_ids = [row[-1][8:-2] for row in rows]
         contracts, sections = [], []
         for sid, purpose in _RESPONSIBILITIES.items():
-            required = evidence_ids if sid == "results" else ["report_question"]
+            required = table_ids + ["report_question"] if sid == "results" else ["report_question"]
             _write(
                 root / f"{sid}.json",
                 {
@@ -216,6 +245,7 @@ def prepare_report_writing(
                     "figures": [],
                     "source_files": files,
                     "table_calculations": calculations,
+                    "result_comparisons": comparisons,
                     "evidence": evidence,
                     "duties": [{"purpose": purpose, "evidence_ids": required, "figure_ids": []}],
                 },
@@ -250,9 +280,9 @@ def prepare_report_writing(
                 section = workspace / "sections" / sid
                 draft = _read(section / "draft-template.json")
                 draft["paragraphs"][0]["evidence_ids"] = (
-                    evidence_ids if sid == "results" else ["report_question"]
+                    table_ids + ["report_question"] if sid == "results" else ["report_question"]
                 )
-                if sid == "results":
+                if sid == "results" and rows:
                     draft["tables"] = [
                         {
                             "table_id": "report_values",
@@ -260,9 +290,7 @@ def prepare_report_writing(
                             "columns": ["Case", "Quantity", "Operator", "Result"],
                             "rows": rows,
                             "after_section_id": "results",
-                            "evidence_ids": [
-                                item["id"] for item in evidence if item["kind"] == "metric"
-                            ],
+                            "evidence_ids": table_ids,
                             "numeric_columns": [3],
                         }
                     ]
@@ -286,6 +314,10 @@ def prepare_report_writing(
                     "row_count": row_count,
                     "evidence_count": len(metrics),
                     "metrics": metrics,
+                    "formulas": [
+                        {"id": key, "source": value["source"], "token": "{{math:" + key + "}}"}
+                        for key, value in formulas.items()
+                    ],
                     "drafts": "drafts.json",
                     "pending_sections": list(_RESPONSIBILITIES),
                 },

@@ -26,7 +26,7 @@ Existing releases and their limitations are retained below as history.
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Implemented; known-project diagnostics, figure/Word trial, targeted refresh and installed example described in v0.22.0 notes |
 | v0.23 | Ordered scientific document, research/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implemented scope; actual human Word return, native-page inspection and portable automation replay described in v0.23.0 notes |
-| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | In development: portable/shared tools and a bounded real second-host report-to-manuscript task work; derived-value binding, interpretation and formal-math gaps remain; third-class real CFD validation is still open |
+| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | In development: portable/shared tools and a bounded real second-host report task work; source-bound derived comparisons, explicit denominators/support domains and native formulas now work in a known-project same-host replay. Renewed second-host scientific quality, release CI and third-class real CFD validation remain open |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -62,7 +62,7 @@ The [same Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section16
 The implementation reuses v0.23 author return, relative paths, refresh and successful template
 checks. New outputs must still have defensible physical definitions, meaningful figures and
 readable pages. A portable ZIP, successful MCP call or synthetic example alone does not complete
-this increment. This is the next plan, not a claim that v0.24 is already implemented.
+this increment. Implementation is in progress; it is not yet a v0.24 release.
 
 ## Release principle
 

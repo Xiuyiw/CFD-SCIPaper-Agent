@@ -216,16 +216,48 @@ def run_analysis_task(
     )
 
 
+def _report_context(writing: dict) -> dict:
+    keys = {
+        "evidence_id",
+        "case_id",
+        "quantity",
+        "label",
+        "operation",
+        "value",
+        "raw_value",
+        "unit",
+        "domain",
+        "comparison_scope",
+        "definition",
+        "reference_evidence_id",
+        "comparison_evidence_id",
+        "denominator",
+    }
+    compact = []
+    for index, metric in enumerate(writing["metrics"]):
+        row = {key: value for key, value in metric.items() if key in keys}
+        if "parent_support" in metric:
+            row["parent_support"] = [
+                {key: value for key, value in parent.items() if key != "original_sources"}
+                for parent in metric["parent_support"]
+            ]
+        row["details_pointer"] = f"/metrics/{index}"
+        compact.append(row)
+    return {**writing, "metrics": compact}
+
+
 def report_task(
     output: Path,
     *,
     root: Path | None = None,
-    cases: list[dict[str, str]] | None = None,
+    cases: list[dict[str, Any]] | None = None,
     quantities: list[dict[str, Any]] | None = None,
     title: str = "",
     question: str = "",
     context: str = "",
     support_files: list[Path] | None = None,
+    derived: list[dict[str, Any]] | None = None,
+    formulas: dict[str, Any] | None = None,
     workspace: Path | None = None,
     drafts: Path | None = None,
 ) -> dict[str, Any]:
@@ -238,6 +270,14 @@ def report_task(
     "output_unit":"kPa","domain":"same static-pressure/area-average operator",
     "comparison":"/pressure/inlet","reference":"/pressure/outlet"}.
     Pointers address actual JSON numbers. The host chooses their physical meaning.
+    Cases may supply named sources (e.g. setup); a quantity selects source_key.
+    A pointer may map case IDs to exact paths in a shared reference JSON.
+    Optional derived compares base evidence IDs via reference/comparison, field
+    (difference, ratio, relative_change or relative_reduction), domain,
+    comparison_scope and definition_source (relative file:Lx-Ly). percentage=true
+    multiplies relative change by 100 once, using reference as denominator.
+    Optional formulas maps IDs to {expression: existing MathNode, source: locator};
+    use {{math:ID}} in prose and the builder supplies native Word mathematics.
 
     The result supplies tokens, a native table and three editable draft files.
     Fill those files, then call report_task with workspace=the previous output,
@@ -257,6 +297,8 @@ def report_task(
         question=question,
         context=context,
         support_files=support_files,
+        derived=derived,
+        formulas=formulas,
         workspace=workspace,
         drafts=drafts,
     )
@@ -277,7 +319,7 @@ def report_task(
                 "docx": "manuscript.docx",
             },
         ),
-        _read(metrics_path),
+        _report_context(_read(metrics_path)),
     )
 
 
