@@ -1,0 +1,81 @@
+# Continue a research task on another host
+
+Use the installed CFD-Paper-Agent package and the current task workspace. Read
+its `TASK.md`, `RESEARCH.md` or `CONTINUE.md` as applicable, then the definitions
+and selected sources needed for the question. Do not reconstruct facts from the
+old chat or load unrelated project history.
+
+## Choose the available tool route
+
+An ordinary terminal host can keep using the documented CLI or Python business
+functions. An MCP host can launch `python -m cfdpaper.mcp_server` after installing
+the `mcp` extra. The server uses local stdio; it does not supply an AI model or
+start a solver. It calls the same analysis, writing and author-return functions.
+
+The task-sized tools are:
+
+- `inspect_materials` and `prepare_analysis_task`: locate actual records and
+  prepare the existing material/skill package, without running source scripts.
+- `run_analysis_task`: compute a supported host-selected comparison and prepare
+  its source-bound writing input. Read its returned artifact paths and current
+  physical definitions; do not type its values into a second evidence list.
+- `research_task`: use the existing surface workspace for supported field
+  analysis, attached diagnostics/figures and targeted refresh. Do not transform
+  unrelated tabular or transient studies into fictitious surface fields.
+- `writing_context` and `manuscript_task`: obtain current section context,
+  assemble host-written drafts and export the same scientific content formally.
+- `author_task`: prepare a managed Word copy or recover an actual Word return.
+- `workbench_task`: export, inspect or restore a selected research workbench.
+
+Choose the few tools the current task needs, not a fixed sequence through all
+of them. Numerical definitions and provenance remain available in the located
+full reports. Large arrays and element indices stay in files.
+
+For a new table-based comparison, `prepare_analysis_task` returns a proposal
+example and schema. Adapt them to the actual columns and physical definitions,
+then call `run_analysis_task` for the chosen candidate. Its `writing_package`
+already contains computed evidence IDs, `result_ref` bindings, copied sources
+and a draft template. Use that section input in the manuscript; do not retype
+its results as fixed `metric.value` entries. Read the generated templates before
+reading implementation modules to discover document schemas. The writing skill
+explains native math and `shared_unit`; a value token normally includes its unit.
+
+## Move the current work, not the whole computer
+
+`cfdpaper portable --workspace CURRENT --output COPY` copies the selected
+workspace. Optional `--baseline` and `--author` include the actual generation
+baseline and author companion needed to continue. Keep the author's local
+figure scripts and Word originals; do not replace them with installed templates.
+
+At the destination, install the matching package and read `COPY/CONTINUE.md`.
+`cfdpaper portable --inspect COPY` reports current entries and exact missing
+references. When an external results root has moved, use `--restore COPY
+--output NEW_COPY --external-roots roots.json`; the JSON maps original absolute
+roots to the actual new roots. Do not guess another same-name source.
+
+This copy contains selected research/manuscript state, not an arbitrary old
+SQLite project, Python environment or complete native solver archive. Read the
+reported missing item and continue independent work. Do not silently substitute
+old results or ask the author to prefill all models, QoI and scientific answers.
+
+## Resume the scientific work
+
+New source-reading and plotting recipes should derive internal paths from their
+own location or accept explicit input/output arguments, not hard-code the current
+machine's working directory. Existing author scripts stay unchanged in the copy;
+report their external path assumptions before running them on another machine.
+
+Use the retained current drafts, definitions, local scripts and actual baseline.
+An author's recovered candidate contributes wording and presentation, not new
+raw numerical facts. With a research workspace, `research --author-candidate`
+continues that wording against current science. Preserve unresolved comments.
+
+After a value or definition changes, inspect the affected figures and wording;
+refreshing tokens is not revising a physical explanation. Check new images at
+their manuscript size and new DOCX/PDF pages. A host without a renderer can
+produce an editable candidate but must not report that it inspected the pages.
+
+Keep the first output before feedback. A different model name, Python process
+or chat is not evidence of a second tool-using host. A resumed task containing
+the author's current draft is a continuation, not an independent blind writing
+trial. Report actual outcomes and leave unavailable evidence unavailable.

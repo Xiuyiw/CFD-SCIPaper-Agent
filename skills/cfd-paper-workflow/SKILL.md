@@ -26,6 +26,9 @@ validation. Ask the author only for missing facts that change the interpretation
 - The author edited a managed Word manuscript: use the writing skill's
   `references/author-word.md` and `cfdpaper author --return-docx`; combine the
   returned wording with current evidence rather than asking for manual JSON transcription.
+- A task moved to another directory or tool-using host: read
+  [portable host continuation](references/portable-host.md). Use its current
+  workspace and local scripts, not the old chat or an obsolete generated draft.
 
 ## First manuscript from ordinary materials
 

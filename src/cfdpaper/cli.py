@@ -302,9 +302,7 @@ def plan_project(
 
 
 def _analysis_plan_action(root, question, package, proposal, select, output, material_paths=None):
-    from cfdpaper.analysis_suggestions import compile_analysis, prepare_analysis
-    from cfdpaper.publication.analysis_section import build_analysis_section
-    from cfdpaper.publication.section import _stage
+    from cfdpaper.host_tools import prepare_analysis_task, run_analysis_task
 
     if output is None:
         raise typer.BadParameter("Analysis preparation/selection requires --output DIR")
@@ -317,16 +315,15 @@ def _analysis_plan_action(root, question, package, proposal, select, output, mat
         )
     try:
         if selecting:
-            with _stage(output) as staged:
-                path = compile_analysis(package, proposal, select, staged / "compiled")
-                build_analysis_section(path, staged / "section-input")
-            result = output / "section-input" / "writing"
+            execution = run_analysis_task(package, proposal, select, output)
+            result = execution["artifacts"]["writing_package"]
             console.print(f"Selected analysis writing package: {result}", markup=False)
             console.print(
                 "Read TASK.md; draft with the host AI, then use write --artifact results-section."
             )
         else:
-            result = prepare_analysis(root, output, question=question, paths=material_paths)
+            execution = prepare_analysis_task(root, output, question=question, paths=material_paths)
+            result = execution["artifacts"]["materials"]
             console.print(f"Analysis materials: {result}", markup=False)
             console.print("Read host-task.md with the host AI and choose an analysis.")
     except (ValueError, OSError, RuntimeError) as error:
@@ -818,6 +815,80 @@ def author_manuscript(
             console.print(f"Author Word workspace ready: {result}", markup=False)
     except Exception as error:
         _workflow_error(error)
+
+
+@app.command("portable")
+def portable_workbench(
+    workspace: Annotated[Path | None, typer.Option("--workspace")] = None,
+    inspect: Annotated[Path | None, typer.Option("--inspect")] = None,
+    restore: Annotated[Path | None, typer.Option("--restore")] = None,
+    output: Annotated[Path | None, typer.Option("--output")] = None,
+    baseline: Annotated[Path | None, typer.Option("--baseline")] = None,
+    author: Annotated[Path | None, typer.Option("--author")] = None,
+    task: Annotated[str | None, typer.Option("--task")] = None,
+    next_action: Annotated[str | None, typer.Option("--next-action")] = None,
+    external_roots: Annotated[
+        Path | None,
+        typer.Option("--external-roots", help="JSON map of original to relocated external roots"),
+    ] = None,
+) -> None:
+    """Export, inspect or restore a research workbench without overwriting its sources."""
+    try:
+        if sum(value is not None for value in (workspace, inspect, restore)) != 1:
+            raise WorkflowInputError("Choose exactly one of --workspace, --inspect or --restore.")
+        if inspect is not None and output is not None:
+            raise WorkflowInputError("--inspect does not write an --output.")
+        if workspace is None and any(
+            value is not None for value in (baseline, author, task, next_action)
+        ):
+            raise WorkflowInputError("Baseline, author and task options require --workspace.")
+        if workspace is not None and external_roots is not None:
+            raise WorkflowInputError("Use --external-roots with --inspect or --restore.")
+        roots = None
+        if external_roots is not None:
+            roots = json.loads(external_roots.read_text(encoding="utf-8"))
+            if not isinstance(roots, dict) or not all(
+                isinstance(old, str) and isinstance(new, str) for old, new in roots.items()
+            ):
+                raise WorkflowInputError("--external-roots must contain a JSON object of paths.")
+        if inspect is not None:
+            from cfdpaper.workbench_portability import inspect_workbench
+
+            result = inspect_workbench(inspect, external_roots=roots)
+            console.print_json(data=result)
+            return
+        if output is None:
+            raise WorkflowInputError("Export and restore require a fresh --output directory.")
+        if workspace is not None:
+            from cfdpaper.workbench_portability import export_workbench
+
+            result = export_workbench(
+                workspace,
+                output,
+                baseline_dir=baseline,
+                author_dir=author,
+                task=task,
+                next_action=next_action,
+            )
+        else:
+            from cfdpaper.workbench_portability import restore_workbench
+
+            result = restore_workbench(restore, output, external_roots=roots)
+        console.print(f"Portable workbench ready: {result}", markup=False)
+    except Exception as error:
+        _workflow_error(error)
+
+
+@app.command("mcp")
+def mcp_stdio() -> None:
+    """Serve the same research tools to a local MCP host (requires the mcp extra)."""
+    try:
+        from cfdpaper.mcp_server import main
+
+        main()
+    except (ImportError, RuntimeError) as error:
+        console.print(str(error), markup=False)
+        raise typer.Exit(code=2) from error
 
 
 @app.command("review")
