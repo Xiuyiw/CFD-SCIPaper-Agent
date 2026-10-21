@@ -39,7 +39,7 @@ def test_report_example_runs_outside_checkout_and_refreshes_bound_author_draft()
             check=False,
         )
         assert result.returncode == 0, result.stderr
-        assert str(output / "refreshed/manuscript.docx") in result.stdout
+        assert Path(result.stdout.strip()).samefile(output / "refreshed/manuscript.docx")
         summary = _read(output / "example-result.json")
         assert summary["scenario"] == "constructed-report-writing-and-refresh"
         before, after = summary["first_values"], summary["refreshed_values"]

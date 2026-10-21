@@ -51,7 +51,7 @@ def test_portable_example_continues_author_state_outside_checkout(short_tmp_path
 
     output = outside / "continued-output"
     report = json.loads((output / "example-result.json").read_text(encoding="utf-8"))
-    assert str(output / "continued.docx") in result.stdout
+    assert Path(result.stdout.strip()).samefile(output / "continued.docx")
     assert not (output / "transfer").exists()
     assert (output / "receiving-machine/workbench/workbench.json").is_file()
     assert report["inspection"]["status"] == "ready"
