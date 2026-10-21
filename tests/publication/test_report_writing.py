@@ -9,6 +9,7 @@ import pytest
 from cfdpaper.publication.formal_export import export_formal_manuscript
 from cfdpaper.publication.manuscript import assemble_manuscript
 from cfdpaper.publication.report_writing import prepare_report_writing
+from cfdpaper.publication.section import _Duty
 
 
 def read(path):
@@ -135,9 +136,9 @@ def test_prepare_uses_three_existing_section_inputs_and_real_result_refs(project
         "results",
         "discussion",
     ]
-    assert manifest["spine"]["central_claim_id"] == "report_question"
+    assert manifest["spine"]["central_claim_id"] == "temperature_a"
     assert all(
-        entry["required_claim_ids"] == ["report_question"]
+        entry["required_claim_ids"] == []
         for entry in manifest["spine"]["sections"]
         if entry["section_id"] != "results"
     )
@@ -222,3 +223,69 @@ def test_prepare_refuses_existing_author_output(projection, tmp_path):
     with pytest.raises(FileExistsError, match="overwrite"):
         prepare(projection, tmp_path)
     assert marker.read_text(encoding="utf-8") == "Keep this edit"
+
+
+def test_research_question_remains_visible_without_forced_paragraph_citation(projection, tmp_path):
+    workspace = prepare(projection, tmp_path)
+    fill_drafts(workspace)
+    selected = {"methods": [], "discussion": ["pressure_a"]}
+    for sid, name in read(workspace / "drafts.json").items():
+        path = workspace / name
+        draft = read(path)
+        paragraph = draft["paragraphs"][0]
+        paragraph["evidence_ids"] = selected.get(
+            sid, [eid for eid in paragraph["evidence_ids"] if eid != "report_question"]
+        )
+        write(path, draft)
+    candidate = assemble_manuscript(workspace, workspace / "drafts.json", tmp_path / "candidate")
+    result = read(candidate / "section.json")
+    assert len(result["tables"]) == 1
+    assert "How do the declared case metrics compare?" in (workspace / "TASK.md").read_text(
+        encoding="utf-8"
+    )
+    for sid in ("methods", "results", "discussion"):
+        section = read(workspace / f"sections/{sid}/input.json")
+        assert any(item["id"] == "report_question" for item in section["evidence"])
+    results_path = workspace / "sections/results/draft.json"
+    draft = read(results_path)
+    draft["paragraphs"][0]["evidence_ids"].remove("temperature_b")
+    write(results_path, draft)
+    with pytest.raises(ValueError, match="coverage|central claim|Required claims"):
+        assemble_manuscript(workspace, workspace / "drafts.json", tmp_path / "incomplete")
+
+
+def test_purpose_only_duty_keeps_explicit_evidence_and_figure_requirements():
+    purpose_only = _Duty(purpose="Describe the available methods.", figure_ids=[])
+    assert purpose_only.evidence_ids == []
+    explicit = _Duty(
+        purpose="Explain the measured contrast.", evidence_ids=["metric"], figure_ids=[]
+    )
+    assert explicit.evidence_ids == ["metric"]
+
+
+def test_reports_without_table_rows_still_require_one_actual_results_metric(projection, tmp_path):
+    for quantity in projection[1]["quantities"]:
+        quantity["table"] = False
+    workspace = prepare(projection, tmp_path)
+    manifest = read(workspace / "manuscript-input.json")
+    assert manifest["spine"]["central_claim_id"] == "temperature_a"
+    contract = next(item for item in manifest["spine"]["sections"] if item["role"] == "results")
+    assert contract["required_claim_ids"] == ["temperature_a"]
+    for sid, name in read(workspace / "drafts.json").items():
+        path = workspace / name
+        draft = read(path)
+        paragraph = draft["paragraphs"][0]
+        paragraph["text"] = "Author method and interpretation."
+        paragraph["evidence_ids"] = []
+        if sid == "results":
+            paragraph["text"] = "The supported value is {{value:temperature_a}}."
+            paragraph["evidence_ids"] = ["temperature_a"]
+        write(path, draft)
+    candidate = assemble_manuscript(workspace, workspace / "drafts.json", tmp_path / "candidate")
+    assert read(candidate / "section.json")["tables"] == []
+    path = workspace / "sections/results/draft.json"
+    draft = read(path)
+    draft["paragraphs"][0]["evidence_ids"] = []
+    write(path, draft)
+    with pytest.raises(ValueError, match="Required claim coverage"):
+        assemble_manuscript(workspace, workspace / "drafts.json", tmp_path / "incomplete")

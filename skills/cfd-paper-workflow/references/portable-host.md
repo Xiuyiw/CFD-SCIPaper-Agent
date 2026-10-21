@@ -65,7 +65,8 @@ is needed. The [Python/CLI example](../../../docs/portable-workbench.md#saved-re
 shows these declarations together.
 
 Read the returned `writing_task` and compact `metrics`, fill its three `draft.json`
-files, and call `report_task(workspace=PREPARED, drafts=PREPARED/workspace/drafts.json,
+files (CLI users read `workspace/report-context.json`, not the full report),
+and call `report_task(workspace=PREPARED, drafts=PREPARED/workspace/drafts.json,
 output=FRESH)`. That call rereads retained JSON and assembles DOCX/Markdown using
 the supplied prose. Keep the bound table; do not retype its numbers. A value token
 already includes its unit. Original records and method/support files remain in

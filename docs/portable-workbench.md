@@ -105,51 +105,101 @@ from pathlib import Path
 from cfdpaper.host_tools import report_task
 
 prepared = report_task(
-    output=Path("prepared"), root=Path("raw"),
+    output=Path("prepared"),
+    root=Path("raw"),
     title="Pressure-report comparison",
     question="How do the saved pressure differences compare with the supplied readings?",
     cases=[
-        {"id": "A", "source": "A.json",
-         "sources": {"setup": "A-setup.json", "reference": "reference.json"}},
-        {"id": "B", "source": "B.json",
-         "sources": {"setup": "B-setup.json", "reference": "reference.json"}},
+        {
+            "id": "A",
+            "source": "A.json",
+            "sources": {"setup": "A-setup.json", "reference": "reference.json"},
+        },
+        {
+            "id": "B",
+            "source": "B.json",
+            "sources": {"setup": "B-setup.json", "reference": "reference.json"},
+        },
     ],
     quantities=[
-        {"id": "dp", "label": "Area-weighted static-pressure difference", "unit": "Pa",
-         "output_unit": "kPa", "domain": "numerical pressure comparison at declared states",
-         "comparison": "/pressure/inlet", "reference": "/pressure/outlet"},
-        {"id": "intensity", "label": "Prescribed inlet turbulence intensity", "unit": "",
-         "domain": "saved inlet specification", "source_key": "setup",
-         "pointer": "/inlet/intensity", "table": False},
-        {"id": "figure", "label": "Approximate reading; pressure operator unspecified", "unit": "Pa",
-         "output_unit": "kPa", "domain": "numerical pressure comparison at declared states",
-         "source_key": "reference",
-         "pointer": {"A": "/figure/A", "B": "/figure/B"}, "table": False},
+        {
+            "id": "dp",
+            "label": "Area-weighted static-pressure difference",
+            "unit": "Pa",
+            "output_unit": "kPa",
+            "domain": "numerical pressure comparison at declared states",
+            "comparison": "/pressure/inlet",
+            "reference": "/pressure/outlet",
+        },
+        {
+            "id": "intensity",
+            "label": "Prescribed inlet turbulence intensity",
+            "unit": "",
+            "domain": "saved inlet specification",
+            "source_key": "setup",
+            "pointer": "/inlet/intensity",
+            "table": False,
+        },
+        {
+            "id": "figure",
+            "label": "Approximate reading; pressure operator unspecified",
+            "unit": "Pa",
+            "output_unit": "kPa",
+            "domain": "numerical pressure comparison at declared states",
+            "source_key": "reference",
+            "pointer": {"A": "/figure/A", "B": "/figure/B"},
+            "table": False,
+        },
     ],
-    derived=[{
-        "id": "excess_A", "label": "Relative excess over the reference reading",
-        "reference": "figure_A", "comparison": "dp_A", "field": "relative_change",
-        "percentage": True, "places": 2,
-        "domain": "numerical pressure comparison at declared states",
-        "comparison_scope": "Reference pressure operator unspecified; not direct validation",
-        "definition_source": "method.md:L1-L3",
-    }],
-    formulas={"pressure_difference": {
-        "source": "method.md:L1",
-        "expression": {"kind": "row", "children": [
-            {"kind": "symbol", "text": "Δp"}, {"kind": "text", "text": " = "},
-            {"kind": "sub", "children": [
-                {"kind": "symbol", "text": "p"}, {"kind": "text", "text": "in"}]},
-            {"kind": "text", "text": " − "},
-            {"kind": "sub", "children": [
-                {"kind": "symbol", "text": "p"}, {"kind": "text", "text": "out"}]},
-        ]},
-    }},
+    derived=[
+        {
+            "id": "excess_A",
+            "label": "Relative excess over the reference reading",
+            "reference": "figure_A",
+            "comparison": "dp_A",
+            "field": "relative_change",
+            "percentage": True,
+            "places": 2,
+            "domain": "numerical pressure comparison at declared states",
+            "comparison_scope": "Reference pressure operator unspecified; not direct validation",
+            "definition_source": "method.md:L1-L3",
+        }
+    ],
+    formulas={
+        "pressure_difference": {
+            "source": "method.md:L1",
+            "expression": {
+                "kind": "row",
+                "children": [
+                    {"kind": "symbol", "text": "Δp"},
+                    {"kind": "text", "text": " = "},
+                    {
+                        "kind": "sub",
+                        "children": [
+                            {"kind": "symbol", "text": "p"},
+                            {"kind": "text", "text": "in"},
+                        ],
+                    },
+                    {"kind": "text", "text": " − "},
+                    {
+                        "kind": "sub",
+                        "children": [
+                            {"kind": "symbol", "text": "p"},
+                            {"kind": "text", "text": "out"},
+                        ],
+                    },
+                ],
+            },
+        }
+    },
 )
 # Fill the three draft.json files named by workspace/drafts.json.
 # Use e.g. {{value:dp_A}}, {{value:excess_A}} and {{math:pressure_difference}}.
-candidate = report_task(output=Path("candidate"), workspace=Path("prepared"),
-    drafts=Path("prepared/workspace/drafts.json"))
+candidate = report_task(
+    output=Path("candidate"),
+    workspace=Path("prepared"),
+    drafts=Path("prepared/workspace/drafts.json"),
+)
 ```
 
 The CLI uses the same function. Put the title, question, case/quantity declarations
@@ -160,6 +210,10 @@ and optional `context`, `support_files`, `derived` and `formulas` in `study.json
 cfdpaper report --study study.json --root raw --output prepared
 cfdpaper report --workspace prepared --drafts prepared/workspace/drafts.json --output candidate
 ```
+
+For CLI preparation, read `prepared/workspace/report-context.json` first. It is a
+compact view of the current values, denominators, support domains and formula tokens;
+`report-writing.json` retains the full records at the view's precise metric pointers.
 
 A scalar uses `pointer` instead of the endpoint pair; a pair means comparison
 minus reference. `case.sources` declares named extra JSON records and

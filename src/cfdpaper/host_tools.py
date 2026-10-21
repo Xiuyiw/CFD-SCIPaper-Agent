@@ -217,33 +217,9 @@ def run_analysis_task(
 
 
 def _report_context(writing: dict) -> dict:
-    keys = {
-        "evidence_id",
-        "case_id",
-        "quantity",
-        "label",
-        "operation",
-        "value",
-        "raw_value",
-        "unit",
-        "domain",
-        "comparison_scope",
-        "definition",
-        "reference_evidence_id",
-        "comparison_evidence_id",
-        "denominator",
-    }
-    compact = []
-    for index, metric in enumerate(writing["metrics"]):
-        row = {key: value for key, value in metric.items() if key in keys}
-        if "parent_support" in metric:
-            row["parent_support"] = [
-                {key: value for key, value in parent.items() if key != "original_sources"}
-                for parent in metric["parent_support"]
-            ]
-        row["details_pointer"] = f"/metrics/{index}"
-        compact.append(row)
-    return {**writing, "metrics": compact}
+    from cfdpaper.publication.report_writing import report_context
+
+    return report_context(writing)
 
 
 def report_task(
@@ -302,7 +278,7 @@ def report_task(
         workspace=workspace,
         drafts=drafts,
     )
-    metrics_path = result / "workspace/report-writing.json"
+    context_path = result / "workspace/report-context.json"
     return _response(
         "report-build" if drafts is not None else "report-prepare",
         result,
@@ -313,13 +289,14 @@ def report_task(
                 "continue": "CONTINUE.md",
                 "workspace": "workspace",
                 "writing_task": "workspace/TASK.md",
+                "writing_context": "workspace/report-context.json",
                 "drafts": "workspace/drafts.json",
                 "metrics": "workspace/report-writing.json",
                 "manuscript": "manuscript/manuscript.md",
                 "docx": "manuscript.docx",
             },
         ),
-        _report_context(_read(metrics_path)),
+        _read(context_path),
     )
 
 

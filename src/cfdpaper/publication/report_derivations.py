@@ -107,6 +107,8 @@ def compile_report_derivations(declarations: list[dict], metrics: list[dict], re
                     {
                         "role": role,
                         "evidence_id": item[role],
+                        "label": selected[role].get("label", item[role]),
+                        "operation": selected[role].get("operation"),
                         "case_id": selected[role].get("case_id"),
                         "domain": selected[role].get("domain"),
                         "original_sources": selected[role]["original_sources"],

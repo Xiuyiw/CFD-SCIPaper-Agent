@@ -33,6 +33,37 @@ _RESPONSIBILITIES = {
 _DEFINITION = "sources/report-writing-definition.json"
 
 
+def report_context(writing: dict) -> dict:
+    """Derive the same compact report view for file, CLI and host consumers."""
+    keys = {
+        "evidence_id",
+        "case_id",
+        "quantity",
+        "label",
+        "operation",
+        "value",
+        "raw_value",
+        "unit",
+        "domain",
+        "comparison_scope",
+        "definition",
+        "reference_evidence_id",
+        "comparison_evidence_id",
+        "denominator",
+    }
+    compact = []
+    for index, metric in enumerate(writing["metrics"]):
+        row = {key: value for key, value in metric.items() if key in keys}
+        if "parent_support" in metric:
+            row["parent_support"] = [
+                {key: value for key, value in parent.items() if key != "original_sources"}
+                for parent in metric["parent_support"]
+            ]
+        row["details_pointer"] = f"/metrics/{index}"
+        compact.append(row)
+    return {**writing, "metrics": compact}
+
+
 def _projection_evidence(root: Path, projection: dict):
     source = projection["source"]
     cases = projection["cases"]
@@ -144,19 +175,22 @@ def _task(question: str) -> str:
         "This is an unfilled ordinary manuscript workspace, not a completed report. "
         "Fill sections/methods/draft.json, sections/results/draft.json, and "
         "sections/discussion/draft.json; drafts.json already maps those paths. "
-        "Use the returned metric summary (also in report-writing.json). The three "
+        "Read report-context.json first for compact values, support domains, explicit "
+        "denominators and formula tokens. It is a derived view, not another source of facts. "
+        "Its details_pointer entries locate full metrics in report-writing.json. The three "
         "sections share one evidence set and draft interface: read one input/template "
-        "to learn it, then consult full input.json or table-results.json only for "
-        "needed definitions or detailed calculations. The original JSON files and "
+        "to learn it, then consult full report-writing.json, input.json or table-results.json "
+        "only for needed definitions or detailed calculations. The original JSON files and "
         "the calculated projection are retained under each section's sources/.\n\n"
         + "\n".join(f"- {sid.title()}: {purpose}" for sid, purpose in _RESPONSIBILITIES.items())
         + "\n\nKeep or edit the native Results table already in draft.json; do not retype "
         "its numbers. Use {{value:evidence_id}} with an exact local evidence ID. "
         "A value token includes its unit, so do not append that unit again. "
         "Use {{table:report_values}} to refer to the supplied table. Cover the duties "
-        "through paragraph evidence_ids; Methods and Discussion need not repeat every value. "
+        "through paragraph evidence_ids; Methods and Discussion bind only the evidence they use. "
         "Split the initial evidence_ids between paragraphs when useful. "
-        "report_question records the supplied question, not a numerical finding.\n\n"
+        "report_question is available as question metadata, not a numerical finding or "
+        "a required paragraph citation.\n\n"
         "Additional ratios or relative errors need an explicit calculation and reference "
         "denominator. Numbers typed into prose are not automatically refreshed merely "
         "because nearby value tokens are bound; reconsider them after source changes.\n\n"
@@ -164,7 +198,7 @@ def _task(question: str) -> str:
         "comparison also names its reference denominator and both parent supports. A relation "
         "at one location, operator or time support does not establish it elsewhere. Read a "
         "nonzero identity residual as a diagnostic result, not a closed physical budget.\n\n"
-        "If report-writing.json lists a formula ID, use {{math:ID}} directly. The report "
+        "If report-context.json lists a formula ID, use {{math:ID}} directly. The report "
         "builder supplies that declared native expression automatically; paragraph-local "
         "author mathematics takes priority. Do not rewrite it as Re^(...) text.\n\n"
         "For editable inline math, put {{math:quantity}} in a paragraph and add this "
@@ -191,7 +225,8 @@ def prepare_report_writing(
     The returned directory is a normal ``prepare_manuscript`` workspace. Its
     ``drafts.json`` maps three intentionally unfilled drafts; the Results draft
     already contains an editable, result-bound table. ``report-writing.json``
-    exposes the current calculated metrics for a host's compact response.
+    retains the complete metric details; the report workflow also publishes a
+    compact ``report-context.json`` read view.
     """
     projection_dir, output = Path(projection_dir), Path(output)
     _fresh(output)
@@ -232,9 +267,10 @@ def prepare_report_writing(
             }
         )
         table_ids = [row[-1][8:-2] for row in rows]
+        central_claim = table_ids[0] if table_ids else metrics[0]["evidence_id"]
         contracts, sections = [], []
         for sid, purpose in _RESPONSIBILITIES.items():
-            required = table_ids + ["report_question"] if sid == "results" else ["report_question"]
+            required = (table_ids or [central_claim]) if sid == "results" else []
             _write(
                 root / f"{sid}.json",
                 {
@@ -268,7 +304,7 @@ def prepare_report_writing(
                 "context": question + ("\n\n" + context if context else ""),
                 "spine": {
                     "topic_id": "report",
-                    "central_claim_id": "report_question",
+                    "central_claim_id": central_claim,
                     "sections": contracts,
                 },
                 "sections": sections,
@@ -280,7 +316,7 @@ def prepare_report_writing(
                 section = workspace / "sections" / sid
                 draft = _read(section / "draft-template.json")
                 draft["paragraphs"][0]["evidence_ids"] = (
-                    table_ids + ["report_question"] if sid == "results" else ["report_question"]
+                    (table_ids or [central_claim]) if sid == "results" else []
                 )
                 if sid == "results" and rows:
                     draft["tables"] = [
@@ -298,7 +334,7 @@ def prepare_report_writing(
                 _write(section / "draft.json", draft)
                 (section / "TASK.md").write_text(
                     f"# {sid.title()}\n\n{purpose}\n\n"
-                    "Use the common manuscript TASK.md and compact report-writing.json. "
+                    "Read report-context.json first and use the common manuscript TASK.md. "
                     "The three sections share the same evidence definitions. Consult input.json "
                     "for exact operators/support/source locators and table-results.json for "
                     "calculation details when needed; do not reread identical reports per section. "
@@ -309,6 +345,7 @@ def prepare_report_writing(
             _write(
                 workspace / "report-writing.json",
                 {
+                    "question": question,
                     "cases": projection["cases"],
                     "quantities": [item["id"] for item in projection["quantities"]],
                     "row_count": row_count,

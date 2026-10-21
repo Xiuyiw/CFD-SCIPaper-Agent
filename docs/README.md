@@ -2,6 +2,13 @@
 
 ## Start here
 
+- [v0.24.0 version notes](releases/v0.24.0.md): portable workbenches, thin host tools and
+  saved-report writing with explicit denominators and native formulas.
+- [Portable host guide](portable-workbench.md) and [report-writing example](../examples/report-writing/README.md):
+  use the same business functions from terminal or MCP hosts without transcribing computed values.
+- [Moved author workbench](../examples/portable-workbench/README.md): relocate and continue a retained
+  analytical workspace, including wording, comments, source values and native mathematics.
+
 - [v0.20.0 release notes](releases/v0.20.0.md): effective method reads, same-record history
   contrasts and explicit bibliography/figure placement.
 - [工程试用指南](tutorials/engineering-trial.md): Chinese practical instructions for local
@@ -55,7 +62,7 @@
   v0.21–v0.24 direction, current implementation and retained historical context.
 - [Surface research workspace](research-workspace.md): development-branch workflow connecting
   original face exports, weighted observations, author-local figures and manuscript updates.
-  The latest released baseline remains v0.20.0 until release validation is complete.
+  The latest released baseline is v0.23.0; v0.24.0 is being prepared for release.
 - [Current limitations](limitations.md)
 - [Public roadmap](ROADMAP.md)
 - [v0.12 development and observed results](research/V0_12_DEVELOPMENT_PLAN.md)
@@ -66,6 +73,11 @@
 - [Changelog](../CHANGELOG.md)
 
 ## Releases
+
+- [v0.24.0](releases/v0.24.0.md) (release preparation)
+- [v0.23.0](releases/v0.23.0.md)
+- [v0.22.0](releases/v0.22.0.md)
+- [v0.21.0](releases/v0.21.0.md)
 
 - [v0.9.0](releases/v0.9.0.md)
 

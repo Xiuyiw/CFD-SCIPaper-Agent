@@ -193,7 +193,7 @@ class _Evidence(_Record):
 
 class _Duty(_Record):
     purpose: str = Field(min_length=1)
-    evidence_ids: list[str] = Field(min_length=1)
+    evidence_ids: list[str] = Field(default_factory=list)
     figure_ids: list[str]
 
 

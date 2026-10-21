@@ -26,6 +26,7 @@ def inputs(tmp_path):
     metrics = [
         {
             "evidence_id": f"pressure_{case}",
+            "label": f"Native pressure difference for {case}",
             "case_id": case,
             "domain": "same supports",
             "original_sources": [{"source": f"sources/{case}.json", "pointer": "/pressure"}],
@@ -68,6 +69,7 @@ def test_derived_percent_keeps_denominator_and_scientific_support(tmp_path):
         "unit": "Pa",
     }
     assert results[0]["parent_support"][0]["case_id"] == "B"
+    assert results[0]["parent_support"][0]["label"] == "Native pressure difference for B"
     assert "source" in results[0]["parent_support"][1]["original_sources"][0]
     assert evidence[0]["evidence_role"] == "algebraic"
     assert evidence[0]["result_ref"]["percentage"] is True

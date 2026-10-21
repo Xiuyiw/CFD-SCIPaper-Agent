@@ -25,7 +25,7 @@ def report_workflow(
     drafts: Path | None = None,
 ) -> Path:
     """Prepare once; on continuation reproject the retained raw JSON before assembly."""
-    from cfdpaper.publication.report_writing import prepare_report_writing
+    from cfdpaper.publication.report_writing import prepare_report_writing, report_context
     from cfdpaper.report_sources import project_reports
 
     if workspace is not None:
@@ -143,10 +143,15 @@ def report_workflow(
             writing = _read(prepared / "report-writing.json")
             writing["pending_sections"] = []
             _write(prepared / "report-writing.json", writing)
+        _write(
+            prepared / "report-context.json",
+            report_context(_read(prepared / "report-writing.json")),
+        )
         (staged / "CONTINUE.md").write_text(
             "# Continue this report task\n\n"
-            "Read report.json, workspace/TASK.md and the retained raw reports "
-            "under projection/sources/.\n"
+            "Read workspace/report-context.json first, then workspace/TASK.md and report.json. "
+            "Full metric details remain in workspace/report-writing.json; retained raw reports "
+            "are under projection/sources/.\n"
             "Fill workspace/sections/{methods,results,discussion}/draft.json using its existing "
             "template and tokens; workspace/drafts.json maps the three sections.\n\n"
             "Continue with report_task(workspace=THIS_DIRECTORY, drafts=THIS_DIRECTORY/"

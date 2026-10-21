@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.24.0] — 2026-10-21
+
+### Added
+
+- Selective research-workbench export, inspection and restoration, including author/baseline
+  companions, local scripts and explicit relocation of declared external source roots.
+- Optional local stdio MCP server sharing nine existing task functions with CLI/Python;
+  no provider-specific research pipeline or mandatory model API.
+- `cfdpaper report` and `report_task`: saved JSON reports to source-bound three-section writing,
+  exact pointers, named setup/reference files, explicit unit conversion and native Results tables.
+- Bound differences, ratios and relative changes with retained reference denominators and
+  both parent supports; source-linked formula declarations supply native editable Word math.
+- Runnable public report-writing and moved-author-workbench examples for installed packages.
+
+### Fixed
+
+- Continue report writing from retained current JSON and actual author drafts, not old CSV
+  projections or empty templates. Separate numeric refresh from changes requiring interpretation.
+- Keep method/Discussion evidence requirements aligned with section roles; keep detailed
+  source records in located reports rather than repeating them in every host response.
+- Avoid cancellation when resolving comparison ratios from retained raw parent values.
+- Resolve current execution declarations during portability checks instead of scanning old
+  snapshots; initialize NumPy before the Windows stdio reader starts.
+
+### Evaluation
+
+- Known-project flow and heat-transfer paths, managed author-state relocation and an actual
+  bounded second-host study are evaluated separately from software/installation checks.
+- Real transient/multiphase CFD evaluation remains open because suitable mature materials
+  are unavailable. See the [version notes](docs/releases/v0.24.0.md) for the tested scope.
+
 ## [0.23.0] — 2026-10-20
 
 ### Added
