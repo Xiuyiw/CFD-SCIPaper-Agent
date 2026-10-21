@@ -26,6 +26,9 @@ validation. Ask the author only for missing facts that change the interpretation
 - The author edited a managed Word manuscript: use the writing skill's
   `references/author-word.md` and `cfdpaper author --return-docx`; combine the
   returned wording with current evidence rather than asking for manual JSON transcription.
+- A task moved to another directory or tool-using host: read
+  [portable host continuation](references/portable-host.md). Use its current
+  workspace and local scripts, not the old chat or an obsolete generated draft.
 
 ## First manuscript from ordinary materials
 
@@ -95,6 +98,12 @@ Keep a necessary qualification beside the first claim it changes, and use the sp
 saved from repeated limitations to explain the positive answer from the selected evidence.
 
 ## Reuse analysis output instead of remapping values
+
+For saved JSON scalar reports, use the direct `report_task` route described in
+[portable host continuation](references/portable-host.md). Select exact source
+pointers and physical definitions, then write its generated three-section drafts.
+The tool calculates and retains the bindings; do not construct a generic proposal
+or duplicate those values in a new evidence list.
 
 For a surface study with original face values, physical areas and polygon connectivity,
 use the connected research workspace rather than manually constructing every metric

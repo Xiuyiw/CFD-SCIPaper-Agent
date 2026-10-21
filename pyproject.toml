@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cfd-paper-agent"
-version = "0.23.0"
+version = "0.24.0"
 description = "Author-in-the-loop CFD evidence analysis, figure generation, and scientific writing"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,9 +48,11 @@ vtk = ["meshio>=5,<6"]
 geometry = ["shapely>=2,<3"]
 fluent = ["ansys-fluent-core>=0.20,<0.21"]
 docs = ["python-docx>=1.1,<2"]
+mcp = ["mcp>=1.28,<2"]
 
 [project.scripts]
 cfdpaper = "cfdpaper.cli:app"
+cfdpaper-mcp = "cfdpaper.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cfdpaper"]

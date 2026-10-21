@@ -26,7 +26,7 @@ Existing releases and their limitations are retained below as history.
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Implemented; known-project diagnostics, figure/Word trial, targeted refresh and installed example described in v0.22.0 notes |
 | v0.23 | Ordered scientific document, research/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implemented scope; actual human Word return, native-page inspection and portable automation replay described in v0.23.0 notes |
-| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Planned |
+| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | In development: portable/shared tools and a bounded real second-host report task work; source-bound derived comparisons, explicit denominators/support domains and native formulas now work in a known-project same-host replay. Renewed second-host scientific quality, release CI and third-class real CFD validation remain open |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -40,6 +40,29 @@ coexist with current source values, and unresolved comments and conflicts remain
 The host remains responsible for changed scientific meaning. Existing diagnostics, native
 extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
 solver expansion, second-host evaluation and automatic submission are not part of this increment.
+
+## Next increment: v0.24 portable research workbench
+
+Main CI for v0.23.0 [finished successfully](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/actions/runs/39372494629):
+six Windows/Linux Python 3.10–3.12 combinations and package smoke. Its bounded author-collaboration
+goals are met; this does not establish cross-host research quality or broad scientific generality.
+
+The [same Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section16, now details:
+
+1. Move the existing research workspace, author return/baseline and local figure scripts to a
+   new root without manual numeric transcription or dependence on the original chat.
+2. Expose existing business functions through an optional thin local MCP interface; retain
+   CLI/Python use and the five on-demand skills, without a second research pipeline or AI runtime.
+3. Have a second actual tool-using host complete a real research task and interruption recovery.
+   Interface compatibility and scientific effects are evaluated separately.
+4. Evaluate real internal-flow/pressure-drop, conjugate-heat-transfer and transient/multiphase
+   tasks. Existing cooling is a known-project regression; battery effective/control-model data
+   are not multiphase-CFD validation. Unavailable real tasks remain open.
+
+The implementation reuses v0.23 author return, relative paths, refresh and successful template
+checks. New outputs must still have defensible physical definitions, meaningful figures and
+readable pages. A portable ZIP, successful MCP call or synthetic example alone does not complete
+this increment. Implementation is in progress; it is not yet a v0.24 release.
 
 ## Release principle
 

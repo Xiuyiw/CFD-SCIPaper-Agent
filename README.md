@@ -17,13 +17,14 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.23.0 adds formal manuscript views and managed Word author collaboration. Recover ordinary
-Word wording, supported formatting and comments against the generated baseline and current evidence,
-then export the continuing manuscript as DOCX, Markdown or LaTeX. Research, report and conference
-profiles share the same ordered scientific content. Source-number and physical-definition changes
-are located separately so the host can revise the affected interpretation without discarding author
-edits. Start with the [author collaboration example](examples/author-collaboration/README.md) and
-[v0.23.0 notes](docs/releases/v0.23.0.md).
+Version 0.24.0 connects selected research and author state across folders and tool-using hosts.
+An optional local MCP server shares nine task functions with CLI/Python. Saved JSON reports,
+method parameters and reference readings can feed bound Methods/Results/Discussion, an editable
+table and native Word formulas without manually rebuilding the general planning schema.
+Derived comparisons retain their actual reference denominators and both source supports.
+Start with the [portable host guide](docs/portable-workbench.md) and
+[report-writing example](examples/report-writing/README.md). Managed Word collaboration from
+[v0.23](docs/releases/v0.23.0.md) and existing scientific/figure workflows remain available.
 
 The existing [physical diagnostics workflow](examples/physical-diagnostics/README.md) connects
 regional field reductions, signed transport, matched changes and control-volume budgets to
@@ -76,6 +77,9 @@ covers whole-manuscript feedback and selected editing.
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
 | Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate. Managed Word edits return through `cfdpaper author`; other detached Word files require host reconciliation. Original returns and unresolved comments are retained. |
+| Portable workbench and host tools | Available | Selective workspace/baseline/author export, inspection and relocation recovery; nine shared CLI/Python task functions through optional local stdio MCP. This is not whole-project SQLite migration or an AI runtime. |
+| Saved JSON reports to bound writing | Available | Exact JSON pointers, named setup/reference sources, unit conversions, differences/ratios/relative changes, explicit denominators and support domains; three host-written sections, native tables/formulas and current-source continuation. |
+| Heterogeneous real-task evaluation | Experimental | Known-project single-phase flow/pressure and conjugate-heat-transfer paths have been exercised. Suitable mature real transient/multiphase CFD materials remain unavailable; battery control-model tests do not fill that gap. |
 | External drawing tasks and mechanism attachment | Available | Studio-guided conceptual/hybrid tasks, editable-source import and manuscript attachment. Explicit `raster_concept` is schematic-only and reports no editable source; it cannot replace computed fields. Import does not approve figures. |
 | Whole-paper review and selected editing | Available | Complete reports, exact targets and optional shared-evidence locations travel with editable drafts; the host evaluates and implements changes. |
 | Broader native solver ingestion | Roadmap | The Fluent surface reference path above is available; STAR-CCM+ and other unsupported native quantities still require structured neutral exports. |
@@ -85,7 +89,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.23.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.24.0 checkout or source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -97,7 +101,7 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.23.0-py3-none-any.whl[docs]"
+python -m pip install "./cfd_paper_agent-0.24.0-py3-none-any.whl[docs]"
 ```
 
 The examples live in the source checkout/archive, not the wheel. For the managed Word workflow,
@@ -122,6 +126,12 @@ cfdpaper research --workspace RESEARCH_WORKSPACE --baseline PREVIOUS_BUILD --aut
 Keep the complete author workspace and save the edited Word under a new name. Read the returned
 `CONTINUE.md` for conflicts and interpretation work. See the
 [author tutorial](examples/author-collaboration/README.md) for supported edits and profile exports.
+
+For saved JSON report writing, run `python examples/report-writing/run_example.py output/report-demo`.
+For another MCP-capable host, install the matching wheel with `[docs,mcp]` and launch
+`python -m cfdpaper.mcp_server` as its local stdio server. Terminal hosts need no MCP dependency.
+The [portable workbench tutorial](examples/portable-workbench/README.md) demonstrates a moved
+analytical author workspace; the [host guide](docs/portable-workbench.md) describes real-task entry.
 
 Run the connected synthetic surface example from the source root, choosing a new output directory:
 
@@ -381,6 +391,9 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.24.0 version notes](docs/releases/v0.24.0.md)
+- [Portable host guide](docs/portable-workbench.md)
+- [Saved-report writing example](examples/report-writing/README.md)
 - [v0.23.0 release notes](docs/releases/v0.23.0.md)
 - [Managed Word author collaboration](examples/author-collaboration/README.md)
 - [v0.22.0 release notes](docs/releases/v0.22.0.md)

@@ -66,8 +66,17 @@ undeclared dependencies or verify the meaning of the prose. Literal numbers, int
 figures are not automatically rewritten or regenerated.
 
 An assembled candidate carries local drafts, sources and instructions for continued editing after
-moving it. The destination needs a compatible CLI installation. Word-only edits must be reconciled
-into the local drafts before re-export; there is no automatic Word-edit merge.
+moving it. The destination needs a compatible installation. `cfdpaper author` supports managed
+Word returns against their generation baseline and current scientific candidate; detached Word
+files, overlapping edits and changed scientific objects require host reconciliation.
+
+Selective workbench export/restore is not whole-project SQLite migration. The optional MCP server
+exposes the same business functions as CLI/Python; it does not supply research intelligence.
+Saved-report comparisons retain declared domains, denominators and exact sources, but matching
+domain strings do not establish equivalent operators or physical causality. Formula declarations
+provide source-linked native mathematics, not a general formula solver. Real transient/multiphase
+CFD has not yet been exercised with this workbench; saved-time operators and battery control-model
+regressions do not establish that evidence.
 
 The local literature workspace preserves CSL JSON metadata and claim-specific support records.
 It normalizes DOI identities, keeps aliases, and checks supplied excerpts against UTF-8 text files.
