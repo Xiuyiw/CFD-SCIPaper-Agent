@@ -2926,7 +2926,9 @@ def _terminate_and_wait(processes: list[subprocess.Popen[str]]) -> None:
 def test_run_plan_serializes_sixteen_processes_into_one_semantic_transition(
     tmp_path: Path,
 ) -> None:
-    prepared_project(tmp_path)
+    # The barrier and changing worker logs are test machinery, not project sources.
+    project = tmp_path / "project"
+    prepared_project(project)
     worktree = Path.cwd().resolve()
     script = tmp_path / "concurrent_plan.py"
     script.write_text(_CONCURRENT_PLAN_SCRIPT, encoding="utf-8")
@@ -2952,7 +2954,7 @@ def test_run_plan_serializes_sixteen_processes_into_one_semantic_transition(
                         sys.executable,
                         str(script),
                         str(worktree),
-                        str(tmp_path),
+                        str(project),
                         str(ready),
                         str(start),
                     ],
@@ -3001,7 +3003,8 @@ def test_run_plan_serializes_sixteen_processes_into_one_semantic_transition(
     checkpoint_ids = [lines[0] for lines in stdout_lines]
     assert len(set(checkpoint_ids)) == 1, diagnostics
 
-    store = ProjectStore.open(tmp_path)
+    store = ProjectStore.open(project)
+    assert {source.uri for source in store.list_sources()} == {"results.csv"}
     with store.connect() as connection:
         stage_count = connection.execute(
             "SELECT COUNT(*) FROM stages WHERE stage = 'plan'"
@@ -3015,7 +3018,7 @@ def test_run_plan_serializes_sixteen_processes_into_one_semantic_transition(
         checkpoint_row = connection.execute(
             "SELECT stage, payload_json FROM checkpoints WHERE stage = 'plan'"
         ).fetchone()
-    report_path = tmp_path / ".cfdpaper" / "outputs" / "plan" / "topic-ranking.json"
+    report_path = project / ".cfdpaper" / "outputs" / "plan" / "topic-ranking.json"
     # Canonical JSON receives the complete PlanReport semantic validation. Pydantic's
     # runtime strict=True is intentionally unsuitable for JSON datetime/array forms.
     report = PlanReport.model_validate_json(report_path.read_text(encoding="utf-8"))
