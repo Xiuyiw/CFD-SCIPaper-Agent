@@ -19,6 +19,9 @@ The task-sized tools are:
 - `run_analysis_task`: compute a supported host-selected comparison and prepare
   its source-bound writing input. Read its returned artifact paths and current
   physical definitions; do not type its values into a second evidence list.
+- `report_task`: for saved JSON scalar reports, select exact pointers and physical
+  definitions once; the tool projects the records, calculates bound quantities
+  and prepares Methods/Results/Discussion drafts with a native Results table.
 - `research_task`: use the existing surface workspace for supported field
   analysis, attached diagnostics/figures and targeted refresh. Do not transform
   unrelated tabular or transient studies into fictitious surface fields.
@@ -31,7 +34,20 @@ Choose the few tools the current task needs, not a fixed sequence through all
 of them. Numerical definitions and provenance remain available in the located
 full reports. Large arrays and element indices stay in files.
 
-For a new table-based comparison, `prepare_analysis_task` returns a proposal
+For raw JSON reports, prefer `report_task` over manufacturing a generic proposal.
+Supply `root`, case IDs and relative JSON paths, and quantities with `id`, `label`,
+`unit`, `domain`, plus either `pointer` or the pair `reference` and `comparison`.
+A pair means comparison minus reference; optional `output_unit` performs unit
+conversion. The same pointers must identify the same physical quantity in all cases.
+Read the returned `writing_task` and compact `metrics`, fill its three `draft.json`
+files, and call `report_task(workspace=PREPARED, drafts=PREPARED/workspace/drafts.json,
+output=FRESH)`. That call rereads retained JSON and assembles DOCX/Markdown using
+the supplied prose. Keep the bound table; do not retype its numbers. A value token
+already includes its unit. Original records and method/support files remain in
+the prepared workspace. This narrow route does not infer solver definitions,
+reconstruct absent fields, or prove a mechanism from endpoint differences.
+
+For an existing CSV/NPZ comparison, `prepare_analysis_task` returns a proposal
 example and schema. Adapt them to the actual columns and physical definitions,
 then call `run_analysis_task` for the chosen candidate. Its `writing_package`
 already contains computed evidence IDs, `result_ref` bindings, copied sources

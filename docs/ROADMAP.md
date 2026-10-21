@@ -26,7 +26,7 @@ Existing releases and their limitations are retained below as history.
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Implemented; known-project diagnostics, figure/Word trial, targeted refresh and installed example described in v0.22.0 notes |
 | v0.23 | Ordered scientific document, research/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implemented scope; actual human Word return, native-page inspection and portable automation replay described in v0.23.0 notes |
-| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | In development: M0 resources confirmed, portability/host tools being integrated; actual second-host task and third-class real CFD validation remain open |
+| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | In development: portable/shared tools and a bounded real second-host report-to-manuscript task work; derived-value binding, interpretation and formal-math gaps remain; third-class real CFD validation is still open |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be

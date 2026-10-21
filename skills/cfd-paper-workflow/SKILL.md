@@ -99,6 +99,12 @@ saved from repeated limitations to explain the positive answer from the selected
 
 ## Reuse analysis output instead of remapping values
 
+For saved JSON scalar reports, use the direct `report_task` route described in
+[portable host continuation](references/portable-host.md). Select exact source
+pointers and physical definitions, then write its generated three-section drafts.
+The tool calculates and retains the bindings; do not construct a generic proposal
+or duplicate those values in a new evidence list.
+
 For a surface study with original face values, physical areas and polygon connectivity,
 use the connected research workspace rather than manually constructing every metric
 and section. After inspecting the actual materials, the host supplies the compact

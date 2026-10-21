@@ -216,6 +216,71 @@ def run_analysis_task(
     )
 
 
+def report_task(
+    output: Path,
+    *,
+    root: Path | None = None,
+    cases: list[dict[str, str]] | None = None,
+    quantities: list[dict[str, Any]] | None = None,
+    title: str = "",
+    question: str = "",
+    context: str = "",
+    support_files: list[Path] | None = None,
+    workspace: Path | None = None,
+    drafts: Path | None = None,
+) -> dict[str, Any]:
+    """Read JSON reports and prepare bound Methods/Results/Discussion; no proposal needed.
+
+    New task: root plus cases [{"id":"A","source":"A.json"}] and quantities.
+    Select a scalar: {"id":"T","label":"Mean temperature","unit":"K",
+    "domain":"wall area-weighted report","pointer":"/mean"}.
+    Select a difference: {"id":"dp","label":"Inlet minus outlet","unit":"Pa",
+    "output_unit":"kPa","domain":"same static-pressure/area-average operator",
+    "comparison":"/pressure/inlet","reference":"/pressure/outlet"}.
+    Pointers address actual JSON numbers. The host chooses their physical meaning.
+
+    The result supplies tokens, a native table and three editable draft files.
+    Fill those files, then call report_task with workspace=the previous output,
+    drafts=its workspace/drafts.json and a fresh output. Continuation re-reads
+    retained JSON, recalculates and exports DOCX through existing manuscript APIs.
+    Do not read the general proposal schema or retype values. Support files keep
+    located methods/settings. No solver, automatic mechanism or approval is run.
+    """
+    from cfdpaper.report_workflow import report_workflow
+
+    result = report_workflow(
+        output,
+        root=root,
+        cases=cases,
+        quantities=quantities,
+        title=title,
+        question=question,
+        context=context,
+        support_files=support_files,
+        workspace=workspace,
+        drafts=drafts,
+    )
+    metrics_path = result / "workspace/report-writing.json"
+    return _response(
+        "report-build" if drafts is not None else "report-prepare",
+        result,
+        _existing(
+            result,
+            {
+                "recipe": "report.json",
+                "continue": "CONTINUE.md",
+                "workspace": "workspace",
+                "writing_task": "workspace/TASK.md",
+                "drafts": "workspace/drafts.json",
+                "metrics": "workspace/report-writing.json",
+                "manuscript": "manuscript/manuscript.md",
+                "docx": "manuscript.docx",
+            },
+        ),
+        _read(metrics_path),
+    )
+
+
 def _research_response(task: str, root: Path) -> dict[str, Any]:
     workspace = root / "workspace" if (root / "workspace").is_dir() else root
     context_path = workspace / "research-context.json"

@@ -584,6 +584,67 @@ def research_workspace(
         _workflow_error(error)
 
 
+@app.command("report")
+def report_workspace(
+    output: Annotated[Path, typer.Option("--output", help="Fresh report directory")],
+    study: Annotated[
+        Path | None,
+        typer.Option("--study", exists=True, dir_okay=False, resolve_path=True),
+    ] = None,
+    root: Annotated[
+        Path | None,
+        typer.Option("--root", exists=True, file_okay=False, resolve_path=True),
+    ] = None,
+    workspace: Annotated[
+        Path | None,
+        typer.Option("--workspace", exists=True, file_okay=False, resolve_path=True),
+    ] = None,
+    drafts: Annotated[
+        Path | None,
+        typer.Option("--drafts", exists=True, dir_okay=False, resolve_path=True),
+    ] = None,
+) -> None:
+    """Prepare from saved JSON reports or assemble source-bound host-written drafts."""
+    try:
+        if (study is None) == (workspace is None):
+            raise WorkflowInputError("Choose exactly one of --study or --workspace.")
+        if root is not None and study is None:
+            raise WorkflowInputError("--root requires --study.")
+        if drafts is not None and workspace is None:
+            raise WorkflowInputError("--drafts requires --workspace.")
+        from cfdpaper.report_workflow import report_workflow
+
+        if study is not None:
+            if root is None:
+                raise WorkflowInputError("--study requires --root for its relative source paths.")
+            data = json.loads(study.read_text(encoding="utf-8-sig"))
+            if not isinstance(data, dict):
+                raise WorkflowInputError("--study must contain a JSON object.")
+            report_workflow(
+                output,
+                root=root,
+                title=data.get("title", ""),
+                question=data.get("question", ""),
+                context=data.get("context", ""),
+                cases=data.get("cases"),
+                quantities=data.get("quantities"),
+                support_files=[Path(name) for name in data.get("support_files", [])],
+            )
+            console.print(f"Report workspace ready: {output}", markup=False)
+            console.print(
+                "Host writing required: read workspace/TASK.md and complete the section drafts "
+                "referenced by workspace/drafts.json.",
+                markup=False,
+            )
+        else:
+            if drafts is None:
+                raise WorkflowInputError("--workspace requires --drafts to assemble the report.")
+            report_workflow(output, workspace=workspace, drafts=drafts)
+            console.print(f"Report candidate assembled: {output}", markup=False)
+    except Exception as error:
+        _workflow_error(error)
+
+
 @app.command("write")
 def write_project(
     root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],

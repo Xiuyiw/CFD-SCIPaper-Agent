@@ -37,6 +37,7 @@ def create_server():
         host_tools.inspect_materials,
         host_tools.prepare_analysis_task,
         host_tools.run_analysis_task,
+        host_tools.report_task,
         host_tools.research_task,
         host_tools.writing_context,
         host_tools.manuscript_task,
