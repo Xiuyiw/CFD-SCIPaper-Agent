@@ -1,4 +1,4 @@
-"""Two complementary, declaration-bound numerical panels; no inferred evidence."""
+"""Complementary, declaration-bound numerical panels; no inferred evidence."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from cfdpaper.publication.table_evidence import (
     read_source_records,
     resolve_table_result,
 )
+from cfdpaper.scientific.units import unit_is_known
 
 _FIELDS = (
     "panel",
@@ -59,11 +60,160 @@ _DIFFERENCE_FIELDS = (
     "crossing_time_kind",
 )
 
+_RESPONSE_FIELDS = (
+    "series",
+    "series_label",
+    "x",
+    "x_unit",
+    "y",
+    "y_unit",
+    "x_calculation_id",
+    "y_calculation_id",
+    "x_field",
+    "y_field",
+    "x_source",
+    "y_source",
+    "x_source_locator",
+    "y_source_locator",
+)
+
+
+def _response_rows(declarations, root, panel, index):
+    """Join resolved scalar observations by exact group identity, never by row order."""
+    allowed = {
+        "kind",
+        "title",
+        "x_label",
+        "y_label",
+        "x_calculation_id",
+        "series",
+        "groups",
+        "connect",
+    }
+    if set(panel) - allowed or any(
+        not isinstance(panel.get(key), str) or not panel[key].strip()
+        for key in ("title", "x_label", "y_label", "x_calculation_id")
+    ):
+        raise ValueError(
+            "Response panel requires title, x_label, y_label, x_calculation_id and series"
+        )
+    if type(panel.get("connect", False)) is not bool:
+        raise ValueError("Response panel connect must be a boolean")
+    series = panel.get("series")
+    if not isinstance(series, list) or not series:
+        raise ValueError("Response panel series must be a nonempty list")
+    for item in series:
+        if (
+            not isinstance(item, dict)
+            or set(item) - {"calculation_id", "label", "field"}
+            or any(
+                not isinstance(item.get(key), str) or not item[key].strip()
+                for key in ("calculation_id", "label")
+            )
+            or not isinstance(item.get("field", "value"), str)
+            or not item.get("field", "value").strip()
+        ):
+            raise ValueError("Response series requires calculation_id, label and optional field")
+
+    def load(calculation_id, operations):
+        declaration = declarations.get(calculation_id)
+        if declaration is None or declaration["operation"] not in operations:
+            raise ValueError("Response calculation is missing or has an incompatible operation")
+        relative = Path(declaration["source"])
+        source = (root / relative).resolve()
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or relative.parts[:1] != ("sources",)
+            or not source.is_relative_to(root.resolve())
+            or not source.is_file()
+        ):
+            raise ValueError("Evidence panel source must be an existing relative sources/ file")
+        report = {**declaration, **calculate_declared_table(source, declaration)}
+        return report, {group["group"]: group for group in report["groups"]}
+
+    x_report, x_groups = load(panel["x_calculation_id"], {"scalar_select"})
+    selected = panel.get("groups", list(x_groups))
+    if (
+        not isinstance(selected, list)
+        or not selected
+        or any(not isinstance(group, str) for group in selected)
+        or len(set(selected)) != len(selected)
+        or set(selected) - x_groups.keys()
+    ):
+        raise ValueError("Response panel groups must select unique available x groups")
+
+    def resolve(report, group, field):
+        return resolve_table_result([report], calculation_id=report["id"], group=group, field=field)
+
+    def locator(bound):
+        key = "array_indices" if "array_indices" in bound else "csv_records"
+        return f"{key}:" + ",".join(str(record) for record in bound[key])
+
+    x_values = {group: resolve(x_report, group, "value") for group in selected}
+    rows, y_units = [], set()
+    for series_index, item in enumerate(series, 1):
+        y_report, y_groups = load(item["calculation_id"], {"scalar_select", "paired_change"})
+        if set(selected) - y_groups.keys() or (
+            "groups" not in panel and x_groups.keys() != y_groups.keys()
+        ):
+            raise ValueError("Response panel calculations must have matching exact case groups")
+        field = item.get("field", "value")
+        for group in selected:
+            x, y = x_values[group], resolve(y_report, group, field)
+            y_units.add(y["unit"])
+            if len(y_units) != 1:
+                raise ValueError("Response series must use the same resolved y unit in one panel")
+            rows.append(
+                {
+                    "panel": index,
+                    "kind": "response",
+                    "calculation_id": y["calculation_id"],
+                    "group": group,
+                    "series": series_index,
+                    "series_label": item["label"],
+                    "operation": y_report["operation"],
+                    "source": y["source"],
+                    "source_locator": locator(y),
+                    "source_columns": json.dumps(y_report["columns"], sort_keys=True),
+                    "source_units": json.dumps(y_report["units"], sort_keys=True),
+                    "source_parameters": json.dumps(
+                        {
+                            key: y_report[key]
+                            for key in (
+                                "group_by",
+                                "pair_by",
+                                "reference",
+                                "comparison",
+                                "row_filters",
+                                "unit_column",
+                                "quantity_kind",
+                                "temperature_reference",
+                            )
+                            if key in y_report
+                        },
+                        sort_keys=True,
+                    ),
+                    **{f"{axis}": bound["raw_value"] for axis, bound in (("x", x), ("y", y))},
+                    **{
+                        f"{axis}_{key}": bound[key]
+                        for axis, bound in (("x", x), ("y", y))
+                        for key in ("unit", "calculation_id", "field", "source")
+                    },
+                    "x_source_locator": locator(x),
+                    "y_source_locator": locator(y),
+                }
+            )
+    return rows
+
 
 def _panel_rows(data, root, panels):
     declarations = {item["id"]: item for item in data["table_calculations"]}
     rows = []
     for index, panel in enumerate(panels, 1):
+        if panel.get("kind") == "response":
+            rows.extend(_response_rows(declarations, root, panel, index))
+            continue
         allowed = {"kind", "calculation_id", "title", "x_label", "y_label", "groups"}
         if set(panel) - allowed or any(
             not isinstance(panel.get(key), str) or not panel[key].strip()
@@ -234,7 +384,7 @@ def _panel_rows(data, root, panels):
     return rows
 
 
-def _draw_panels(rows, panels, output, style):
+def _draw_panels(rows, panels, output, style, columns=1):
     """Self-contained renderer copied into the author's standalone local plot.py."""
     import matplotlib
 
@@ -257,18 +407,45 @@ def _draw_panels(rows, panels, output, style):
         "pdf.fonttype": 42,
     }
     with plt.rc_context(rc):
+        columns = min(columns, len(panels))
+        row_count = (len(panels) + columns - 1) // columns
         fig, axes = plt.subplots(
-            len(panels),
-            1,
+            row_count,
+            columns,
             squeeze=False,
             layout="constrained",
             figsize=(style["width_mm"] / 25.4, style["height_mm"] / 25.4),
         )
         try:
-            for index, (panel, ax) in enumerate(zip(panels, axes[:, 0], strict=True), 1):
+            visible_axes = list(axes.flat)[: len(panels)]
+            for ax in list(axes.flat)[len(panels) :]:
+                ax.set_axis_off()
+            for index, (panel, ax) in enumerate(zip(panels, visible_axes, strict=True), 1):
                 selected = [r for r in rows if int(r["panel"]) == index]
                 groups = list(dict.fromkeys(r["group"] for r in selected))
-                if panel["kind"] == "profile":
+                if panel["kind"] == "response":
+                    series = list(dict.fromkeys(int(row["series"]) for row in selected))
+                    for n, series_index in enumerate(series):
+                        samples = sorted(
+                            [row for row in selected if int(row["series"]) == series_index],
+                            key=lambda row: float(row["x"]),
+                        )
+                        marker = markers[n % len(markers)]
+                        ax.plot(
+                            [float(row["x"]) for row in samples],
+                            [float(row["y"]) for row in samples],
+                            label=samples[0]["series_label"],
+                            color=colors[n % len(colors)],
+                            marker=marker,
+                            markersize={"o": 4.2, "s": 3.8, "^": 4.6, "D": 3.7}[marker],
+                            markerfacecolor="white",
+                            markeredgewidth=0.9,
+                            linestyle="-" if panel.get("connect", False) else "None",
+                            linewidth=1.0,
+                            zorder=3,
+                        )
+                    ax.margins(x=0.08, y=0.12)
+                elif panel["kind"] == "profile":
                     for n, group in enumerate(groups):
                         samples = [r for r in selected if r["group"] == group]
                         ax.plot(
@@ -334,20 +511,27 @@ def _draw_panels(rows, panels, output, style):
                         )
                     ax.set_yticks(range(len(groups)), groups)
                     ax.margins(y=0.4)
-                ax.set_title(f"({chr(96 + index)}) {panel['title']}", loc="left", pad=32)
+                title_pad = (
+                    10 + len(series) * style["legend_pt"] * 1.2
+                    if panel["kind"] == "response"
+                    else 32
+                )
+                ax.set_title(f"({chr(96 + index)}) {panel['title']}", loc="left", pad=title_pad)
                 ax.set_xlabel(panel["x_label"])
                 ax.set_ylabel(panel["y_label"])
                 ax.legend(
                     loc="lower left",
                     bbox_to_anchor=(0, 1.01),
                     borderaxespad=0,
-                    ncol=min(3, len(ax.get_legend_handles_labels()[0])),
+                    ncol=1
+                    if panel["kind"] == "response"
+                    else min(3, len(ax.get_legend_handles_labels()[0])),
                     handlelength=1.5,
                     columnspacing=1.1,
                     frameon=False,
                 )
                 ax.grid(
-                    axis="both" if panel["kind"] == "profile" else "x",
+                    axis="both" if panel["kind"] in {"profile", "response"} else "x",
                     color="#DEE3E7",
                     linewidth=0.5,
                 )
@@ -357,7 +541,7 @@ def _draw_panels(rows, panels, output, style):
             fig.canvas.draw()
             renderer = fig.canvas.get_renderer()
             boxes, texts = [], []
-            for ax in axes[:, 0]:
+            for ax in visible_axes:
                 current = [ax.title, ax._left_title, ax.xaxis.label, ax.yaxis.label]
                 current.extend(ax.texts)
                 for positions, labels, limits in (
@@ -407,31 +591,64 @@ def _draw_panels(rows, panels, output, style):
                 "canvas_pixels": canvas,
                 "text_inside_canvas": inside,
                 "text_nonoverlapping": not overlaps,
+                "panel_layout": {"rows": row_count, "columns": columns},
             }
         finally:
             plt.close(fig)
 
 
-def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Path, *, style=None):
+def render_evidence_panels(
+    input_path: Path, panels: list[dict], output_dir: Path, *, style=None, columns: int = 1
+):
     """Render finite complementary panels from the same declarations used by prose."""
     input_path, output_dir = Path(input_path).resolve(), Path(output_dir).resolve()
     if not output_dir.is_relative_to(input_path.parent):
         raise ValueError("Evidence panel output must remain within the input package")
     if not panels:
         raise ValueError("At least one evidence panel is required")
+    if type(columns) is not int or columns < 1:
+        raise ValueError("Evidence panel columns must be a positive integer")
     script = output_dir / "plot.py"
     if script.exists():
         raise FileExistsError("Preserve the existing local plot.py; run it for author re-export")
     data = json.loads(input_path.read_text(encoding="utf-8"))
     rows = _panel_rows(data, input_path.parent, panels)
+    row_count = (len(panels) + min(columns, len(panels)) - 1) // min(columns, len(panels))
     style = style or PlotStyle(
-        width_mm=160, height_mm=65 * len(panels), font_family="Times New Roman"
+        width_mm=160,
+        height_mm=(75 if any(p["kind"] == "response" for p in panels) else 65) * row_count,
+        font_family="Times New Roman",
     )
     # Units come from the bound calculation, never from the host's axis wording.
     prepared = []
     for index, panel in enumerate(panels, 1):
         row = next(r for r in rows if r["panel"] == index)
         labels = dict(panel)
+        if panel["kind"] == "response":
+            # Recognize exact common/source unit suffixes, not arbitrary parenthetical qualifiers.
+            known_units = {
+                unit
+                for declaration in data["table_calculations"]
+                for unit in declaration.get("units", {}).values()
+            }
+            known_units.update(display_unit(unit) for unit in tuple(known_units))
+            for axis in ("x", "y"):
+                key, unit = f"{axis}_label", row[f"{axis}_unit"]
+                stem, separator, suffix = labels[key].rpartition(" (")
+                if (
+                    separator
+                    and suffix.endswith(")")
+                    and (suffix[:-1] in known_units or unit_is_known(suffix[:-1]))
+                ):
+                    if suffix[:-1] not in {unit, display_unit(unit)}:
+                        raise ValueError(
+                            f"Response {axis} axis label unit conflicts with result unit"
+                        )
+                    labels[key] = stem
+                if unit:
+                    labels[key] += f" ({display_unit(unit)})"
+            prepared.append(labels)
+            continue
         if row.get("operation") == "paired_reference_change":
             input_unit = json.loads(row["source_units"])["value"]
             for source_unit in {input_unit, display_unit(input_unit)}:
@@ -458,6 +675,8 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
         fields = _FIELDS + _PAIRED_FIELDS if any("operation" in row for row in rows) else _FIELDS
         if any(row.get("operation") == "temporal_difference" for row in rows):
             fields += _DIFFERENCE_FIELDS
+        if any(row["kind"] == "response" for row in rows):
+            fields += _RESPONSE_FIELDS
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
@@ -465,17 +684,17 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
         '"""Author-editable standalone re-export; source-data.csv retains declared evidence."""\n'
         "import csv\nimport json\nfrom pathlib import Path\n\n"
         + inspect.getsource(_draw_panels)
-        + f"\nPLOT_STYLE = {style.model_dump()!r}\nPANELS = {prepared!r}\n"
+        + f"\nPLOT_STYLE = {style.model_dump()!r}\nPANELS = {prepared!r}\nCOLUMNS = {columns!r}\n"
         + "OUTPUT = Path(__file__).parent\n"
         + "SOURCE_DATA = OUTPUT / 'evidence-panels-source-data.csv'\n"
         + "with SOURCE_DATA.open(encoding='utf-8', newline='') as stream:\n"
         + "    ROWS = list(csv.DictReader(stream))\n"
-        + "CHECKS = _draw_panels(ROWS, PANELS, OUTPUT, PLOT_STYLE)\n"
+        + "CHECKS = _draw_panels(ROWS, PANELS, OUTPUT, PLOT_STYLE, columns=COLUMNS)\n"
         + "(OUTPUT / 'layout-checks.json').write_text(\n"
         + "    json.dumps(CHECKS, indent=2), encoding='utf-8')\n",
         encoding="utf-8",
     )
-    checks = _draw_panels(rows, prepared, output_dir, style.model_dump())
+    checks = _draw_panels(rows, prepared, output_dir, style.model_dump(), columns=columns)
     (output_dir / "layout-checks.json").write_text(json.dumps(checks, indent=2), encoding="utf-8")
     range_kinds = sorted({r["reference_kind"] for r in rows if "reference_kind" in r})
     caption = "; ".join(p["title"] for p in panels) + ". "
@@ -483,6 +702,12 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
         caption += (
             "Profiles connect saved samples within the declared exact window, without smoothing. "
         )
+    if any(p["kind"] == "response" for p in panels):
+        caption += "Response markers show declared case-wise scalar results. "
+        if any(p["kind"] == "response" and p.get("connect", False) for p in panels):
+            caption += (
+                "Connecting lines are straight guides through x-sorted discrete cases, not fits. "
+            )
     if any(row.get("operation") == "temporal_difference" for row in rows):
         caption += (
             "Differences are comparison minus reference at each saved record; "
@@ -500,7 +725,13 @@ def render_evidence_panels(input_path: Path, panels: list[dict], output_dir: Pat
             + ", ".join(range_kinds)
             + ", not confidence intervals."
         )
-    ids = {p["calculation_id"] for p in panels}
+    ids = set()
+    for panel in panels:
+        if panel["kind"] == "response":
+            ids.add(panel["x_calculation_id"])
+            ids.update(item["calculation_id"] for item in panel["series"])
+        else:
+            ids.add(panel["calculation_id"])
     figure = {
         "id": "1",
         "path": str((output_dir / "evidence-panels.png").relative_to(input_path.parent)).replace(

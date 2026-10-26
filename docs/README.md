@@ -2,6 +2,9 @@
 
 ## Start here
 
+- [v0.25.0 version notes](releases/v0.25.0.md) and
+  [bound-response report example](../examples/bound-response-report/README.md): source-bound
+  complementary figures, native tables and host-written research sections, with author-script refresh.
 - [v0.24.0 version notes](releases/v0.24.0.md): portable workbenches, thin host tools and
   saved-report writing with explicit denominators and native formulas.
 - [Portable host guide](portable-workbench.md) and [report-writing example](../examples/report-writing/README.md):

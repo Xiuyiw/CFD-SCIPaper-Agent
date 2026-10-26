@@ -234,6 +234,7 @@ def report_task(
     support_files: list[Path] | None = None,
     derived: list[dict[str, Any]] | None = None,
     formulas: dict[str, Any] | None = None,
+    figure_plan: dict[str, Any] | None = None,
     workspace: Path | None = None,
     drafts: Path | None = None,
 ) -> dict[str, Any]:
@@ -254,6 +255,10 @@ def report_task(
     multiplies relative change by 100 once, using reference as denominator.
     Optional formulas maps IDs to {expression: existing MathNode, source: locator};
     use {{math:ID}} in prose and the builder supplies native Word mathematics.
+    Optional figure_plan={panels:[...], columns:2, style:{...}} renders bound
+    complementary observations. A response panel declares x_calculation_id and
+    series=[{calculation_id,label,field?}] using the quantity IDs above.
+    The actual local plot.py is retained and executed on source continuation.
 
     The result supplies tokens, a native table and three editable draft files.
     Fill those files, then call report_task with workspace=the previous output,
@@ -275,6 +280,7 @@ def report_task(
         support_files=support_files,
         derived=derived,
         formulas=formulas,
+        figure_plan=figure_plan,
         workspace=workspace,
         drafts=drafts,
     )

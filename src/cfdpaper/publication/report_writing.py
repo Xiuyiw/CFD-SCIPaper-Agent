@@ -33,6 +33,80 @@ _RESPONSIBILITIES = {
 _DEFINITION = "sources/report-writing-definition.json"
 
 
+def _figure_source_units(path):
+    """Read the actual response-axis scales before reusing an author's local script."""
+    units = {}
+    with path.open(encoding="utf-8", newline="") as stream:
+        for row in csv.DictReader(stream):
+            if row.get("kind") == "response":
+                for axis in ("x", "y"):
+                    units.setdefault((row["panel"], axis), set()).add(row[f"{axis}_unit"])
+    return units
+
+
+def _report_figure(root, calculations, evidence, plan, author_plot):
+    """Use existing bound calculations, retaining the author's actual refresh script."""
+    if plan is None:
+        return [], []
+    if not isinstance(plan, dict) or set(plan) - {"panels", "columns", "style", "caption"}:
+        raise ValueError("Report figure_plan accepts panels, columns, style and caption")
+    from cfdpaper.publication.evidence_panels import render_evidence_panels
+    from cfdpaper.publication.render_figure import PlotStyle, _run_script
+
+    path = root / "report-figure-input.json"
+    _write(path, {"table_calculations": calculations, "evidence": evidence})
+    output = root / "sources/report-figure"
+    figure = render_evidence_panels(
+        path,
+        plan.get("panels", []),
+        output,
+        columns=plan.get("columns", 1),
+        style=PlotStyle.model_validate(plan["style"]) if "style" in plan else None,
+    )
+    if author_plot is not None:
+        previous_units = _figure_source_units(
+            author_plot.parent / "evidence-panels-source-data.csv"
+        )
+        current_units = _figure_source_units(output / "evidence-panels-source-data.csv")
+        if previous_units != current_units:
+            changes = []
+            for key in sorted(previous_units.keys() | current_units.keys()):
+                before, after = previous_units.get(key, set()), current_units.get(key, set())
+                if before != after:
+                    old = ", ".join(unit or "dimensionless" for unit in sorted(before)) or "missing"
+                    new = ", ".join(unit or "dimensionless" for unit in sorted(after)) or "missing"
+                    changes.append(f"panel {key[0]} {key[1]}: {old} -> {new}")
+            raise ValueError(
+                "Figure source units changed (" + "; ".join(changes) + "). "
+                "Regenerate a new figure plan with current physical units, then migrate "
+                "the author styling. The retained author plot.py was not changed."
+            )
+        shutil.copyfile(author_plot, output / "plot.py")
+        # Never let an author script's no-op reuse the template's provisional render.
+        for name in [
+            *(f"evidence-panels.{ext}" for ext in ("png", "svg", "pdf", "tiff")),
+            "layout-checks.json",
+        ]:
+            (output / name).unlink()
+        _run_script(output / "plot.py")
+        for ext in ("png", "svg", "pdf", "tiff"):
+            if not (output / f"evidence-panels.{ext}").is_file():
+                raise ValueError(f"Retained author plot did not regenerate {ext}")
+        checks = _read(output / "layout-checks.json")
+        figure["sizing"] = {key: checks[key] for key in figure["sizing"]}
+    if "caption" in plan:
+        if not isinstance(plan["caption"], str) or not plan["caption"].strip():
+            raise ValueError("Report figure caption must be nonblank text")
+        figure["caption"] = figure["description"] = plan["caption"]
+    summary = _read(output / "figure-summary.json")
+    summary["figures"] = [figure]
+    if author_plot is not None:
+        summary.update(checks=checks, author_script_retained=True)
+    _write(output / "figure-summary.json", summary)
+    files = [path.relative_to(root).as_posix() for path in output.iterdir() if path.is_file()]
+    return [figure], files
+
+
 def report_context(writing: dict) -> dict:
     """Derive the same compact report view for file, CLI and host consumers."""
     keys = {
@@ -191,6 +265,12 @@ def _task(question: str) -> str:
         "Split the initial evidence_ids between paragraphs when useful. "
         "report_question is available as question metadata, not a numerical finding or "
         "a required paragraph citation.\n\n"
+        "Methods must report available numerical boundary conditions, material assignments "
+        "and source prescriptions needed to understand this comparison, with their exact "
+        "source locations. Do not replace those values with script paths or vague statements "
+        "that conditions were unchanged. If a dimensionless input is a fraction, identify "
+        "that convention rather than silently presenting it as a percentage. Missing method "
+        "values remain explicit gaps, not invented defaults.\n\n"
         "Additional ratios or relative errors need an explicit calculation and reference "
         "denominator. Numbers typed into prose are not automatically refreshed merely "
         "because nearby value tokens are bound; reconsider them after source changes.\n\n"
@@ -208,6 +288,10 @@ def _task(question: str) -> str:
         "Leave evidence_notes for concrete gaps or review questions. Do not invent "
         "missing conditions, measurements, causal proof, or automatic approval. "
         "After filling the drafts, use the existing manuscript assembly and formal export.\n"
+        "When report-context.json includes figures, open their preview before interpretation. "
+        'Use {{figure:1}} in Results with figure_ids=["1"]; retain or revise the supplied '
+        "caption and record actual visible features in observation_notes. A computed source "
+        "binding alone does not show that the image displays the relationship discussed.\n"
     )
 
 
@@ -219,6 +303,8 @@ def prepare_report_writing(
     title: str,
     question: str,
     context: str = "",
+    figure_plan: dict | None = None,
+    author_plot: Path | None = None,
 ) -> Path:
     """Prepare Methods/Results/Discussion without generating scientific prose.
 
@@ -248,6 +334,9 @@ def prepare_report_writing(
         metrics.extend(derived_metrics)
         rows.extend(derived_rows)
         formulas = normalize_report_formulas(projection.get("formulas"))
+        figures, figure_files = _report_figure(
+            root, calculations, evidence, figure_plan, author_plot
+        )
         _write(
             root / _DEFINITION,
             {
@@ -271,6 +360,8 @@ def prepare_report_writing(
         contracts, sections = [], []
         for sid, purpose in _RESPONSIBILITIES.items():
             required = (table_ids or [central_claim]) if sid == "results" else []
+            current_figures = figures if sid == "results" else []
+            figure_ids = [figure["id"] for figure in current_figures]
             _write(
                 root / f"{sid}.json",
                 {
@@ -278,12 +369,17 @@ def prepare_report_writing(
                     "title": sid.title(),
                     "question": question,
                     "context": context,
-                    "figures": [],
-                    "source_files": files,
+                    "figures": [
+                        {key: value for key, value in figure.items() if key != "evidence_ids"}
+                        for figure in current_figures
+                    ],
+                    "source_files": files + (figure_files if current_figures else []),
                     "table_calculations": calculations,
                     "result_comparisons": comparisons,
                     "evidence": evidence,
-                    "duties": [{"purpose": purpose, "evidence_ids": required, "figure_ids": []}],
+                    "duties": [
+                        {"purpose": purpose, "evidence_ids": required, "figure_ids": figure_ids}
+                    ],
                 },
             )
             sections.append({"section_id": sid, "input": f"{sid}.json"})
@@ -294,7 +390,7 @@ def prepare_report_writing(
                     "title": sid.title(),
                     "purpose": purpose,
                     "required_claim_ids": required,
-                    "required_figure_ids": [],
+                    "required_figure_ids": figure_ids,
                 }
             )
         _write(
@@ -318,6 +414,8 @@ def prepare_report_writing(
                 draft["paragraphs"][0]["evidence_ids"] = (
                     (table_ids or [central_claim]) if sid == "results" else []
                 )
+                if sid == "results":
+                    draft["paragraphs"][0]["figure_ids"] = [figure["id"] for figure in figures]
                 if sid == "results" and rows:
                     draft["tables"] = [
                         {
@@ -357,6 +455,21 @@ def prepare_report_writing(
                     ],
                     "drafts": "drafts.json",
                     "pending_sections": list(_RESPONSIBILITIES),
+                    **(
+                        {
+                            "figures": [
+                                {
+                                    **figure,
+                                    "section_id": "results",
+                                    "path": f"sections/results/figures/{figure['id']}.png",
+                                    "script": "sections/results/sources/report-figure/plot.py",
+                                }
+                                for figure in figures
+                            ]
+                        }
+                        if figures
+                        else {}
+                    ),
                 },
             )
             (workspace / "TASK.md").write_text(_task(question), encoding="utf-8")

@@ -921,14 +921,14 @@ def assemble_section(
                         if shared_unit != unit:
                             raise ValueError(f"Shared unit does not match evidence {identifier}")
                         return resolved["value"]
-                    return resolved["value"] + (f" {unit}" if unit else "")
+                    return resolved["value"] + (f" {unit}" if unit not in {"", "1"} else "")
                 if record.value is None or not record.value.strip():
                     raise ValueError(f"Missing value for {identifier}")
                 if shared_unit is not None:
                     if shared_unit != record.unit:
                         raise ValueError(f"Shared unit does not match evidence {identifier}")
                     return record.value
-                return record.value + (f" {record.unit}" if record.unit else "")
+                return record.value + (f" {record.unit}" if record.unit not in {"", "1"} else "")
             if record.kind != "literature":
                 raise ValueError(f"Citation {identifier} must be literature evidence")
             if identifier not in citations:

@@ -19,6 +19,14 @@ comment, followed by product recovery and host caption revision; native Word pag
 IEEEtran-based LaTeX output were inspected. A portable public analytical replay is available in
 the [author tutorial](../examples/author-collaboration/README.md). Release validation and exact
 boundaries are recorded in the [v0.23 notes](releases/v0.23.0.md).
+The v0.24 release adds selected-workbench transfer, shared CLI/Python/MCP tools and source-bound
+report writing with derived comparisons and native formulas. An actual second host completed a
+known-project report task. Numerical bindings worked; residual interpretation errors and missing
+real transient/multiphase evaluation remain explicit in the [v0.24 notes](releases/v0.24.0.md).
+The v0.25 candidate connects exact-case response figures directly to report calculations and
+host-written sections, and combines original-face maps with layer-wise signed diagnostics.
+An editable Studio mechanism trial uses the existing figure exchange rather than a new drawing
+engine. Release completion and tested scope are tracked in the [v0.25 notes](releases/v0.25.0.md).
 Existing releases and their limitations are retained below as history.
 
 | Version | Complete user capability | Status |
@@ -26,7 +34,8 @@ Existing releases and their limitations are retained below as history.
 | v0.21 | Existing field results → physical comparison → complementary figures → editable research manuscript, with targeted source refresh and author-asset preservation | Implemented; known-project trial and synthetic public example described in v0.21.0 notes |
 | v0.22 | Regional heat budgets, signed transport and matched spatial/temporal evidence → mechanism discussion and complementary figures, with tested native and neutral field extraction | Implemented; known-project diagnostics, figure/Word trial, targeted refresh and installed example described in v0.22.0 notes |
 | v0.23 | Ordered scientific document, research/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implemented scope; actual human Word return, native-page inspection and portable automation replay described in v0.23.0 notes |
-| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | In development: portable/shared tools and a bounded real second-host report task work; source-bound derived comparisons, explicit denominators/support domains and native formulas now work in a known-project same-host replay. Renewed second-host scientific quality, release CI and third-class real CFD validation remain open |
+| v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Released within tested scope; known-project second-host bindings and report output work, scientific interpretation remains author-reviewed, and third-class real CFD validation remains open |
+| v0.25 | Question-driven interpretation, complementary bound figures and connected manuscript arguments | Implemented scope: multi-series report responses, original-face/layer diagnostics and editable Studio artwork exercised in connected Word/PDF trials; publication and platform evidence are linked in the v0.25.0 notes, with scientific interpretation still author-reviewed |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -41,28 +50,39 @@ The host remains responsible for changed scientific meaning. Existing diagnostic
 extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
 solver expansion, second-host evaluation and automatic submission are not part of this increment.
 
-## Next increment: v0.24 portable research workbench
+## Current increment: v0.25 scientific synthesis and figure quality
 
-Main CI for v0.23.0 [finished successfully](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/actions/runs/39372494629):
-six Windows/Linux Python 3.10–3.12 combinations and package smoke. Its bounded author-collaboration
-goals are met; this does not establish cross-host research quality or broad scientific generality.
+v0.24.0 is [released](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases/tag/v0.24.0).
+After the test-fixture-only PR #25 repair, [main CI finished successfully](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/actions/runs/39645728697):
+six Windows/Linux Python 3.10–3.12 combinations and package smoke. PR #25 is not version v0.25.
 
-The [same Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section16, now details:
+The [same Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section17, follows one
+complete research task rather than another interface or isolated metadata increment:
 
-1. Move the existing research workspace, author return/baseline and local figure scripts to a
-   new root without manual numeric transcription or dependence on the original chat.
-2. Expose existing business functions through an optional thin local MCP interface; retain
-   CLI/Python use and the five on-demand skills, without a second research pipeline or AI runtime.
-3. Have a second actual tool-using host complete a real research task and interruption recovery.
-   Interface compatibility and scientific effects are evaluated separately.
-4. Evaluate real internal-flow/pressure-drop, conjugate-heat-transfer and transient/multiphase
-   tasks. Existing cooling is a known-project regression; battery effective/control-model data
-   are not multiphase-CFD validation. Unavailable real tasks remain open.
+1. Recover effective definitions and comparison conditions from existing reports and method
+   sources, then select a few observations that can distinguish physical interpretations.
+2. Improve figure selection, composition and publication-scale layout through the existing product
+   renderers. Exercise quantitative, field/diagnostic composite and mechanism-figure tasks using
+   available cooling evidence; judge scientific communication and visual quality separately.
+   Studio integration and overlap checks alone do not establish adequate drawing capability.
+   Field plots, data figures and schematics must match the final accepted P04 figures in scientific
+   communication and manuscript-scale finish, without copying burner-specific content or complexity.
+3. Connect temperature and hydraulic responses to these figures and a self-contained
+   Methods/Results/Discussion unit. Preserve actual weights, source domains and reference bases.
+4. Continue that unit after one meaningful source or definition change, updating affected
+   calculations, current author scripts, captions and interpretations without overwriting author edits.
+5. Evaluate first outputs and actual manuscript-size figures/pages, not only generated files or
+   successful calls. Demonstrate regeneration through the product rather than a hand-polished
+   sample. Use bounded tasks and targeted feedback, retaining original candidates.
 
-The implementation reuses v0.23 author return, relative paths, refresh and successful template
-checks. New outputs must still have defensible physical definitions, meaningful figures and
-readable pages. A portable ZIP, successful MCP call or synthetic example alone does not complete
-this increment. Implementation is in progress; it is not yet a v0.24 release.
+Existing report bindings, native mathematics, workspace transfer, MCP and Word return are reused.
+The first candidate uses a new question in an existing cooling project, not an unfamiliar-domain
+claim. Mature real transient/multiphase materials remain missing; battery control-model data and
+synthetic examples do not replace them. The response and field-composite production paths are
+implemented, and the existing Studio import/attachment path has been exercised with editable
+mechanism art. The connected candidates have been inspected in native Word/PDF pages;
+release requirements and actual publication evidence are recorded in the
+[current version notes](releases/v0.25.0.md).
 
 ## Release principle
 
@@ -130,6 +150,7 @@ run; independent cross-provider scientific comparison remains untested.
 | `v0.21.0` | Connected surface research, source-aware refresh, Studio concept-figure attachment and a runnable public example | Implemented scope; known-project scientific use and author-edit preservation described in release notes |
 | `v0.22.0` | Regional field quantities, signed transport, matched changes, budgets and an optional saved-Fluent surface reader | Implemented scope; real cooling diagnostics and installed example described in release notes |
 | `v0.23.0` | Ordered formal manuscript views, three presentation profiles and bounded Word author return against current evidence | Implemented scope; actual author collaboration and output validation described in release notes |
+| `v0.24.0` | Portable selected workbench, shared host tools and source-bound report writing with derived comparisons and native formulas | Released within tested scope; interpretation limits and missing third-class real CFD evaluation retained |
 
 The [v0.5.0 implementation plan](research/V0_5_IMPLEMENTATION_PLAN.md) combines P04 writing
 lessons and the cross-domain cooling trial. It improves the existing host-assisted subsection

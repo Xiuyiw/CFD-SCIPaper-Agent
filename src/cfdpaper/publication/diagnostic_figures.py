@@ -65,47 +65,95 @@ def _read_panels(config_path):
         series = panel.get("series", [])
         if not isinstance(series, list) or not 1 <= len(series) <= 4:
             raise ValueError("A diagnostic panel requires one to four labelled series")
+        layers = panel.get("layers")
+        if layers is not None:
+            if (
+                kind != "signed_flux"
+                or not isinstance(layers, list)
+                or not layers
+                or any(
+                    not isinstance(layer, dict)
+                    or any(
+                        not isinstance(layer.get(key), str) or not layer[key].strip()
+                        for key in ("id", "label")
+                    )
+                    or layer.get("id") == "all"
+                    for layer in layers
+                )
+                or len({layer["id"] for layer in layers}) != len(layers)
+            ):
+                raise ValueError("Signed-flux layers require unique nonempty ids and labels")
+            totals = [bool(item.get("calculation_id")) for item in series]
+            if any(totals) and not all(totals):
+                raise ValueError("Full-height calculations must be supplied for every series")
         entries = []
         for index, item in enumerate(series):
-            declaration = declarations.get(item.get("calculation_id"))
-            if declaration is None or declaration["operation"] != _OPERATIONS[kind]:
-                raise ValueError("Panel calculation operation is missing or incompatible")
             if not isinstance(item.get("label"), str) or not item["label"].strip():
                 raise ValueError("Diagnostic series require a label")
-            identity = declaration["id"]
-            if identity not in reports:
-                reports[identity] = calculate_field_diagnostic(
-                    _source(config_path.parent, declaration["source"]), declaration
+            if layers is None:
+                calculations = [(None, None, item.get("calculation_id"))]
+            else:
+                mapping = item.get("calculation_ids")
+                if not isinstance(mapping, dict) or set(mapping) != {
+                    layer["id"] for layer in layers
+                }:
+                    raise ValueError("Each signed-flux series must map the same exact layers")
+                calculations = [
+                    (layer["id"], layer["label"], mapping[layer["id"]]) for layer in layers
+                ]
+                if item.get("calculation_id"):
+                    calculations.append(("all", "Full height", item["calculation_id"]))
+            for layer_id, layer_label, calculation_id in calculations:
+                declaration = declarations.get(calculation_id)
+                if declaration is None or declaration["operation"] != _OPERATIONS[kind]:
+                    raise ValueError("Panel calculation operation is missing or incompatible")
+                identity = declaration["id"]
+                if identity not in reports:
+                    reports[identity] = calculate_field_diagnostic(
+                        _source(config_path.parent, declaration["source"]), declaration
+                    )
+                report = reports[identity]
+                if kind == "signed_flux" and report.get("result_units", {}).get("net") not in {
+                    "W",
+                    "kW",
+                    "MW",
+                }:
+                    raise ValueError("signed_flux requires an integrated power unit")
+                available = {group["group"]: group for group in report["groups"]}
+                default_groups = (
+                    [group for group in available if group != "all"]
+                    if kind == "regional"
+                    else ["all"]
                 )
-            report = reports[identity]
-            if kind == "signed_flux" and report.get("result_units", {}).get("net") not in {
-                "W",
-                "kW",
-                "MW",
-            }:
-                raise ValueError("signed_flux requires an integrated power unit")
-            available = {group["group"]: group for group in report["groups"]}
-            default_groups = (
-                [group for group in available if group != "all"] if kind == "regional" else ["all"]
-            )
-            groups = item.get("groups", default_groups or ["all"])
-            if not isinstance(groups, list) or not groups or len(set(groups)) != len(groups):
-                raise ValueError("Panel groups must select unique computed groups")
-            for name in groups:
-                group = available.get(name)
-                if group is None or group["status"] != "computed":
-                    raise ValueError(f"Diagnostic group is unavailable: {name}")
-                entry = {
-                    "series_index": index,
-                    "label": item["label"],
-                    "group": name,
-                    "declaration": declaration,
-                    "report": report,
-                    "computed": group,
-                    "result": group["result"],
-                    "total_measure": available["all"]["result"].get("measure"),
-                }
-                entries.append(entry)
+                groups = item.get("groups", default_groups or ["all"])
+                if (
+                    not isinstance(groups, list)
+                    or not groups
+                    or len(set(groups)) != len(groups)
+                    or (layers is not None and groups != ["all"])
+                ):
+                    raise ValueError("Panel groups must select unique computed groups")
+                for name in groups:
+                    group = available.get(name)
+                    if group is None or group["status"] != "computed":
+                        raise ValueError(f"Diagnostic group is unavailable: {name}")
+                    entry = {
+                        "series_index": index,
+                        "label": item["label"],
+                        "group": name,
+                        "declaration": declaration,
+                        "report": report,
+                        "computed": group,
+                        "result": group["result"],
+                        "total_measure": available["all"]["result"].get("measure"),
+                    }
+                    if layers is not None:
+                        entry.update(
+                            layer_id=layer_id,
+                            layer_label=layer_label,
+                            case_id=item.get("case_id", ""),
+                        )
+                    entries.append(entry)
         if len(entries) > 16:
             raise ValueError("Use focused diagnostic panels with at most sixteen displayed groups")
         panels.append((panel, entries))
@@ -145,6 +193,8 @@ def _rows(entries):
             "reference_csv_records": json.dumps(group.get("reference_csv_records", [])),
             **entry["result"],
         }
+        if "layer_id" in entry:
+            record.update({key: entry[key] for key in ("layer_id", "layer_label", "case_id")})
         if entry["total_measure"]:
             record["measure_fraction"] = entry["result"]["measure"] / entry["total_measure"]
         rows.append(record)
@@ -232,6 +282,8 @@ def _plot_signed(fig, panel, entries, style):
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 
+    if panel.get("layers") is not None:
+        return _plot_layered_signed(fig, panel, entries, style)
     ax = fig.subplots()
     y = np.arange(len(entries))
     for position, entry in zip(y, entries, strict=True):
@@ -287,6 +339,111 @@ def _plot_signed(fig, panel, entries, style):
         columnspacing=1.2,
     )
     return (ax,)
+
+
+def _plot_layered_signed(fig, panel, entries, style):
+    """Matched declared layers, with exact small negative/net readings beside the bars."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    ax, readings = fig.subplots(1, 2, gridspec_kw={"width_ratios": [4, 1.7], "wspace": 0.08})
+    layers = list(dict.fromkeys(entry["layer_id"] for entry in entries))
+    positions = {layer: index for index, layer in enumerate(layers)}
+    series = {entry["series_index"]: entry["label"] for entry in entries}
+    count = len(series)
+    height = min(0.22, 0.7 / count)
+    for entry in entries:
+        index, result = entry["series_index"], entry["result"]
+        y = positions[entry["layer_id"]] + (index - (count - 1) / 2) * (height + 0.14)
+        color = _COLORS[index]
+        ax.barh(y, result["positive"], height=height, color=color, alpha=0.72)
+        ax.barh(
+            y,
+            result["negative"],
+            height=height,
+            color=color,
+            alpha=0.4,
+            hatch="///",
+            edgecolor=color,
+            linewidth=0.5,
+        )
+        ax.plot(
+            result["net"],
+            y,
+            marker="D",
+            color=color,
+            markerfacecolor="white",
+            markersize=3.8,
+            markeredgewidth=0.9,
+            linestyle="none",
+            zorder=3,
+        )
+        for x, field in ((0.49, "negative"), (0.99, "net")):
+            readings.text(
+                x,
+                y,
+                f"{result[field]:+.2f}",
+                transform=readings.get_yaxis_transform(),
+                ha="right",
+                va="center",
+                fontsize=style.annotation_pt,
+                color=color,
+            )
+    labels = {entry["layer_id"]: entry["layer_label"] for entry in entries}
+    ax.set_yticks(range(len(layers)), [labels[layer] for layer in layers])
+    ax.set_ylim(len(layers) - 0.45, -0.65)
+    readings.set_ylim(ax.get_ylim())
+    readings.set_xticks([])
+    readings.set_yticks([])
+    readings.set_axis_off()
+    ax.set_ylabel(panel.get("layer_label", "Declared layer"))
+    unit = display_unit(_unit(entries[0], "net"))
+    ax.set_xlabel(f"Signed transfer ({unit})")
+    ax.axvline(0, color="#7C858D", linewidth=0.8)
+    if "all" in positions:
+        ax.axhline(positions["all"] - 0.5, color="#B8C1C7", linewidth=0.6)
+    for x, label in ((0.49, f"Negative ({unit})"), (0.99, f"Net ({unit})")):
+        readings.text(
+            x,
+            1.025,
+            label,
+            transform=readings.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=style.annotation_pt,
+            color="#46545E",
+        )
+    handles = [
+        Patch(facecolor=_COLORS[index], alpha=0.72, label=label) for index, label in series.items()
+    ]
+    handles.extend(
+        [
+            Patch(facecolor="#8798A1", alpha=0.72, label="Positive"),
+            Patch(facecolor="white", edgecolor="#8798A1", hatch="///", label="Negative"),
+            Line2D(
+                [],
+                [],
+                color="#46545E",
+                marker="D",
+                markerfacecolor="white",
+                markersize=3.8,
+                linestyle="none",
+                label="Net",
+            ),
+        ]
+    )
+    ax.legend(
+        handles=handles,
+        loc="lower left",
+        bbox_to_anchor=(0, 1.025),
+        ncol=3,
+        frameon=False,
+        borderaxespad=0,
+        handlelength=1.15,
+        columnspacing=1.0,
+        handletextpad=0.45,
+    )
+    return (ax, readings)
 
 
 def _plot_pair(fig, panel, entries, style):

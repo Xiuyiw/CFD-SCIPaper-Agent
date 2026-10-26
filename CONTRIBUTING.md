@@ -56,6 +56,28 @@ be copied into public fixtures without permission and suitable rights. Use the a
 between cell-integrated Heat of Reaction and separately calculated volumetric HRR, not its superseded
 representative-cell-volume conversion. Preserve full external reviews, not just extracted JSON findings.
 
+### Scientific figure quality benchmark
+
+Scientific figure quality must be no lower than the polished figures in the accepted P04 paper.
+Use its final field plots, quantitative figures and schematics as separate quality references,
+not as burner-specific templates or a requirement to reproduce their visual complexity.
+
+- Field plots must faithfully represent the source quantity and geometry, with appropriate
+  comparison scales, units, cropping, aspect ratios and legible colorbars.
+- Quantitative figures must communicate the research comparison through useful encodings and
+  complementary panels, with coherent typography, markers, legends, grids and information density.
+- Schematics must have physically correct entities, geometry and relationships, a clear visual
+  hierarchy and a genuine editable source where that delivery is claimed. Decorative arrows or
+  generic boxes are not substitutes for explaining the actual study.
+- Compare rendered figures at equivalent final manuscript widths, including captions and nearby
+  prose. No overlap, successful export and passing tests are necessary checks, not proof that this
+  quality level has been reached. Simpler evidence can warrant a simpler figure without lower quality.
+- Improve the reusable skills and production path, not just one manually repaired sample. Keep
+  first outputs distinct from author-polished versions and preserve author-edited local scripts.
+
+The P04 originals remain private, read-only references. Transfer their general design principles
+into redistributable examples; do not bundle the paper or its assets into public releases by default.
+
 ## Development setup
 
 ```bash
