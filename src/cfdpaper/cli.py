@@ -631,6 +631,7 @@ def report_workspace(
                 support_files=[Path(name) for name in data.get("support_files", [])],
                 derived=data.get("derived"),
                 formulas=data.get("formulas"),
+                figure_plan=data.get("figure_plan"),
             )
             console.print(f"Report workspace ready: {output}", markup=False)
             console.print(

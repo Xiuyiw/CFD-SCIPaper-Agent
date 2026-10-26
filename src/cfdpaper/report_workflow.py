@@ -21,6 +21,7 @@ def report_workflow(
     support_files: list[Path] | None = None,
     derived: list[dict] | None = None,
     formulas: dict | None = None,
+    figure_plan: dict | None = None,
     workspace: Path | None = None,
     drafts: Path | None = None,
 ) -> Path:
@@ -28,6 +29,7 @@ def report_workflow(
     from cfdpaper.publication.report_writing import prepare_report_writing, report_context
     from cfdpaper.report_sources import project_reports
 
+    author_plot = None
     if workspace is not None:
         if (
             root is not None
@@ -36,6 +38,7 @@ def report_workflow(
             or support_files
             or derived is not None
             or formulas is not None
+            or figure_plan is not None
         ):
             raise ValueError("Choose workspace continuation or new root/cases/quantities")
         root = Path(workspace).resolve()
@@ -44,6 +47,11 @@ def report_workflow(
         title, question, context = recipe["title"], recipe["question"], recipe["context"]
         support_files = [Path(name) for name in recipe["support_files"]]
         derived, formulas = recipe.get("derived", []), recipe.get("formulas", {})
+        figure_plan = recipe.get("figure_plan")
+        if figure_plan is not None:
+            author_plot = root / "workspace/sections/results/sources/report-figure/plot.py"
+            if not author_plot.is_file():
+                raise ValueError("Report continuation is missing its retained author plot.py")
     elif root is None or not cases or not quantities:
         raise ValueError("A new report task requires root, cases and quantities")
     if not title.strip() or not question.strip():
@@ -107,6 +115,7 @@ def report_workflow(
                 "support_files": retained_support,
                 "derived": retained_derived,
                 "formulas": retained_formulas,
+                **({"figure_plan": deepcopy(figure_plan)} if figure_plan is not None else {}),
             },
         )
         prepared = prepare_report_writing(
@@ -116,6 +125,8 @@ def report_workflow(
             title=title,
             question=question,
             context=context,
+            figure_plan=figure_plan,
+            author_plot=author_plot,
         )
         if drafts is not None:
             from cfdpaper.publication.formal_export import export_formal_manuscript
@@ -141,6 +152,20 @@ def report_workflow(
             for sid, name in _read(prepared / "drafts.json").items():
                 shutil.copyfile(manuscript / "sections" / sid / "draft.json", prepared / name)
             writing = _read(prepared / "report-writing.json")
+            if writing.get("figures"):
+                actual = _read(manuscript / "sections/results/section.json")
+                captions = {figure["id"]: figure["caption"] for figure in actual["figures"]}
+                for figure in writing["figures"]:
+                    caption = captions[figure["id"]]
+                    figure.update(caption=caption, description=caption)
+                summary_path = (
+                    prepared / "sections/results/sources/report-figure/figure-summary.json"
+                )
+                summary = _read(summary_path)
+                for figure in summary["figures"]:
+                    caption = captions[figure["id"]]
+                    figure.update(caption=caption, description=caption)
+                _write(summary_path, summary)
             writing["pending_sections"] = []
             _write(prepared / "report-writing.json", writing)
         _write(

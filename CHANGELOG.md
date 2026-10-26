@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.25.0] — 2026-10-26
+
+### Added
+
+- `report_task` and CLI/MCP report input accept a figure plan: exact-case x/y response bindings,
+  multiple series and multi-column complementary panels consume the same calculations as writing.
+- Original-face field/diagnostic composites combine two common-scale maps, declared region
+  outlines and height-resolved positive, negative and net transfers, joined by explicit case IDs.
+- A portable constructed-report example produces the bound panels, native table, three supplied
+  author sections and editable Word output through installed product entry points.
+
+### Fixed
+
+- Report continuation preserves and executes the author's local plotting script with freshly
+  computed source rows; it does not silently replace that script with the template.
+- Dimensionless source unit `1` remains in calculation metadata without appearing as a prose suffix.
+- Unit-changing report continuations no longer reuse author-script axes with obsolete units;
+  a new figure configuration is required before migrating author styling.
+- Assembled author captions, including resolved value tokens, populate the current report
+  context and figure summary rather than leaving the preparation caption behind.
+
+### Evaluation
+
+- Known cooling tasks exercised report-bound thermal/hydraulic responses and original-face
+  field/height diagnostics. Editable mechanism artwork used the existing Studio exchange path.
+  These are complementary studies in an existing project, not independent scientific validation.
+- Scientific interpretation remains host/author work. Mature real transient/multiphase CFD
+  evaluation remains open. Release checks and evaluation scope are recorded in the
+  [version notes](docs/releases/v0.25.0.md).
+
 ## [0.24.0] — 2026-10-21
 
 ### Added

@@ -58,8 +58,12 @@ units, legend, marker weights, whitespace and panel alignment on the actual manu
 Keep the result in existing figure contract/review notes; successful export and no clipping alone
 do not establish scientific readability.
 
-For declared numerical evidence, `evidence_panels` can combine only `profile` and
-`reference_range` panels. Each names a `calculation_id`, `title`, `x_label`, `y_label`, and
+Use the accepted P04 field plots, quantitative figures and schematics as the current internal
+quality floor, not just inspiration. Compare like kinds at the same manuscript width; transfer
+their scientific clarity and finish, not burner-specific content or decorative complexity.
+
+For declared numerical evidence, `evidence_panels` combines `profile`, `reference_range` and
+`response` panels. A profile or range panel names a `calculation_id`, `title`, `x_label`, `y_label`, and
 optionally selected `groups`. A profile uses the temporal declaration's exact saved-sample
 window and value kind; it cannot manufacture an unavailable curve. A reference-range panel
 shows the supplied bounds/center, model value and signed difference, with the declared range
@@ -68,6 +72,44 @@ declared bounds are not confidence intervals. Different units belong in separate
 The reusable output includes source locations, editable vector/raster exports and standalone
 `plot.py`; preserve local author edits and inspect the PNG at its final 160 mm width after
 the actual bounding-box checks. This finite route is not a general diagram engine.
+
+For a saved-parameter sweep, use a `response` panel rather than pretending the parameter is
+time or copying scalar points into a free script. Declare `x_calculation_id` and a nonempty
+`series` list of `{calculation_id, label, field?}`. The x calculation selects an actual scalar;
+each y field is resolved from the same exact case groups. Units come from these calculations.
+Keep unlike y units in aligned panels, not an implicit dual axis. `connect: true` requests straight
+guides between discrete observations, not fitting or smoothing; the default is unconnected markers.
+
+The direct `report_task` accepts `figure_plan={"panels": [...], "columns": 2}` with optional
+`style` (existing `PlotStyle` fields) and `caption`. Use the report quantity IDs as calculation IDs.
+This creates the source-bound plot, Results figure/caption and figure locations in
+`report-context.json`; it does not write scientific prose. Open the actual preview, record visible
+features in the Results draft's `observation_notes`, and reference `{{figure:1}}` with its figure ID.
+On report continuation the retained local `plot.py` consumes fresh source rows and redraws into
+a new candidate. Do not regenerate a template over the author's style edits. Review caption and
+interpretation after definition changes; numerical refresh is not an automatic scientific rewrite.
+
+For a spatial claim with height- or region-resolved signed transfer, use the finite
+`surface_figures.render_surface_composite(study_path, diagnostics_path, output_dir,
+panel_id=...)` route. Select exactly two original-face cases. Each diagnostic series names its
+matching `case_id` and a `calculation_ids` mapping for the panel's declared `layers`; an optional
+`calculation_id` supplies the full-domain aggregate. Use the same physical band order across
+related figures, and identify the aggregate separately so it is not counted as another layer.
+The maps share coordinates, aspect and a color scale. An optional `region_outline` names the
+actual bounds used by the diagnosis, not an attractive contour drawn after seeing the result.
+Show positive, negative and net contributions together: explicit small-value readings may be
+needed even when the common axis makes a negative contribution visually narrow. Retain the
+original arrays, calculation definitions, source CSVs and local `plot.py` for re-export.
+Connect the selected figure to the existing section's evidence IDs and caption; a renderer's
+empty `evidence_ids` list alone does not establish a scientific prose binding. Distinguish native
+interface fluxes, input-minus-output remainders and reconstructed gradient integrals according
+to their actual definitions. Same-solution agreement is not independent validation.
+
+For a Studio schematic, check arrows against the drawn geometry and the exact caption: an
+arrow contained inside one layer shows a direction, not an interface-crossing rate. Show
+conceptual layers as such; do not imply that they resolve actual coolant topology. Carry the
+editable source and declared source font sizes through import, then inspect the actual Word
+placement; source font sizes alone do not guarantee readability after page-constrained scaling.
 
 A profile also accepts `temporal_difference` on two columns of the same saved record. Its plotted
 value and prose statistics share the declaration; the source CSV includes both original readings,

@@ -88,7 +88,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs,geometry,mcp]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.24.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.25.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           & $cfdpaper portable --help
           & $cfdpaper mcp --help
@@ -482,9 +482,40 @@ jobs:
           Copy-Item (Join-Path $env:GITHUB_WORKSPACE "examples\report-writing") $example -Recurse
           Set-Location $env:RUNNER_TEMP
           & $smokePython (Join-Path $example "run_example.py") $output
+      - name: Replay bound response figures and Word from installed wheel
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $smokePython = Join-Path $env:RUNNER_TEMP "cfdpaper-wheel-smoke\Scripts\python.exe"
+          $example = Join-Path $env:RUNNER_TEMP "bound-response-report-example"
+          $output = Join-Path $env:RUNNER_TEMP "bound-response-report-output"
+          Copy-Item (Join-Path $env:GITHUB_WORKSPACE "examples\bound-response-report") $example -Recurse
+          Set-Location $env:RUNNER_TEMP
+          & $smokePython (Join-Path $example "run_example.py") $output
+          @'
+          import csv, json, sys
+          from pathlib import Path
+          from docx import Document
+          p = Path(sys.argv[1]) / 'candidate'
+          context = json.loads((p / 'workspace/report-context.json').read_text(encoding='utf-8'))
+          assert len(context['metrics']) == 15
+          figure = p / 'workspace/sections/results/sources/report-figure'
+          with (figure / 'evidence-panels-source-data.csv').open(encoding='utf-8', newline='') as f:
+              rows = list(csv.DictReader(f))
+          assert len(rows) == 12 and {r['panel'] for r in rows} == {'1', '2'}
+          assert {r['y_unit'] for r in rows} == {'K', 'kPa'}
+          assert all((figure / f'evidence-panels.{ext}').stat().st_size > 100
+                     for ext in ('svg', 'pdf', 'png', 'tiff'))
+          assert (figure / 'plot.py').is_file()
+          doc = Document(p / 'manuscript.docx')
+          assert len(doc.element.body.xpath('.//w:tbl')) == 1 and len(doc.inline_shapes) == 1
+          text = ' '.join(doc.element.body.xpath('.//w:t/text()')).replace('\u00a0', ' ')
+          assert '330.000 K' in text and '0.600 kPa' in text and '{{value:' not in text
+          '@ | & $smokePython - $output
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.24.0-distributions
+          name: cfd-paper-agent-0.25.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

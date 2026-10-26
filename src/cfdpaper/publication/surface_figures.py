@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -235,7 +236,14 @@ def _export(fig, output, figure_id, style):
     ]
     minimum = min(text.get_fontsize() for text in texts)
     if not inside or collisions:
-        raise ValueError(f"Surface figure labels overlap or leave canvas: {collisions}")
+        outside = [
+            text.get_text()
+            for text, box in zip(texts, boxes, strict=True)
+            if box.x0 < 0 or box.y0 < 0 or box.x1 > fig.bbox.width or box.y1 > fig.bbox.height
+        ]
+        raise ValueError(
+            f"Surface figure labels overlap or leave canvas: {collisions}; outside: {outside}"
+        )
     if minimum < 8:
         raise ValueError("Surface figures require at least 8 pt at the declared final width")
     export_options = {}
@@ -471,3 +479,262 @@ def render_surface_study(
         encoding="utf-8",
     )
     return figures
+
+
+def render_surface_composite(
+    config_path: Path,
+    diagnostic_path: Path,
+    output_dir: Path,
+    *,
+    panel_id: str,
+    style: PlotStyle | None = None,
+) -> dict:
+    """Combine two original-face maps with their declared layer-wise signed transfer.
+
+    The finite layout reuses the surface and diagnostic renderers. A diagnostic
+    series explicitly names its surface ``case_id``; matching labels or array
+    order alone never establishes that relationship. Existing local plot.py is
+    retained as the author's re-export entry.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+    from matplotlib.colors import Normalize
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Rectangle
+
+    from cfdpaper.publication.diagnostic_figures import (
+        _axes_style,
+        _plot_signed,
+        _read_panels,
+        _rows,
+        _unit,
+    )
+    from cfdpaper.publication.diagnostic_figures import (
+        _write_csv as write_diagnostic_csv,
+    )
+
+    config_path, diagnostic_path, output_dir = (
+        Path(path).resolve() for path in (config_path, diagnostic_path, output_dir)
+    )
+    data, cases = _read_study(config_path)
+    diagnostic_data, panels = _read_panels(diagnostic_path)
+    selected = [(panel, entries) for panel, entries in panels if panel["id"] == panel_id]
+    if len(selected) != 1:
+        raise ValueError("Composite requires one exact diagnostic panel_id")
+    panel, entries = selected[0]
+    if panel["kind"] != "signed_flux" or not panel.get("layers") or len(cases) != 2:
+        raise ValueError("Composite requires two surface cases and a layered signed_flux panel")
+    case_ids = [series.get("case_id") for series in panel["series"]]
+    if len(case_ids) != 2 or len(set(case_ids)) != 2 or set(case_ids) != {c["id"] for c in cases}:
+        raise ValueError(
+            "Composite diagnostic case_id values must match both surface cases exactly"
+        )
+    cases_by_id = {case["id"]: case for case in cases}
+    cases = [cases_by_id[identity] for identity in case_ids]
+    if len({_unit(entry, "net") for entry in entries}) != 1:
+        raise ValueError("Composite diagnostic series must have the same physical unit")
+    rows, _, _, limits, _ = _source_rows(data, cases)
+    all_vertices = np.concatenate([polygon for case in cases for polygon in case["polygons"]])
+    low, high = all_vertices.min(axis=0), all_vertices.max(axis=0)
+    outline = data.get("region_outline")
+    if outline is not None:
+        axis_names = ["xyz"[axis] for axis in data["projection_axes"]]
+        bounds = outline.get("bounds", {}) if isinstance(outline, dict) else {}
+        if (
+            not isinstance(outline, dict)
+            or not isinstance(outline.get("label"), str)
+            or not outline["label"].strip()
+            or set(bounds) != set(axis_names)
+            or any(
+                not isinstance(bounds.get(axis), list)
+                or len(bounds[axis]) != 2
+                or any(
+                    type(value) not in (int, float) or not np.isfinite(value)
+                    for value in bounds[axis]
+                )
+                or not low[index] <= bounds[axis][0] < bounds[axis][1] <= high[index]
+                for index, axis in enumerate(axis_names)
+            )
+        ):
+            raise ValueError("Composite region_outline must declare bounded projected coordinates")
+        outline_bounds = [bounds[axis] for axis in axis_names]
+    style = style or PlotStyle(
+        width_mm=160,
+        height_mm=155,
+        font_family="Times New Roman",
+        font_pt=9,
+        axis_label_pt=9,
+        title_pt=10,
+        tick_pt=8.5,
+        legend_pt=8.5,
+        annotation_pt=8.5,
+    )
+    figure_id = f"field-{panel_id}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _write_csv(output_dir / "field-source-data.csv", rows)
+    write_diagnostic_csv(output_dir / "diagnostic-source-data.csv", _rows(entries))
+    rc = {
+        "font.family": [style.font_family, "serif"],
+        "font.serif": ["Times New Roman", "DejaVu Serif"],
+        "font.size": style.font_pt,
+        "axes.labelsize": style.axis_label_pt,
+        "axes.titlesize": style.title_pt,
+        "xtick.labelsize": style.tick_pt,
+        "ytick.labelsize": style.tick_pt,
+        "legend.fontsize": style.legend_pt,
+        "svg.fonttype": "none",
+        "pdf.fonttype": 42,
+    }
+    with plt.rc_context(rc):
+        fig = plt.figure(
+            figsize=(style.width_mm / 25.4, style.height_mm / 25.4), layout="constrained"
+        )
+        try:
+            upper, lower = fig.subfigures(2, 1, height_ratios=[1, 1.12], hspace=0.04)
+            grid = upper.add_gridspec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.08)
+            normalization = (
+                Normalize(*limits)
+                if limits[0] != limits[1]
+                else Normalize(limits[0] - 0.5, limits[1] + 0.5)
+            )
+            field_axes = []
+            for index, case in enumerate(cases):
+                ax = upper.add_subplot(grid[0, index])
+                field_axes.append(ax)
+                collection = PolyCollection(
+                    case["polygons"],
+                    array=case["values"],
+                    cmap="cividis",
+                    norm=normalization,
+                    edgecolors="none",
+                    antialiaseds=False,
+                )
+                ax.add_collection(collection)
+                ax.set_xlim(low[0], high[0])
+                ax.set_ylim(low[1], high[1])
+                ax.set_aspect("equal", adjustable="box")
+                if outline is not None:
+                    x, y = outline_bounds
+                    ax.add_patch(
+                        Rectangle(
+                            (x[0], y[0]),
+                            x[1] - x[0],
+                            y[1] - y[0],
+                            fill=False,
+                            edgecolor="#8C3E36",
+                            linestyle="--",
+                            linewidth=1.0,
+                        )
+                    )
+                    ax.legend(
+                        handles=[
+                            Line2D(
+                                [],
+                                [],
+                                color="#8C3E36",
+                                linestyle="--",
+                                linewidth=1.0,
+                                label=outline["label"],
+                            )
+                        ],
+                        loc="lower left",
+                        bbox_to_anchor=(0, 1.015),
+                        frameon=False,
+                        borderaxespad=0,
+                        handlelength=1.5,
+                    )
+                ax.set_title(
+                    f"({chr(97 + index)}) {case['label']}",
+                    loc="left",
+                    color=_COLORS[index],
+                    pad=25 if outline is not None else 7,
+                )
+                ax.set_xlabel(f"{'xyz'[data['projection_axes'][0]]} (m)")
+                ax.set_ylabel(f"{'xyz'[data['projection_axes'][1]]} (m)")
+                ax.tick_params(length=3, width=0.6)
+                ax.locator_params(axis="both", nbins=3)
+            colorbar = upper.colorbar(collection, cax=upper.add_subplot(grid[0, -1]))
+            colorbar.set_label(f"{data['quantity']} ({display_unit(data['unit'])})")
+            axes = _plot_signed(lower, panel, entries, style)
+            for ax in axes:
+                _axes_style(ax)
+            axes[0].set_title(f"(c) {panel['title']}", loc="left", pad=35)
+            fig.canvas.draw()
+            # Align the colorbar to actual equal-aspect map boxes, not their larger grid cells.
+            position = colorbar.ax.get_position()
+            bottom = min(ax.get_position().y0 for ax in field_axes)
+            top = max(ax.get_position().y1 for ax in field_axes)
+            colorbar.ax.set_position([position.x0, bottom, position.width, top - bottom])
+            fig.set_layout_engine("none")
+            checks = _export(fig, output_dir, figure_id, style)
+        finally:
+            plt.close(fig)
+    caption = (
+        f"{data['quantity']} on {data['domain']} and height-resolved signed transfer for the "
+        "same saved solution of each declared case. Original face polygons retain common "
+        f"projected coordinates in m and a shared {display_unit(data['unit'])} color scale; "
+        "no spatial interpolation is applied. "
+    )
+    if outline is not None:
+        caption += f"Dashed rectangles identify the declared {outline['label'].lower()}. "
+    caption += (
+        "Solid and hatched bars retain positive and negative transfers separately; diamonds "
+        "show their signed net, with negative and net readings alongside. "
+        + panel["sign_convention"]
+        + " Layer rows preserve the selected physical bands; full-height rows, when supplied, "
+        "retain their aggregate context. These are complementary diagnostics of the same "
+        "numerical solutions, not independent validation."
+    )
+    figure = {
+        "id": figure_id,
+        "path": f"{figure_id}.png",
+        "caption": caption,
+        "description": caption,
+        "sizing": {
+            key: checks[key]
+            for key in ("source_width_mm", "target_width_mm", "minimum_source_font_pt")
+        },
+        "evidence_ids": list(
+            dict.fromkeys(data.get("evidence_ids", []) + diagnostic_data.get("evidence_ids", []))
+        ),
+    }
+    checks.update(
+        case_ids=case_ids,
+        value_range=limits,
+        projection_axes=data["projection_axes"],
+        region_outline=outline,
+        coordinate_unit="m",
+        value_unit=data["unit"],
+        diagnostic_unit=_unit(entries[0], "net"),
+        layer_ids=[layer["id"] for layer in panel["layers"]],
+    )
+    (output_dir / "composite-checks.json").write_text(
+        json.dumps(checks, indent=2), encoding="utf-8"
+    )
+    (output_dir / "composite-figures.json").write_text(
+        json.dumps(
+            {"figures": [figure], "style": style.model_dump(), "visual_review": "required"},
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    script = output_dir / "plot.py"
+    if not script.exists():
+        relative_study = os.path.relpath(config_path, output_dir).replace("\\", "/")
+        relative_diagnostic = os.path.relpath(diagnostic_path, output_dir).replace("\\", "/")
+        script.write_text(
+            '"""Author-local field/diagnostic composite; refine STYLE and rerun this file."""\n'
+            "from pathlib import Path\n"
+            "from cfdpaper.publication.surface_figures import render_surface_composite\n"
+            "from cfdpaper.publication.render_figure import PlotStyle\n\n"
+            f"STYLE = PlotStyle(**{style.model_dump()!r})\n"
+            "ROOT = Path(__file__).resolve().parent\n"
+            "if __name__ == '__main__':\n"
+            f"    render_surface_composite(ROOT / {relative_study!r},\n"
+            f"        ROOT / {relative_diagnostic!r}, ROOT, panel_id={panel_id!r}, style=STYLE)\n",
+            encoding="utf-8",
+        )
+    return figure
