@@ -396,12 +396,8 @@ def _set_styles(document, config, template):
             border.getparent().remove(border)
         style.paragraph_format.widow_control = True
     normal = document.styles["Normal"].paragraph_format
-    normal.first_line_indent = Pt(config.body_first_line_indent_chars * config.body_pt)
     normal.space_before, normal.space_after = Pt(0), Pt(0)
     normal.line_spacing = config.line_spacing
-    document.styles["Normal"].element.get_or_add_pPr().get_or_add_ind().set(
-        qn("w:firstLineChars"), str(round(config.body_first_line_indent_chars * 100))
-    )
     for name in ("Title", "Caption", "Heading 1", "Heading 2"):
         item = document.styles[name].paragraph_format
         item.first_line_indent = Pt(0)
@@ -810,6 +806,14 @@ def _docx(document_data, source, output, template=None):
             paragraph = document.add_paragraph(
                 style=style_roles["Caption" if kind == "caption" else "Normal"]
             )
+            if kind == "paragraph" and not template:
+                body = paragraph.paragraph_format
+                body.first_line_indent = Pt(config.body_first_line_indent_chars * config.body_pt)
+                body.space_before = Pt(config.body_space_before_pt)
+                body.space_after = Pt(config.body_space_after_pt)
+                paragraph._p.get_or_add_pPr().get_or_add_ind().set(
+                    qn("w:firstLineChars"), str(round(config.body_first_line_indent_chars * 100))
+                )
             if kind in {"caption", "keywords", "reference"}:
                 if not template:
                     paragraph.paragraph_format.first_line_indent = Pt(0)

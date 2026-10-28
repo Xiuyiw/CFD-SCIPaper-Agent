@@ -78,7 +78,8 @@ def _path(root, name):
 def _bounded(text):
     if len(text) <= _LOG_LIMIT:
         return text
-    return text[:_LOG_LIMIT] + "\n[truncated]"
+    half = _LOG_LIMIT // 2
+    return text[:half] + "\n[truncated]\n" + text[-half:]
 
 
 def _check_output(root, name):

@@ -1068,8 +1068,13 @@ def assemble_section(
         content["caption"] = resolve(table.caption, table.evidence_ids, figures)
         content["note"] = resolve(table.note, table.evidence_ids, figures)
         content["columns"] = [resolve(c, table.evidence_ids, figures) for c in table.columns]
+        units = table.column_units or [None] * len(table.columns)
         content["rows"] = [
-            [resolve(c, table.evidence_ids, figures) for c in row] for row in table.rows
+            [
+                resolve(cell, table.evidence_ids, figures, shared_unit=unit)
+                for cell, unit in zip(row, units, strict=True)
+            ]
+            for row in table.rows
         ]
         tables.append(content)
     equations = []

@@ -18,6 +18,12 @@ For a complete runnable example without private data or an AI API, start with th
 [synthetic surface study](../examples/surface-research/README.md). Its fixed sample
 prose demonstrates assembly; a real task still needs the host's scientific reading.
 
+The v0.26 [research-expression example](../examples/research-expression/README.md)
+adds an original-array regional comparison, a complementary budget panel, ordered native tables
+and a source-driven refresh. Its prose is supplied by the example author; the software binds the
+calculations and figures rather than discovering the interpretation. Use the matching v0.26.0 package;
+the older v0.25.0 wheel does not contain these additions.
+
 ## Read saved native results when necessary
 
 The optional Fluent reference path was exercised on Windows with Fluent 2023 R1 and
@@ -125,6 +131,9 @@ as the physical domain, quantity, units, thresholds, cases and array names. For 
 ```
 
 The named files, including `sources/definition.md`, must exist relative to `study.json`.
+Optional `selected_figures` selects `field` and/or `distribution` in the requested initial manuscript
+order. Omission keeps both; `[]` starts without either figure while retaining their calculated data
+and output files. An existing author's chosen figure set is preserved during refresh.
 This example illustrates the data contract, not an assertion that new cases are physically
 comparable or converged. The host fills support and definition fields from the actual
 study materials, retaining any limits or missing evidence rather than copying these claims.
@@ -217,6 +226,34 @@ question to the diagnostics that could distinguish its explanations. Sources use
 workspace, adds calculations and bound evidence to the existing Results input, makes the
 same evidence available to the other sections, and retains author prose and existing figures.
 The host reads the resulting context and completes the argument.
+
+For a composed diagnostic figure, the Python API exposes the renderer's existing selection and style:
+
+```python
+from cfdpaper.publication.research_workspace import attach_research_diagnostics
+
+attach_research_diagnostics(
+    "research-workspace",
+    "materials/diagnostics.json",
+    "research-with-diagnostics",
+    combine=True,
+    figure_id="regional-budget",
+    panel_ids=["regional-change", "local-budget"],
+)
+```
+
+Those panel IDs must exist in the supplied configuration; they are not inferred from a case name.
+Omit `panel_ids` to render all declared panels. Calculations remain available to writing even when
+their panel is not selected. The returned workspace retains its local `plot.py` and relative source
+configuration as the next build's recipe. Do not substitute a copied static PNG for that recipe.
+An optional `style` uses the existing `PlotStyle` settings.
+
+For native tables, `column_units` declares one shared display unit or `null` per column; units must
+match bound values and appear in the header. Choose precision in the evidence `result_ref`, not by
+rounding the source. Explicit draft `paragraph_id` and `block_order` arrange prose, figures and tables
+through the formal Word exporter. Subsequent refresh preserves display precision for unchanged bound
+identities, author captions, drafts and the current plotting script. Inspect the resulting pages and
+revisit interpretations when changed evidence affects the argument.
 `research-context.json.result_summary` gives compact current scalar results and exact pointers
 into the full result reports; source element/record lists remain there instead of flooding
 the reading context. Attachment refreshes those reports and cross-section evidence bindings

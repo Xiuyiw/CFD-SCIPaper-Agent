@@ -88,7 +88,7 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs,geometry,mcp]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.25.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.26.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           & $cfdpaper portable --help
           & $cfdpaper mcp --help
@@ -448,6 +448,42 @@ jobs:
           assert any(r['id'] == 'budget' for r in context['result_summary'])
           assert '{{value:' not in '\n'.join(q.text for q in doc.paragraphs)
           '@ | & $smokePython - $output
+      - name: Replay research-expression refresh from installed wheel
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+          $smokePython = Join-Path $env:RUNNER_TEMP "cfdpaper-wheel-smoke\Scripts\python.exe"
+          $example = Join-Path $env:RUNNER_TEMP "research-expression-example"
+          $output = Join-Path $env:RUNNER_TEMP "research-expression-output"
+          Copy-Item (Join-Path $env:GITHUB_WORKSPACE "examples\research-expression") $example -Recurse
+          Set-Location $env:RUNNER_TEMP
+          & $smokePython (Join-Path $example "run_example.py") $output
+          @'
+          import json, math, sys
+          from pathlib import Path
+          from docx import Document
+          p = Path(sys.argv[1])
+          for name, mean, change in [('candidate', 319.75, 2.25), ('refreshed', 320.75, 3.25)]:
+              candidate = p / name
+              doc = Document(candidate / 'manuscript.docx')
+              assert len(doc.inline_shapes) == 1 and len(doc.element.body.xpath('.//w:tbl')) == 2
+              text = ' '.join(doc.element.body.xpath('.//w:t/text()'))
+              assert '{{value:' not in text
+              data = json.loads((candidate / 'manuscript/section.json').read_text(encoding='utf-8'))
+              for field, expected in [('comparison_mean', mean), ('difference_mean', change)]:
+                  key = json.dumps(['results', f'paired-A-all-{field}'], separators=(',', ':'))
+                  assert math.isclose(data['resolved_values'][key]['raw_value'], expected)
+              figure = candidate / 'workspace/sections/results/figures/diagnostics'
+              assert all((figure / f'thermal-budget.{ext}').stat().st_size > 100
+                         for ext in ('svg', 'pdf', 'png', 'tiff'))
+          author = p / 'author-working'
+          refreshed = p / 'refreshed/workspace'
+          local = 'sections/results/figures/diagnostics/plot.py'
+          assert (author / local).read_bytes() == (refreshed / local).read_bytes()
+          for name in json.loads((author / 'drafts.json').read_text(encoding='utf-8')).values():
+              assert (author / name).read_bytes() == (refreshed / name).read_bytes()
+          '@ | & $smokePython - $output
       - name: Replay managed author collaboration from installed wheel
         shell: pwsh
         run: |
@@ -516,6 +552,6 @@ jobs:
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.25.0-distributions
+          name: cfd-paper-agent-0.26.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

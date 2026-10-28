@@ -125,6 +125,14 @@ Do not hide that evidence behind an attractive zero-mismatch marker.
 
 ## Original-face surface studies
 
+In a new surface study, optional `selected_figures` chooses the initial manuscript figure IDs
+from `field` and `distribution`, in the requested order. Omission retains the legacy pair;
+`["field"]` keeps the map without promoting the empirical curve to a standalone main figure,
+and `[]` permits a table-led argument. Source diagnostics and their data remain available.
+Read `research-context.json`'s `selected_figures` and the actual section input before drafting;
+available generated files are not all required publication figures. Preserve an existing author's
+chosen figure set rather than applying this initial selection over their manuscript.
+
 For original-face surface exports, `render_surface_study` supplies common-scale
 polygon fields and an exact measure-weighted exceedance distribution. The spatial
 map explains where a change occurs; the curve and weighted statistics explain its
@@ -142,6 +150,25 @@ and figures together. Inspect both the map and distribution at the actual Word w
 the complementary relationship, legibility and caption remain host responsibilities.
 
 ## Connected physical diagnostics
+
+Two complementary diagnostic panels may share a canvas through
+`render_diagnostic_figures(config, output, combine=True, figure_id="comparison")`.
+In a research workspace, use `attach_research_diagnostics(workspace, config, output,
+combine=True, figure_id="comparison", panel_ids=[...], style=...)` to retain that composition
+as a refreshable recipe, rather than merely inserting its current PNG into the section.
+The optional `panel_ids` selects nonempty, unique panel IDs in the requested order;
+omitting it renders all declared panels. The exported local `plot.py` retains that choice.
+Keep its configuration and raw sources inside the workspace, with relative paths, and preserve
+the author's script as the refresh entry point. Check the real refreshed source rows and
+manuscript, not only that the first image exists. See the runnable
+[research-expression example](../../examples/research-expression/README.md).
+Use `regional` with `view: paired_change` for explicit reference/comparison regional means;
+each series declares `pair_id` and `role`, never inferred from a case-name substring.
+Keep a moving source region distinct from a fixed-coordinate field difference.
+The `budget` view `decomposition` shows its reported output/storage and signed remainder
+against input/source; use scientifically accurate `component_labels`. It is a balance
+decomposition, not an independent measurement of each transport path. Inspect the combined
+figure at its final width and use the generated local script on later source refreshes.
 
 For attached physical diagnostics, `diagnostic_figures` consumes the declared
 `field_calculations` and selected `panels` rather than a second hand-entered metric table.

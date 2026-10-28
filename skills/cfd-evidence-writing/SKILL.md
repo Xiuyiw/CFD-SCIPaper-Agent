@@ -244,6 +244,26 @@ missing scientific evidence. Do not activate this wider reading for a local form
 
 ## Manuscript paragraph and page formatting
 
+Choose the figure set before writing around it. Explain the actual reference and modified
+structures, not just their case codes. Assign each figure a distinct part of the argument;
+do not repeat a field or metric solely because a renderer exports it. Use a compact table for
+original readings when a change plot needs those readings as context.
+
+In a native table, optional `column_units` lists one display unit or `null` per column. For
+example, columns `["Case", "Temperature (K)", "Mean flux (W m⁻²)"]` use
+`[null, "K", "W m⁻²"]`. Bound values then display numbers only in those columns; the
+declared display unit must match every bound value and appear explicitly in its header.
+Choose display precision through existing evidence references, not by rounding source files.
+Research refresh retains that precision when the calculation, group, result field and source
+record still identify the same bound observation; it does not rewrite the source values.
+Use draft `block_order` with explicit `paragraph_id` values when near-reference defaults
+separate a figure from its explanation or leave an avoidable layout gap. Captions travel with
+their figures. The normal research build uses the formal exporter when an explicit block order
+is supplied, including on the first build without an author-recovery file. Verify the actual
+paragraph/table/figure order in the DOCX, not only the draft declaration.
+Resolve duplicate content and overlong captions before changing pagination;
+do not shrink text or change the scientific encoding merely to fill a page.
+
 Use the author's requested format first, or the target venue's supplied template; do not present
 one house style as a universal SCI requirement. For this project's requested manuscript style,
 body paragraphs use a two-character first-line indent and 0 pt before/after spacing. Implement

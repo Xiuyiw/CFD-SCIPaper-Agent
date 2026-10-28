@@ -89,6 +89,192 @@ def fill_drafts(workspace):
         write(path, draft)
 
 
+@pytest.mark.parametrize("selected", [["field"], ["distribution", "field"], []])
+def test_surface_workspace_selects_publication_figures_without_losing_diagnostics(
+    tmp_path, selected
+):
+    materials = tmp_path / "materials"
+    materials.mkdir()
+    source = study(materials)
+    data = read(source)
+    data["selected_figures"] = selected
+    write(source, data)
+    workspace = prepare_surface_workspace(source, tmp_path / "author")
+    result = read(workspace / "sections/results/input.json")
+    assert [figure["id"] for figure in result["figures"]] == selected
+    assert result["duties"][0]["figure_ids"] == selected
+    contract = next(
+        item
+        for item in read(workspace / "manuscript-input.json")["spine"]["sections"]
+        if item["section_id"] == "results"
+    )
+    assert contract["required_figure_ids"] == selected
+    assert set(read(workspace / "sections/results/draft.json")["captions"]) == set(selected)
+    assert {
+        item["id"] for item in read(workspace / "research-context.json")["selected_figures"]
+    } == set(selected)
+    assert (workspace / "sections/results/figures/distribution-source-data.csv").is_file()
+    assert (workspace / "sections/results/figures/field-source-data.csv").is_file()
+
+
+@pytest.mark.parametrize("selected", [["not-a-figure"], ["field", "field"], "field"])
+def test_surface_workspace_rejects_invalid_figure_selection_before_output(tmp_path, selected):
+    materials = tmp_path / "materials"
+    materials.mkdir()
+    source = study(materials)
+    data = read(source)
+    data["selected_figures"] = selected
+    write(source, data)
+    output = tmp_path / "author"
+    with pytest.raises(ValueError, match="selected_figures"):
+        prepare_surface_workspace(source, output)
+    assert not output.exists()
+
+
+def test_combined_diagnostic_recipe_refreshes_bound_text_and_preserves_author_assets(tmp_path):
+    from cfdpaper.publication.research_workspace import attach_research_diagnostics
+
+    materials = tmp_path / "materials"
+    materials.mkdir()
+    workspace = prepare_surface_workspace(study(materials), tmp_path / "author")
+    (materials / "sources/heat.csv").write_text("heat,area\n10,1\n-2,1\n", encoding="utf-8")
+    (materials / "sources/budget.csv").write_text(
+        "input,output,source\n20,12,0\n", encoding="utf-8"
+    )
+    config = {
+        "field_calculations": [
+            {
+                "id": "heat-path",
+                "source": "sources/heat.csv",
+                "operation": "field_integral",
+                "columns": {"value": "heat", "measure": "area"},
+                "units": {"value": "W/m2", "measure": "m2"},
+                "domain": "declared wall",
+                "field_options": {"association": "face", "integrand": "density"},
+            },
+            {
+                "id": "column",
+                "source": "sources/budget.csv",
+                "operation": "energy_budget",
+                "columns": {"input": "input", "output": "output", "source": "source"},
+                "units": {"input": "W", "output": "W", "source": "W"},
+                "domain": "steady column",
+                "field_options": {"steady_state": True},
+            },
+        ],
+        "panels": [
+            {
+                "id": "path",
+                "kind": "signed_flux",
+                "title": "Signed wall exchange",
+                "sign_convention": "Positive points outward.",
+                "series": [{"calculation_id": "heat-path", "label": "Wall"}],
+            },
+            {
+                "id": "budget",
+                "kind": "budget",
+                "view": "decomposition",
+                "title": "Column balance",
+                "series": [{"calculation_id": "column", "label": "Column"}],
+            },
+        ],
+    }
+    write(materials / "diagnostics.json", config)
+    attached = attach_research_diagnostics(
+        workspace,
+        materials / "diagnostics.json",
+        tmp_path / "attached",
+        combine=True,
+        figure_id="heat-readout",
+        panel_ids=["path", "budget"],
+    )
+    input_path = attached / "sections/results/input.json"
+    section = read(input_path)
+    for evidence in section["evidence"]:
+        if evidence["id"] in {"heat-path-all-net", "A-mean"}:
+            evidence["result_ref"]["places"] = 2
+    write(input_path, section)
+    fill_drafts(attached)
+    path = attached / "sections/results/draft.json"
+    draft = read(path)
+    draft["paragraphs"][0]["text"] += " Net transfer is {{value:heat-path-all-net}}."
+    draft["captions"]["heat-readout"] = "Author's current signed-transfer caption."
+    write(path, draft)
+    first = build_research_workspace(attached, tmp_path / "first")
+    author = first / "workspace"
+    local_script = author / "sections/results/figures/diagnostics/plot.py"
+    local_script.write_text(
+        local_script.read_text(encoding="utf-8") + "\n# Author style note\n", encoding="utf-8"
+    )
+    author_script = local_script.read_bytes()
+    (author / "sections/results/sources/heat.csv").write_text(
+        "heat,area\n20,1\n-2,1\n", encoding="utf-8"
+    )
+    updated = build_research_workspace(author, tmp_path / "updated", baseline_dir=first)
+    reports = read(updated / "workspace/sections/results/table-results.json")
+    assert next(r for r in reports if r["id"] == "heat-path")["groups"][0]["result"]["net"] == 18
+    output = read(updated / "manuscript/section.json")
+    assert any("Net transfer is 18.00 W." in p.get("text", "") for p in output["paragraphs"])
+    assert any(f["caption"] == draft["captions"]["heat-readout"] for f in output["figures"])
+    assert (
+        updated / "workspace/sections/results/figures/diagnostics/plot.py"
+    ).read_bytes() == author_script
+    selected = read(updated / "workspace/sections/results/input.json")["figures"]
+    assert [f["id"] for f in selected] == ["field", "distribution", "heat-readout"]
+    current_evidence = read(updated / "workspace/sections/results/input.json")["evidence"]
+    assert {
+        e["id"]: e["result_ref"]["places"]
+        for e in current_evidence
+        if e["id"] in {"heat-path-all-net", "A-mean"}
+    } == {"heat-path-all-net": 2, "A-mean": 2}
+    recipe = next(
+        r
+        for r in read(updated / "workspace/figure-recipes.json")
+        if r["id"] == "physical-diagnostics"
+    )
+    assert "sections/results/figures/diagnostics/heat-readout.png" in recipe["outputs"]
+    assert (
+        updated / "workspace/sections/results/figures/diagnostics/heat-readout.png"
+    ).read_bytes() != (
+        first / "workspace/sections/results/figures/diagnostics/heat-readout.png"
+    ).read_bytes()
+
+
+def test_diagnostic_metadata_reads_registered_secondary_bundle_without_replacing_caption(tmp_path):
+    from cfdpaper.publication.research_workspace import _diagnostic_metadata
+
+    root = tmp_path / "sections/results"
+    bundle = root / "figures/height"
+    bundle.mkdir(parents=True)
+    (bundle / "height.png").write_bytes(b"artifact location only; no visual validation")
+    write(
+        root / "input.json",
+        {"figures": [{"id": "height", "path": "old.png", "caption": "Author caption"}]},
+    )
+    write(
+        bundle / "diagnostic-figures.json",
+        {
+            "figures": [
+                {
+                    "id": "height",
+                    "path": "height.png",
+                    "caption": "Generated caption",
+                    "sizing": {"source_width_mm": 160},
+                }
+            ]
+        },
+    )
+    write(
+        tmp_path / "figure-recipes.json",
+        [{"outputs": ["sections/results/figures/height/diagnostic-figures.json"]}],
+    )
+    _diagnostic_metadata(tmp_path)
+    figure = read(root / "input.json")["figures"][0]
+    assert figure["path"] == "figures/height/height.png"
+    assert figure["sizing"] == {"source_width_mm": 160}
+    assert figure["caption"] == "Author caption"
+
+
 def test_attach_field_diagnostics_uses_existing_research_and_refresh(tmp_path):
     from cfdpaper.publication.research_workspace import attach_research_diagnostics
 

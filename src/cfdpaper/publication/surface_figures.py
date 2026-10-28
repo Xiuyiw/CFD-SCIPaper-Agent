@@ -373,11 +373,30 @@ def render_surface_study(
                 ax.locator_params(axis="both", nbins=4)
             colorbar = fig.colorbar(collection, cax=fig.add_subplot(grid[:, -1]))
             colorbar.set_label(f"{data['quantity']} ({display_unit(data['unit'])})")
-            # Fixed aspect can make projected x axes narrow, especially with fallback fonts.
+            # Fixed aspect can make either projected axis short, especially with fallback fonts.
             # Use Matplotlib's label-space estimate without increasing the existing tick cap.
             fig.canvas.draw()
             for ax in fig.axes[:-1]:
                 ax.locator_params(axis="x", nbins=min(4, max(1, ax.xaxis.get_tick_space())))
+                ax.locator_params(axis="y", nbins=min(4, max(1, ax.yaxis.get_tick_space())))
+            # Older compressed layouts can place the shared bar under a long panel title.
+            # Reserve its actual rendered extent without shortening text or changing the maps.
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            title_right = max(ax._left_title.get_window_extent(renderer).x1 for ax in fig.axes[:-1])
+            clearance = 4 * fig.dpi / 72
+            shift = title_right + clearance - colorbar.ax.get_window_extent().x0
+            if shift > 0:
+                position = colorbar.ax.get_position()
+                fig.set_layout_engine("none")
+                colorbar.ax.set_position(
+                    [
+                        position.x0 + shift / fig.bbox.width,
+                        position.y0,
+                        position.width,
+                        position.height,
+                    ]
+                )
             checks["field"] = _export(fig, output_dir, "field", style)
         finally:
             plt.close(fig)
