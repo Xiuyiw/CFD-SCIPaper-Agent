@@ -10,7 +10,15 @@ from tempfile import TemporaryDirectory
 from cfdpaper.publication.figure_recipes import execute_figure_recipes
 from cfdpaper.publication.figure_tasks import _asset, _check_preview, _Delivery, _Task
 from cfdpaper.publication.manuscript import _inputs, assemble_manuscript, prepare_manuscript
-from cfdpaper.publication.section import _Draft, _read, _stage, _write, export_section_docx
+from cfdpaper.publication.section import (
+    _calculate_sources,
+    _Draft,
+    _read,
+    _resolve_metric,
+    _stage,
+    _write,
+    export_section_docx,
+)
 from cfdpaper.publication.surface_figures import _read_study
 
 _RESULTS = Path("sections/results")
@@ -96,6 +104,7 @@ def attach_imported_figure(
     image_observation: str = "not-viewed",
     observation_note: str = "",
     paragraph_index: int | None = None,
+    replace_existing: bool = False,
 ) -> Path:
     """Attach an imported figure to a fresh authoring workspace, without replacing prose.
 
@@ -105,6 +114,9 @@ def attach_imported_figure(
     package; bundled drawing Skills are not duplicated into manuscript sources.
     Observation status/notes are caller declarations, never scientific approval.
     ``paragraph_index`` inserts before that zero-based paragraph; None appends.
+    Explicit replacement keeps the identity, numbering and current paragraphs. It
+    imports a new caption/artwork beside the previous author sources in a fresh
+    workspace; changed scientific prose remains the host's task.
     """
     workspace_dir, imported_dir, output_dir = map(
         lambda path: Path(path).resolve(), (workspace_dir, imported_dir, output_dir)
@@ -152,7 +164,14 @@ def attach_imported_figure(
         *draft["image_observations"],
         *draft.get("observation_notes", {}),
     }
-    if figure_id.casefold() in {key.casefold() for key in existing_ids}:
+    existing = next((f for f in section["figures"] if f["id"] == figure_id), None)
+    if replace_existing and (
+        existing is None
+        or paragraph_index is not None
+        or Path(existing["path"]).parts[:2] != ("sources", "figure-tasks")
+    ):
+        raise ValueError("Figure update requires an existing exact ID and no paragraph insertion")
+    if not replace_existing and figure_id.casefold() in {key.casefold() for key in existing_ids}:
         raise ValueError(f"Figure already exists in section {section_id}: {figure_id}")
     if "{{figure:" + figure_id + "}}" not in delivery.body_reference:
         raise ValueError("body_reference must contain the imported figure's local figure token")
@@ -172,17 +191,29 @@ def attach_imported_figure(
     assets = {name: _asset(imported_dir, name) for name in names}
     relative = Path("sources/figure-tasks") / figure_id
     destination = source.parent / relative
-    if destination.exists():
+    if replace_existing:
+        revision = 1
+        while (source.parent / relative).exists():
+            relative = Path("sources/figure-tasks") / f"{figure_id}-update-{revision}"
+            revision += 1
+    elif destination.exists():
         raise FileExistsError(f"Refusing to overwrite author-owned figure sources: {destination}")
-    section["figures"].append(
-        {
-            "id": figure_id,
-            "path": (relative / delivery.preview).as_posix(),
-            "caption": delivery.caption,
-            "description": task.purpose,
-            "sizing": delivery.sizing.model_dump(),
-        }
-    )
+    updated_figure = {
+        "id": figure_id,
+        "path": (relative / delivery.preview).as_posix(),
+        "caption": delivery.caption,
+        "description": task.purpose,
+        "sizing": delivery.sizing.model_dump(),
+    }
+    if replace_existing:
+        existing.update(updated_figure)
+        for paragraph in draft["paragraphs"]:
+            if figure_id in paragraph.get("figure_ids", []):
+                paragraph["evidence_ids"] = list(
+                    dict.fromkeys([*paragraph.get("evidence_ids", []), *evidence_ids])
+                )
+    else:
+        section["figures"].append(updated_figure)
     section["source_files"] = list(
         dict.fromkeys(
             [*section.get("source_files", []), *[(relative / name).as_posix() for name in names]]
@@ -193,18 +224,47 @@ def attach_imported_figure(
         "evidence_ids": evidence_ids,
         "figure_ids": [figure_id],
     }
-    draft["paragraphs"].insert(
-        len(draft["paragraphs"]) if paragraph_index is None else paragraph_index, paragraph
-    )
+    if not replace_existing:
+        identity = f"figure-{figure_id}-intro"
+        used = {p.get("paragraph_id") for p in draft["paragraphs"]}
+        suffix = 1
+        while identity in used:
+            identity = f"figure-{figure_id}-intro-{suffix}"
+            suffix += 1
+        paragraph["paragraph_id"] = identity
+        if draft.get("block_order"):
+            from cfdpaper.publication.document_blocks import paragraph_identity
+
+            occurrences = {}
+            for current in draft["paragraphs"]:
+                text = current["text"]
+                current.setdefault(
+                    "paragraph_id", paragraph_identity(text, occurrences.get(text, 0))
+                )
+                occurrences[text] = occurrences.get(text, 0) + 1
+            insertion = len(draft["block_order"])
+            if paragraph_index is not None and paragraph_index < len(draft["paragraphs"]):
+                anchor = "paragraph:" + draft["paragraphs"][paragraph_index]["paragraph_id"]
+                insertion = draft["block_order"].index(anchor)
+            draft["block_order"][insertion:insertion] = [
+                "paragraph:" + identity,
+                "figure:" + figure_id,
+            ]
+        draft["paragraphs"].insert(
+            len(draft["paragraphs"]) if paragraph_index is None else paragraph_index, paragraph
+        )
     draft["captions"][figure_id] = delivery.caption
     draft["image_observations"][figure_id] = image_observation
     if observation_note:
         draft.setdefault("observation_notes", {})[figure_id] = observation_note
+    elif replace_existing:
+        draft.get("observation_notes", {}).pop(figure_id, None)
     _Draft.model_validate(draft)
     contract = next(
         item for item in manifest["spine"]["sections"] if item["section_id"] == section_id
     )
-    contract.setdefault("required_figure_ids", []).append(figure_id)
+    if not replace_existing:
+        contract.setdefault("required_figure_ids", []).append(figure_id)
     with _stage(output_dir) as staged:
         shutil.copytree(workspace_dir, staged, dirs_exist_ok=True)
         target_section = staged / source.parent.relative_to(workspace_dir)
@@ -216,6 +276,146 @@ def attach_imported_figure(
         _write(staged / drafts[section_id], draft)
         _write(staged / "manuscript-input.json", manifest)
     return output_dir
+
+
+def research_question_context(workspace_dir, *, question, section_id, evidence_ids):
+    """Read selected current evidence and its definitions for one host research question.
+
+    Recalculate through existing source operators without modifying the workspace.
+    This is a bounded reading view, not a generated scientific explanation.
+    """
+    root = Path(workspace_dir).resolve()
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("A nonblank research question is required")
+    manifest, loaded, _, _, bound_resolutions = _inputs(root / "manuscript-input.json")
+    if section_id not in loaded:
+        raise ValueError(f"Unknown section: {section_id}")
+    if (
+        not isinstance(evidence_ids, list)
+        or not evidence_ids
+        or any(not isinstance(key, str) for key in evidence_ids)
+        or len(set(evidence_ids)) != len(evidence_ids)
+    ):
+        raise ValueError("Select a nonempty unique list of evidence IDs")
+    entries = {entry.section_id: entry for entry in manifest.sections}
+    _, target = loaded[section_id]
+    target_ids = {record.id for record in target.evidence}
+    if set(evidence_ids) - target_ids:
+        raise ValueError("Selected evidence must exist in the target section")
+    records, calculations = [], {}
+    for identity in evidence_ids:
+        owner, key = (
+            entries[section_id]
+            .evidence_bindings.get(identity, f"{section_id}/{identity}")
+            .split("/")
+        )
+        source, data = loaded[owner]
+        record = next(record for record in data.evidence if record.id == key)
+        if (
+            record.result_ref
+            and owner not in calculations
+            and not bound_resolutions.get(section_id, {}).get(identity)
+        ):
+            calculations[owner] = _calculate_sources(data, source.parent, write=False)
+        resolved = bound_resolutions.get(section_id, {}).get(identity) or _resolve_metric(
+            record, source.parent, calculations.get(owner, [])
+        )
+        declaration = next(
+            (
+                item.model_dump(exclude_none=True)
+                for item in [*data.table_calculations, *data.result_comparisons]
+                if record.result_ref and item.id == record.result_ref.calculation_id
+            ),
+            None,
+        )
+        excerpt = None
+        # Only a declared local text source is read. Narrative locators remain locators.
+        name = record.source.split(";", 1)[0].split("#", 1)[0].strip()
+        if name and Path(name).suffix.lower() in {".md", ".txt", ".json"}:
+            try:
+                material = _asset(source.parent, name)
+            except ValueError:
+                material = None
+            if material is not None:
+                lines = material.read_text(encoding="utf-8").splitlines()
+                text = "\n".join(lines[:80])
+                excerpt = {
+                    "path": material.relative_to(root).as_posix(),
+                    "first_line": 1,
+                    "last_line": min(80, len(lines)),
+                    "text": text[:8000],
+                    "truncated": len(lines) > 80 or len(text) > 8000,
+                }
+        records.append(
+            {
+                "id": identity,
+                "owner": f"{owner}/{key}",
+                "kind": record.kind,
+                "text": record.text,
+                "source": record.source,
+                "declared_value": record.value,
+                "declared_unit": record.unit,
+                "section_input": source.relative_to(root).as_posix(),
+                "evidence_role": record.evidence_role,
+                "resolved": {
+                    k: v
+                    for k, v in (resolved or {}).items()
+                    if k
+                    in {
+                        "value",
+                        "raw_value",
+                        "unit",
+                        "calculation_id",
+                        "group",
+                        "field",
+                        "source",
+                        "source_record",
+                        "quantity_kind",
+                        "support",
+                    }
+                },
+                "calculation": declaration,
+                "source_excerpt": excerpt,
+            }
+        )
+    drafts = _read(root / "drafts.json")
+    passages, figures = [], []
+    owners = {record["owner"] for record in records}
+    selected_sections = [section_id, *[record["owner"].split("/")[0] for record in records]]
+    for sid in dict.fromkeys(selected_sections):
+        if sid not in drafts:
+            continue
+        source, data = loaded[sid]
+        draft = _read(_asset(root, drafts[sid]))
+        relevant = [
+            p
+            for p in draft.get("paragraphs", [])
+            if any(
+                entries[sid].evidence_bindings.get(eid, f"{sid}/{eid}") in owners
+                for eid in p.get("evidence_ids", [])
+            )
+        ]
+        passages.extend({"section_id": sid, **p} for p in relevant)
+        figure_ids = {fid for p in relevant for fid in p.get("figure_ids", [])}
+        figures.extend(
+            {
+                **f.model_dump(),
+                "section_id": sid,
+                "path": (source.parent / f.path).relative_to(root).as_posix(),
+                "caption": draft.get("captions", {}).get(f.id, f.caption),
+            }
+            for f in data.figures
+            if f.id in figure_ids
+        )
+    return {
+        "question": question,
+        "section_id": section_id,
+        "evidence": records,
+        "passages": passages,
+        "figures": figures,
+        "reading": "Current calculations and declared sources inform host interpretation; "
+        "select discriminating observations and read the actual figures.",
+    }
 
 
 def _definition_text(data):

@@ -2,6 +2,9 @@
 
 from copy import deepcopy
 
+import pytest
+
+from cfdpaper.publication.manuscript import _change_report
 from cfdpaper.publication.manuscript_changes import compare_manuscript_states
 
 
@@ -219,3 +222,147 @@ def test_large_sources_and_record_text_do_not_bloat_report():
     assert len(str(report)) < 3000
     assert "a" * 200 not in str(report)
     assert "z" * 200 not in str(report)
+
+
+def difference_state(field, value):
+    snapshot = state()
+    owner = snapshot["sections"]["results"]
+    owner["input"]["table_calculations"] = [
+        {
+            "id": "delta",
+            "source": "sources/current.csv",
+            "operation": "field_difference" if field == "difference_mean" else "paired_change",
+            "columns": {"value": "temperature", "measure": "area"},
+            "units": {"value": "K", "measure": "m2"},
+            "domain": "Whole heated wall",
+            "quantity_kind": "absolute-temperature",
+            "support": {"spatial": {"domain": "wall"}, "time": {"state": "steady"}},
+            "field_options": {"association": "face", "reference_source": "baseline.csv"},
+        }
+    ]
+    owner["evidence"]["q"]["resolved"] = {
+        "raw_value": value,
+        "value": f"{value:.3f}",
+        "unit": "K",
+        "calculation_id": "delta",
+        "group": "all",
+        "field": field,
+    }
+    owner["draft"]["paragraphs"][0]["evidence_ids"] = ["q"]
+    snapshot["sections"]["abstract"]["draft"]["paragraphs"][0]["evidence_ids"] = ["summary"]
+    return snapshot
+
+
+@pytest.mark.parametrize("field", ["difference", "difference_mean"])
+@pytest.mark.parametrize(
+    ("left", "right", "changed"),
+    [
+        (-0.0001, 0.0001, True),
+        (2, -1, True),
+        (2, 0, True),
+        (0, -1, True),
+        (-2, 0, True),
+        (0, 1, True),
+        (-2, -1, False),
+        (1, 2, False),
+    ],
+)
+def test_passage_difference_direction_uses_unrounded_values_and_exact_binding(
+    field, left, right, changed
+):
+    before, after = difference_state(field, left), difference_state(field, right)
+    original_before, original_after = deepcopy(before), deepcopy(after)
+    report = _change_report(before, after)
+    for sid, eid in (("results", "q"), ("abstract", "summary")):
+        passage = report["affected_passages"][sid][0]
+        assert passage["text"] == "Author's manually edited sentence."
+        change = passage["result_changes"][0]
+        assert change["evidence_id"] == eid
+        assert change["before"]["raw_value"] == left
+        assert change["after"]["raw_value"] == right
+        assert change["difference_sign_changed"] is changed
+    assert before == original_before and after == original_after
+
+
+@pytest.mark.parametrize("field", ["difference", "difference_mean"])
+@pytest.mark.parametrize(
+    ("location", "key", "value"),
+    [
+        ("resolved", "unit", "Pa"),
+        ("resolved", "group", "hotspot"),
+        ("resolved", "calculation_id", "other-delta"),
+        ("calculation", "domain", "Hotspot only"),
+        ("calculation", "support", {"spatial": {"domain": "hotspot"}}),
+        ("calculation", "operation", "field_integral"),
+        ("calculation", "columns", {"value": "pressure", "measure": "area"}),
+        ("calculation", "quantity_kind", "ordinary"),
+        ("calculation", "field_options", {"reference_source": "different-baseline.csv"}),
+    ],
+)
+def test_passage_does_not_call_incompatible_difference_a_direction_change(
+    field, location, key, value
+):
+    before, after = difference_state(field, -2), difference_state(field, 1)
+    owner = after["sections"]["results"]
+    target = (
+        owner["evidence"]["q"]["resolved"]
+        if location == "resolved"
+        else owner["input"]["table_calculations"][0]
+    )
+    target[key] = value
+    report = _change_report(before, after)
+    change = report["affected_passages"]["abstract"][0]["result_changes"][0]
+    assert change["difference_sign_changed"] is None
+    assert change["before"]["raw_value"] == -2
+    assert change["after"]["raw_value"] == 1
+
+
+def test_passage_difference_compares_upstream_definitions_not_unrelated_calculations():
+    before = difference_state("difference", -2)
+    owner = before["sections"]["results"]
+    owner["input"]["table_calculations"] = [
+        {
+            "id": name,
+            "operation": "weighted_population",
+            "source": f"sources/{name}.csv",
+            "domain": "Whole heated wall",
+            "weight_kind": "area",
+            "quantity_kind": "absolute-temperature",
+            "support": {"spatial": {"domain": "wall"}},
+        }
+        for name in ("baseline", "current", "unrelated")
+    ]
+    owner["input"]["result_comparisons"] = [
+        {
+            "id": "delta",
+            "domain": "Whole heated wall",
+            "definition_source": "sources/method.md:L1-L2",
+            "reference": {"calculation_id": "baseline", "group": "all", "field": "weighted_mean"},
+            "comparison": {"calculation_id": "current", "group": "all", "field": "weighted_mean"},
+        }
+    ]
+    after = deepcopy(before)
+    after_owner = after["sections"]["results"]
+    after_owner["evidence"]["q"]["resolved"]["raw_value"] = 1
+    after_owner["input"]["table_calculations"][2]["domain"] = "Unrelated domain"
+    report = _change_report(before, after)
+    assert (
+        report["affected_passages"]["abstract"][0]["result_changes"][0]["difference_sign_changed"]
+        is True
+    )
+    after_owner["input"]["table_calculations"][0]["weight_kind"] = "volume"
+    report = _change_report(before, after)
+    assert (
+        report["affected_passages"]["abstract"][0]["result_changes"][0]["difference_sign_changed"]
+        is None
+    )
+
+
+def test_passage_absolute_temperature_is_not_a_difference():
+    before, after = difference_state("weighted_mean", -2), difference_state("weighted_mean", 1)
+    for snapshot in (before, after):
+        snapshot["sections"]["results"]["input"]["table_calculations"][0]["operation"] = (
+            "weighted_population"
+        )
+    change = _change_report(before, after)["affected_passages"]["abstract"][0]["result_changes"][0]
+    assert change["difference_sign_changed"] is None

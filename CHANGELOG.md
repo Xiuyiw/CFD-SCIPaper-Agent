@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.27.0] — 2026-10-28
+
+### Added
+
+- A question-focused reading view recalculates selected current evidence and gathers its operator,
+  physical definition, source excerpt and related prose/figures through Python and CLI.
+- Explicit imported-artwork replacement retains figure identity, author source versions, numbering
+  and body prose in a fresh workspace, with the incoming caption and new inspection state.
+- A public mechanism-continuation replay extends research-expression with editable artwork,
+  a difference reversal and an explicit host interpretation update.
+
+### Fixed
+
+- Regional `difference_mean` changes receive passage-level direction-change context. Changed
+  domains, operators, supports, baselines, units or upstream definitions are kept separate from
+  comparable sign reversals.
+
 ## [0.26.0] — 2026-10-28
 
 ### Added

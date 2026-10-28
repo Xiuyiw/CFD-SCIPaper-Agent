@@ -763,6 +763,155 @@ def test_imported_figure_defaults_to_append_and_not_viewed(assets, figure_candid
         )
 
 
+def test_explicit_figure_update_retains_identity_author_sources_and_body(
+    assets, figure_candidate, tmp_path
+):
+    work, old = clone(assets, tmp_path)
+    attached = attach_imported_figure(
+        work,
+        figure_candidate,
+        tmp_path / "attached",
+        section_id="discussion",
+        evidence_ids=["A-mean"],
+    )
+    baseline = build_research_workspace(attached, tmp_path / "baseline", baseline_dir=old)
+    author = baseline / "workspace"
+    local = author / "sections/discussion/sources/figure-tasks/mechanism/artwork/figure.svg"
+    local.write_text(local.read_text() + "<!-- author source -->")
+    draft_path = author / "sections/discussion/draft.json"
+    draft = read(draft_path)
+    draft["paragraphs"][-1]["text"] += " Author interpretation retained."
+    write(draft_path, draft)
+    original = snapshot(author)
+    changed = tmp_path / "new-artwork"
+    shutil.copytree(figure_candidate, changed)
+    metadata = read(changed / "delivery.json")
+    metadata["caption"] = "Updated explanation of the same synthetic pathway."
+    metadata["body_reference"] = "Do not duplicate {{figure:mechanism}} in the body."
+    write(changed / "delivery.json", metadata)
+    updated = attach_imported_figure(
+        author,
+        changed,
+        tmp_path / "updated",
+        section_id="discussion",
+        evidence_ids=["A-mean"],
+        replace_existing=True,
+    )
+    assert snapshot(author) == original
+    updated_draft = read(updated / "sections/discussion/draft.json")
+    assert updated_draft["paragraphs"] == draft["paragraphs"]
+    assert updated_draft["captions"]["mechanism"] == metadata["caption"]
+    assert updated_draft["image_observations"]["mechanism"] == "not-viewed"
+    assert local.relative_to(author).as_posix() in snapshot(updated)
+    assert (updated / local.relative_to(author)).read_bytes() == local.read_bytes()
+    section = read(updated / "sections/discussion/input.json")
+    assert len(section["figures"]) == 1
+    assert section["figures"][0]["id"] == "mechanism"
+    assert "mechanism-update-1/" in section["figures"][0]["path"]
+    result = build_research_workspace(updated, tmp_path / "candidate", baseline_dir=baseline)
+    assert read(result / "manuscript/numbering.json")["sections"]["discussion"]["figure"] == {
+        "mechanism": "3"
+    }
+    assert all(s["status"] == "unchanged" for s in read(result / "refresh.json")["figure_recipes"])
+    assert "discussion" in read(result / "manuscript/changes.json")["affected_passages"]
+
+
+def test_figure_update_requires_existing_identity(assets, figure_candidate, tmp_path):
+    work, _ = clone(assets, tmp_path)
+    with pytest.raises(ValueError, match="existing"):
+        attach_imported_figure(
+            work,
+            figure_candidate,
+            tmp_path / "bad-update",
+            section_id="discussion",
+            evidence_ids=[],
+            replace_existing=True,
+        )
+
+
+def test_figure_attachment_extends_explicit_author_block_order(assets, figure_candidate, tmp_path):
+    work, old = clone(assets, tmp_path)
+    path = work / "sections/discussion/draft.json"
+    draft = read(path)
+    for index, paragraph in enumerate(draft["paragraphs"]):
+        paragraph["paragraph_id"] = f"author-p-{index}"
+    previous_order = ["paragraph:" + p["paragraph_id"] for p in draft["paragraphs"]]
+    draft["block_order"] = previous_order
+    write(path, draft)
+    attached = attach_imported_figure(
+        work,
+        figure_candidate,
+        tmp_path / "attached",
+        section_id="discussion",
+        evidence_ids=["A-mean"],
+        paragraph_index=0,
+    )
+    updated = read(attached / "sections/discussion/draft.json")
+    assert updated["block_order"] == [
+        "paragraph:figure-mechanism-intro",
+        "figure:mechanism",
+        *previous_order,
+    ]
+    build_research_workspace(attached, tmp_path / "candidate", baseline_dir=old)
+
+
+def test_question_context_reads_current_values_definitions_and_selected_passages(assets, tmp_path):
+    from cfdpaper.publication.research_workspace import research_question_context
+
+    work, _ = clone(assets, tmp_path)
+    path = work / "sections/results/sources/A.npz"
+    with np.load(path) as source:
+        arrays = {key: source[key] for key in source.files}
+    arrays["face_value"] = arrays["face_value"] + 4
+    np.savez(path, **arrays)
+    before = snapshot(work)
+    context = research_question_context(
+        work,
+        question="Does the mean describe the whole wall?",
+        section_id="discussion",
+        evidence_ids=["A-mean", "study-definition"],
+    )
+    assert snapshot(work) == before
+    metric = context["evidence"][0]
+    assert metric["resolved"]["raw_value"] == pytest.approx(379)
+    assert metric["owner"] == "results/A-mean"
+    assert metric["calculation"]["operation"] == "weighted_population"
+    definition = context["evidence"][1]["source_excerpt"]
+    assert definition["first_line"] == 1
+    assert "Synthetic common-wall" in definition["text"]
+    assert context["passages"]
+    assert "vertices_m" not in json.dumps(context)
+    assert 'face_value": [' not in json.dumps(context)
+    with pytest.raises(ValueError, match="evidence"):
+        research_question_context(
+            work, question="Question", section_id="discussion", evidence_ids=["absent"]
+        )
+
+
+def test_question_context_keeps_a_declared_report_reading(assets, tmp_path):
+    from cfdpaper.publication.research_workspace import research_question_context
+
+    work, _ = clone(assets, tmp_path)
+    path = work / "sections/discussion/input.json"
+    section = read(path)
+    section["evidence"].append(
+        {
+            "id": "reported",
+            "kind": "metric",
+            "value": "42.5",
+            "unit": "W",
+            "text": "Declared report reading",
+            "source": "report row 4",
+        }
+    )
+    write(path, section)
+    reading = research_question_context(
+        work, question="What was reported?", section_id="discussion", evidence_ids=["reported"]
+    )["evidence"][0]
+    assert reading["declared_value"] == "42.5" and reading["declared_unit"] == "W"
+    assert reading["resolved"] == {} and reading["source_excerpt"] is None
+
+
 @pytest.mark.parametrize(
     "failure",
     ["missing-token", "unknown-evidence", "section", "index", "preview", "observation", "source"],

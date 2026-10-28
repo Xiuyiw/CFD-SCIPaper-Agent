@@ -188,6 +188,15 @@ exports an editable candidate, not a finished or author-approved full paper.
 
 ### Continue an existing manuscript
 
+For a focused physical question, use `research_question_context` or
+`research --workspace ... --section ... --evidence ID --question-context "..." --output ...`
+to read selected current calculations, exact definitions, source excerpts and related passages/figures.
+Choose evidence IDs from actual observations; the question does not discover a mechanism.
+Use discriminating observations to compare explanations, rather than adding every available scalar.
+When a comparable `difference_mean` crosses zero, use the passage's before/after context to revise
+its directional interpretation and caption. A changed support or operator needs definition review,
+not a mechanical word swap. Preserve the first draft and the author's unrelated text.
+
 An assembled workspace includes `CONTINUE.md`, portable `drafts.json`, each section's
 `input.json`, local-ID `draft.json`, sources, Skill and current manuscript context. Copy the whole
 workspace to resume with another host. Preserve the current version, edit only the intended draft
