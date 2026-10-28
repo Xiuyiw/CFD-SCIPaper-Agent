@@ -69,6 +69,15 @@ def _study(path):
     _asset(path.parent, definition["source"])
     if _PARAMETERS in {definition["source"], *[case["source"] for case in data["cases"]]}:
         raise ValueError(f"Selected material conflicts with generated parameters: {_PARAMETERS}")
+    selected = data.get("selected_figures", ["field", "distribution"])
+    if (
+        not isinstance(selected, list)
+        or any(
+            not isinstance(item, str) or item not in {"field", "distribution"} for item in selected
+        )
+        or len(set(selected)) != len(selected)
+    ):
+        raise ValueError("selected_figures must be a unique list drawn from field and distribution")
     return data
 
 
@@ -334,7 +343,7 @@ def _recipe(data):
     }
 
 
-def _figure_metadata(workspace, *, initial=False):
+def _figure_metadata(workspace, *, initial=False, selected_figures=None):
     root = (workspace / _RESULTS).resolve()
     summary = _read(root / "figures/surface-figures.json")
     figures = {item["id"]: item for item in summary["figures"]}
@@ -344,7 +353,10 @@ def _figure_metadata(workspace, *, initial=False):
     if initial:
         data["figures"] = [
             {key: item[key] for key in ("id", "path", "caption", "description", "sizing")}
-            for item in figures.values()
+            for item in (
+                figures[key]
+                for key in (list(figures) if selected_figures is None else selected_figures)
+            )
         ]
     for figure in data["figures"]:
         if figure["id"] in figures:
@@ -403,6 +415,10 @@ def _host_context(root, data):
             "results": "sections/results/table-results.json",
             "result_summary": summaries,
             "figure_script": "sections/results/figures/plot.py",
+            "selected_figures": [
+                {key: item[key] for key in ("id", "path", "description")}
+                for item in _read(root / _RESULTS / "input.json")["figures"]
+            ],
             **(
                 {
                     "diagnostics": "sections/results/diagnostics.json",
@@ -421,7 +437,10 @@ def _host_context(root, data):
         "manuscript-context.json. Source paths in the study are relative to sections/results/. "
         "Use result_summary for the current scalar readings; full_result points to complete "
         "source indices and definitions without copying large arrays into the reading context. "
-        "Open both figures and read the definition material before interpreting the comparison.\n\n"
+        "Open the selected figures and read the definition material before interpreting "
+        "the comparison. Generated diagnostic files are available observations, not automatically "
+        "the final figure set. "
+        "Each chosen figure should add a distinct part of the argument.\n\n"
         "The generated spine and duties are provisional: study-definition is a scope fact, "
         "not a scientific central finding. Before writing, update the spine and duties to "
         "the actual finding and each section's evidence needs. Discussion and Conclusions "
@@ -506,6 +525,23 @@ def _diagnostic_evidence(config, reports):
     return evidence
 
 
+def _retain_display_precision(evidence, previous):
+    """Keep an author's rounding when the bound quantity is still the same."""
+    old = {item["id"]: item.get("result_ref") or {} for item in previous}
+    for item in evidence:
+        current = item.get("result_ref") or {}
+        retained = old.get(item["id"], {})
+        if (
+            current
+            and "places" in retained
+            and all(
+                current.get(key) == retained.get(key)
+                for key in ("calculation_id", "group", "field", "source_record")
+            )
+        ):
+            current["places"] = retained["places"]
+
+
 def _sync_diagnostics(workspace):
     """Refresh configured diagnostic declarations without replacing author prose/scripts."""
     config_path = workspace / _RESULTS / "diagnostics.json"
@@ -520,6 +556,7 @@ def _sync_diagnostics(workspace):
     ]
     evidence = _diagnostic_evidence(config, reports)
     data = _read(root / "input.json")
+    _retain_display_precision(evidence, data["evidence"])
     current_calculations = {item["id"] for item in config["field_calculations"]}
     current_evidence = {item["id"] for item in evidence}
     retired_calculations = set(config.get("managed_calculation_ids", current_calculations))
@@ -592,9 +629,21 @@ def _sync_diagnostics(workspace):
 
 def _diagnostic_metadata(workspace, *, initial=False):
     root = (workspace / _RESULTS).resolve()
-    summary = root / "figures/diagnostics/diagnostic-figures.json"
-    if not summary.is_file():
-        return
+    summaries = [root / "figures/diagnostics/diagnostic-figures.json"]
+    recipes_path = workspace / "figure-recipes.json"
+    if not initial and recipes_path.is_file():
+        for recipe in _read(recipes_path):
+            summaries.extend(
+                _asset(workspace, name)
+                for name in recipe["outputs"]
+                if Path(name).name == "diagnostic-figures.json"
+            )
+    for summary in dict.fromkeys(summaries):
+        if summary.is_file():
+            _update_diagnostic_metadata(root, summary, initial=initial)
+
+
+def _update_diagnostic_metadata(root, summary, *, initial):
     figures = _read(summary)["figures"]
     section = _read(root / "input.json")
     existing = {item["id"]: item for item in section["figures"]}
@@ -616,8 +665,21 @@ def _diagnostic_metadata(workspace, *, initial=False):
     _write(root / "input.json", section)
 
 
-def attach_research_diagnostics(workspace_dir, config_path, output_dir):
-    """Attach source-driven diagnostics and their local plotting recipe to a fresh workspace."""
+def attach_research_diagnostics(
+    workspace_dir,
+    config_path,
+    output_dir,
+    *,
+    combine=False,
+    figure_id="diagnostic-composite",
+    panel_ids=None,
+    style=None,
+):
+    """Attach selected source-driven diagnostics and their author-local refresh recipe.
+
+    All declared calculations remain available to writing. Panel selection and
+    composition affect the figures, not the underlying numerical evidence.
+    """
     from .diagnostic_figures import render_diagnostic_figures
 
     workspace_dir, config_path, output_dir = (
@@ -650,13 +712,25 @@ def attach_research_diagnostics(workspace_dir, config_path, output_dir):
             raise ValueError("Workspace already has diagnostics; edit its current configuration")
         _write(root / "diagnostics.json", config)
         _sync_diagnostics(staged)
-        figures = render_diagnostic_figures(root / "diagnostics.json", root / "figures/diagnostics")
+        figures = render_diagnostic_figures(
+            root / "diagnostics.json",
+            root / "figures/diagnostics",
+            combine=combine,
+            figure_id=figure_id,
+            panel_ids=panel_ids,
+            style=style,
+        )
         _diagnostic_metadata(staged, initial=True)
         prefix = (_RESULTS / "figures/diagnostics").as_posix()
         outputs = [
             f"{prefix}/{f['id']}.{ext}" for f in figures for ext in ("png", "svg", "pdf", "tiff")
         ]
         outputs += [f"{prefix}/{f['id']}-source-data.csv" for f in figures]
+        outputs += [
+            f"{prefix}/{f['id']}-differences.csv"
+            for f in figures
+            if (root / "figures/diagnostics" / f"{f['id']}-differences.csv").is_file()
+        ]
         outputs += [
             f"{prefix}/{name}" for name in ("diagnostic-checks.json", "diagnostic-figures.json")
         ]
@@ -702,6 +776,7 @@ def prepare_surface_workspace(study_path: Path, output_dir: Path) -> Path:
     study_path, output_dir = Path(study_path).resolve(), Path(output_dir).resolve()
     _distinct_output(study_path.parent, output_dir)
     data = _study(study_path)
+    selected_figures = data.get("selected_figures", ["field", "distribution"])
     calculations, evidence = _declarations(data)
     metric_ids = [item["id"] for item in evidence]
     means = [f"{case['id']}-mean" for case in data["cases"]]
@@ -750,7 +825,7 @@ def prepare_surface_workspace(study_path: Path, output_dir: Path) -> Path:
                         {
                             "purpose": purpose,
                             "evidence_ids": required,
-                            "figure_ids": ["field", "distribution"] if sid == "results" else [],
+                            "figure_ids": selected_figures if sid == "results" else [],
                         }
                     ],
                     "context": _definition_text(data),
@@ -779,12 +854,12 @@ def prepare_surface_workspace(study_path: Path, output_dir: Path) -> Path:
                     "title": title,
                     "purpose": purpose,
                     "required_claim_ids": required,
-                    "required_figure_ids": ["field", "distribution"] if sid == "results" else [],
+                    "required_figure_ids": selected_figures if sid == "results" else [],
                 }
             )
         recipes = [_recipe(data)]
         execute_figure_recipes(source, recipes)
-        _figure_metadata(source, initial=True)
+        _figure_metadata(source, initial=True, selected_figures=selected_figures)
         _write(
             source / "manuscript-input.json",
             {
@@ -856,6 +931,7 @@ def _sync_definitions(workspace, data):
     previous.add("study-definition")
     previous_sources = {item["source"] for item in section["evidence"] if item["id"] in previous}
     calculations, evidence = _declarations(data)
+    _retain_display_precision(evidence, section["evidence"])
     _write(workspace / _RESULTS / _PARAMETERS, {"thresholds": data["thresholds"]})
     section["table_calculations"] = [
         item for item in section["table_calculations"] if not item["id"].startswith("surface-")
@@ -1019,7 +1095,12 @@ def build_research_workspace(
         manuscript = assemble_manuscript(
             workspace, workspace / "drafts.json", staged / "manuscript"
         )
-        if (workspace / "author-edits.json").is_file() or author_candidate is not None:
+        explicit_order = any(_read(manuscript / "section.json").get("section_orders", {}).values())
+        if (
+            (workspace / "author-edits.json").is_file()
+            or author_candidate is not None
+            or explicit_order
+        ):
             from cfdpaper.publication.formal_export import export_formal_manuscript
 
             export_formal_manuscript(manuscript, staged / "manuscript.docx")

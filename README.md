@@ -17,15 +17,19 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.25.0 connects saved-report calculations to complementary response figures and
-host-written Methods/Results/Discussion. Multiple series share exact case identities, source
-definitions and bound values; continuing a report executes the retained author-local plotting
-script against current source rows. Two original-face maps can also share a scale and accompany
-layer-wise positive, negative and net transfer diagnostics. Studio-guided editable mechanism
-artwork uses the existing figure exchange and manuscript attachment path, not a new automatic
-mechanism-discovery engine. Start with the
-[bound-response report example](examples/bound-response-report/README.md) and
-[version notes](docs/releases/v0.25.0.md).
+Version 0.26.0 connects original face arrays to paired regional changes, complementary budget
+panels, native Word tables and an ordered research note. Initial figure selection keeps available
+diagnostics separate from the manuscript's chosen figure set. Source-driven continuation updates
+the figure and bound prose while retaining author-local plotting scripts, drafts, captions and
+display precision. Start with the
+[research-expression example](examples/research-expression/README.md) and
+[version notes](docs/releases/v0.26.0.md).
+
+The earlier [bound-response report example](examples/bound-response-report/README.md) remains
+available for saved reports and multi-series response figures. Original-face maps, signed-transfer
+diagnostics and Studio-guided editable mechanism artwork continue through the existing figure
+exchange and manuscript attachment paths. The host chooses the scientific argument and diagram;
+these tools do not automatically discover a mechanism.
 
 The optional local MCP server shares nine task functions with CLI/Python. Existing report
 bindings, explicit reference denominators, native Word formulas, portable workspaces and
@@ -96,7 +100,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.25.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.26.0 checkout or source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -108,10 +112,22 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.25.0-py3-none-any.whl[docs]"
+python -m pip install "./cfd_paper_agent-0.26.0-py3-none-any.whl[docs]"
 ```
 
-The examples live in the source checkout/archive, not the wheel. For the managed Word workflow,
+The examples live in the source checkout/archive, not the wheel. Start with a complete constructed
+research note and source-update continuation:
+
+```text
+python examples/research-expression/run_example.py output/research-expression
+```
+
+Open `output/research-expression/candidate/manuscript.docx` and
+`output/research-expression/refreshed/manuscript.docx`. The example provides the question and prose;
+the product computes and refreshes the shared numerical evidence, figures and tables. See its
+[README](examples/research-expression/README.md) to continue with your own local script and drafts.
+
+For the managed Word workflow,
 run the source-checkout command below, or copy `examples/author-collaboration` anywhere writable
 and use the absolute path to that standalone script against the installed package:
 
@@ -403,6 +419,8 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Documentation index](docs/README.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
+- [v0.26.0 version notes](docs/releases/v0.26.0.md)
+- [Source-bound research expression and refresh](examples/research-expression/README.md)
 - [v0.25.0 version notes](docs/releases/v0.25.0.md)
 - [Bound response figures and report example](examples/bound-response-report/README.md)
 - [v0.24.0 version notes](docs/releases/v0.24.0.md)

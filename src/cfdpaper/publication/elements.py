@@ -6,7 +6,7 @@ import math
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, model_validator
 
 from cfdpaper.publication.export import ManuscriptTable
 
@@ -60,6 +60,8 @@ def display_scientific_text(value: str) -> str:
 class SectionTable(ManuscriptTable):
     evidence_ids: list[str] = Field(default_factory=list)
     column_widths_mm: list[float] | None = None
+    # Explicit shared display units, not inferred from cell strings. None retains units.
+    column_units: list[StrictStr | None] | None = None
     numeric_columns: list[int] = Field(default_factory=list)
     note: str = ""
 
@@ -74,6 +76,18 @@ class SectionTable(ManuscriptTable):
             raise ValueError("Table column widths must be finite positive widths for every column")
         if any(i < 0 or i >= len(self.columns) for i in self.numeric_columns):
             raise ValueError("Numeric column indices must identify existing columns (zero-based)")
+        if self.column_units is not None:
+            if len(self.column_units) != len(self.columns):
+                raise ValueError("Column units must identify every table column")
+            for title, unit in zip(self.columns, self.column_units, strict=True):
+                if unit is not None and (
+                    not unit.strip()
+                    or unit != unit.strip()
+                    or not re.search(r"(?<!\w)" + re.escape(unit) + r"(?!\w)", title)
+                ):
+                    raise ValueError(
+                        "A shared column unit must be written explicitly in its header"
+                    )
         return self
 
 

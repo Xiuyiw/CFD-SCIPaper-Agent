@@ -3,6 +3,40 @@ import pytest
 from cfdpaper.publication.elements import MathNode, SectionTable, math_text, math_xml
 
 
+@pytest.mark.parametrize(
+    "units,columns",
+    [
+        ([None], ["Case", "Temperature (K)"]),
+        ([None, ""], ["Case", "Temperature (K)"]),
+        ([None, "  "], ["Case", "Temperature (K)"]),
+        ([None, "K"], ["Case", "Temperature"]),
+        ([None, "K"], ["Case", "Temperature (kK)"]),
+    ],
+)
+def test_table_column_units_must_be_explicit_and_match_headers(units, columns):
+    with pytest.raises(ValueError, match="[Uu]nit"):
+        SectionTable(
+            table_id="1",
+            caption="Response",
+            after_section_id="results",
+            columns=columns,
+            rows=[["A", "300"]],
+            column_units=units,
+        )
+
+
+def test_table_column_units_are_optional_presentation_metadata():
+    table = SectionTable(
+        table_id="1",
+        caption="Response",
+        after_section_id="results",
+        columns=["Case", "Temperature (K)"],
+        rows=[["A", "300.00"]],
+        column_units=[None, "K"],
+    )
+    assert table.column_units == [None, "K"]
+
+
 def test_table_caption_separates_adjacent_tables():
     from docx import Document
 

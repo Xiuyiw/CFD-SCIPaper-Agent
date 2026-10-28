@@ -33,7 +33,7 @@ def _source(root, name):
     return source
 
 
-def _read_panels(config_path):
+def _read_panels(config_path, panel_ids: list[str] | None = None):
     from cfdpaper.publication.field_diagnostics import calculate_field_diagnostic
 
     data = json.loads(config_path.read_text(encoding="utf-8"))
@@ -43,7 +43,7 @@ def _read_panels(config_path):
         if identity in declarations:
             raise ValueError(f"Duplicate diagnostic calculation: {identity}")
         declarations[identity] = declaration
-    panels, identities, reports = [], set(), {}
+    configured = {}
     for panel in data.get("panels", []):
         identity, kind = panel.get("id"), panel.get("kind")
         if (
@@ -53,18 +53,52 @@ def _read_panels(config_path):
                 character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
                 for character in identity
             )
-            or identity in identities
+            or identity in configured
             or kind not in _OPERATIONS
             or not isinstance(panel.get("title"), str)
             or not panel["title"].strip()
         ):
             raise ValueError("Diagnostic panels require unique portable id, kind and title")
-        identities.add(identity)
+        configured[identity] = panel
+    if panel_ids is not None and (
+        not isinstance(panel_ids, list)
+        or not panel_ids
+        or any(
+            not isinstance(identity, str) or identity not in configured for identity in panel_ids
+        )
+        or len(set(panel_ids)) != len(panel_ids)
+    ):
+        raise ValueError("panel_ids must select unique existing diagnostic panel IDs")
+    selected = configured.values() if panel_ids is None else (configured[key] for key in panel_ids)
+    panels, reports = [], {}
+    for panel in selected:
+        kind = panel["kind"]
         if kind == "signed_flux" and not str(panel.get("sign_convention", "")).strip():
             raise ValueError("signed_flux requires a reader-visible sign_convention")
         series = panel.get("series", [])
         if not isinstance(series, list) or not 1 <= len(series) <= 4:
             raise ValueError("A diagnostic panel requires one to four labelled series")
+        view = panel.get("view")
+        if view is not None and (kind, view) not in {
+            ("regional", "paired_change"),
+            ("budget", "decomposition"),
+        }:
+            raise ValueError("Diagnostic view is incompatible with the panel kind")
+        if view == "paired_change":
+            pairs = {}
+            for item in series:
+                pair, role = item.get("pair_id"), item.get("role")
+                if (
+                    not isinstance(pair, str)
+                    or not pair.strip()
+                    or role not in {"reference", "comparison"}
+                ):
+                    raise ValueError("Paired changes require explicit pair_id and role")
+                if role in pairs.setdefault(pair, set()):
+                    raise ValueError("Paired changes require one reference and comparison")
+                pairs[pair].add(role)
+            if any(roles != {"reference", "comparison"} for roles in pairs.values()):
+                raise ValueError("Paired changes require one reference and comparison")
         layers = panel.get("layers")
         if layers is not None:
             if (
@@ -147,6 +181,9 @@ def _read_panels(config_path):
                         "result": group["result"],
                         "total_measure": available["all"]["result"].get("measure"),
                     }
+                    for key in ("pair_id", "role"):
+                        if key in item:
+                            entry[key] = item[key]
                     if layers is not None:
                         entry.update(
                             layer_id=layer_id,
@@ -195,6 +232,7 @@ def _rows(entries):
         }
         if "layer_id" in entry:
             record.update({key: entry[key] for key in ("layer_id", "layer_label", "case_id")})
+        record.update({key: entry[key] for key in ("pair_id", "role") if key in entry})
         if entry["total_measure"]:
             record["measure_fraction"] = entry["result"]["measure"] / entry["total_measure"]
         rows.append(record)
@@ -226,6 +264,8 @@ def _labels(entries):
 
 
 def _plot_regional(fig, panel, entries, style):
+    if panel.get("view") == "paired_change":
+        return _plot_regional_change(fig, panel, entries, style)
     left, right = fig.subplots(1, 2, gridspec_kw={"width_ratios": [2.2, 1]})
     groups = list(dict.fromkeys(entry["group"] for entry in entries))
     count = len({entry["series_index"] for entry in entries})
@@ -276,6 +316,211 @@ def _plot_regional(fig, panel, entries, style):
     right.set_ylim(left.get_ylim())
     right.set_yticks([])
     return (left, right)
+
+
+def _paired_rows(entries):
+    """Pair declared regional readings, without implying same-coordinate subtraction."""
+    pairs = list(dict.fromkeys(entry["pair_id"] for entry in entries))
+    groups = list(dict.fromkeys(entry["group"] for entry in entries))
+    rows = []
+    for pair in pairs:
+        for group in groups:
+            selected = [e for e in entries if e["pair_id"] == pair and e["group"] == group]
+            roles = {e["role"]: e for e in selected}
+            if len(selected) != 2 or set(roles) != {"reference", "comparison"}:
+                raise ValueError("Paired regional series must select exactly the same groups")
+            reference, comparison = roles["reference"], roles["comparison"]
+            first, second = (entry["result"]["weighted_mean"] for entry in (reference, comparison))
+            rows.append(
+                {
+                    "pair_id": pair,
+                    "group": group,
+                    "reference_calculation_id": reference["declaration"]["id"],
+                    "comparison_calculation_id": comparison["declaration"]["id"],
+                    "reference_mean": first,
+                    "comparison_mean": second,
+                    "difference": second - first,
+                    "unit": _unit(reference, "weighted_mean"),
+                }
+            )
+    return rows
+
+
+def _style_index(panel, entry):
+    pairs = list(dict.fromkeys(item.get("pair_id") for item in panel["series"]))
+    return pairs.index(entry["pair_id"]) if entry.get("pair_id") else entry["series_index"]
+
+
+def _plot_regional_change(fig, panel, entries, style):
+    ax = fig.subplots()
+    rows = _paired_rows(entries)
+    pairs = list(dict.fromkeys(row["pair_id"] for row in rows))
+    groups = list(dict.fromkeys(row["group"] for row in rows))
+    for row in rows:
+        index = pairs.index(row["pair_id"])
+        y = groups.index(row["group"]) + (index - (len(pairs) - 1) / 2) * 0.24
+        ax.hlines(y, 0, row["difference"], color=_COLORS[index], linewidth=1.1)
+        ax.plot(
+            row["difference"],
+            y,
+            marker=_MARKERS[index],
+            linestyle="none",
+            color=_COLORS[index],
+            markerfacecolor="white",
+            markersize=5,
+            markeredgewidth=1.1,
+            label=row["pair_id"] if row["group"] == groups[0] else None,
+            clip_on=False,
+        )
+        ax.annotate(
+            f"{row['difference']:+.2f}",
+            (row["difference"], y),
+            xytext=(7 if row["difference"] >= 0 else -7, 0),
+            textcoords="offset points",
+            ha="left" if row["difference"] >= 0 else "right",
+            va="center" if len(pairs) == 1 else ("bottom" if index == 0 else "top"),
+            fontsize=style.annotation_pt,
+            color=_COLORS[index],
+        )
+    values = [row["difference"] for row in rows]
+    extent = max(max(abs(value) for value in values), 0.1)
+    ax.set_xlim(min(0, min(values)) - extent * 0.35, max(0, max(values)) + extent * 0.35)
+    ax.set_ylim(len(groups) - 0.5, -0.65)
+    ax.set_yticks(range(len(groups)), [panel.get("group_labels", {}).get(g, g) for g in groups])
+    ax.axvline(0, color="#7C858D", linewidth=0.8, linestyle="--", zorder=0)
+    ax.set_xlabel(
+        panel.get("change_label", f"Comparison − reference ({display_unit(rows[0]['unit'])})")
+    )
+    ax.legend(
+        loc="lower left",
+        bbox_to_anchor=(0, 1.025),
+        ncol=len(pairs),
+        frameon=False,
+        borderaxespad=0,
+        handletextpad=0.4,
+        columnspacing=1.5,
+    )
+    return (ax,)
+
+
+def _plot_budget_decomposition(fig, panel, entries, style):
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    ax = fig.subplots()
+    for y, entry in enumerate(entries):
+        result = entry["result"]
+        color = _COLORS[_style_index(panel, entry)]
+        output = result["output"] + result["storage"]
+        incoming = result["input"] + result["source"]
+        ax.barh(y, output, height=0.48, color=color, alpha=0.83, edgecolor="white", linewidth=0.5)
+        ax.barh(
+            y,
+            result["residual"],
+            left=output,
+            height=0.48,
+            color=color,
+            alpha=0.25,
+            edgecolor=color,
+            hatch="///",
+            linewidth=0.6,
+        )
+        ax.plot(
+            incoming,
+            y,
+            marker="D",
+            markerfacecolor="white",
+            color=color,
+            markeredgewidth=1,
+            markersize=4,
+            linestyle="none",
+            zorder=3,
+        )
+        ax.text(
+            output / 2,
+            y,
+            f"{output:.2f}",
+            va="center",
+            ha="center",
+            fontsize=style.annotation_pt,
+            color="white",
+        )
+        ax.text(
+            output + result["residual"] / 2,
+            y,
+            f"{result['residual']:.2f}",
+            va="center",
+            ha="center",
+            fontsize=style.annotation_pt,
+            color="#253540",
+        )
+        ax.annotate(
+            f"{incoming:.2f}",
+            (incoming, y),
+            xytext=(7, 0),
+            textcoords="offset points",
+            ha="left",
+            va="center",
+            fontsize=style.annotation_pt,
+            color=color,
+        )
+    ax.set_yticks(range(len(entries)), _labels(entries))
+    ax.set_ylim(len(entries) - 0.5, -0.65)
+    endpoints = [0.0]
+    for entry in entries:
+        result = entry["result"]
+        endpoints.extend((result["output"] + result["storage"], result["input"] + result["source"]))
+    minimum, maximum = min(endpoints), max(endpoints)
+    margin = (maximum - minimum or 1.0) * 0.18
+    ax.set_xlim(minimum - margin if minimum < 0 else 0, maximum + margin)
+    ax.set_xlabel(
+        panel.get("quantity_label", f"Heat rate ({display_unit(_unit(entries[0], 'residual'))})")
+    )
+    labels = panel.get("component_labels", {})
+    output_label = labels.get("output", "Output + storage")
+    input_label = labels.get("input", "Input + source")
+    if any(entry["result"]["storage"] != 0 for entry in entries) and (
+        "output" in labels or "storage" in labels
+    ):
+        output_label = f"{labels.get('output', 'Output')} + {labels.get('storage', 'storage')}"
+    if any(entry["result"]["source"] != 0 for entry in entries) and (
+        "input" in labels or "source" in labels
+    ):
+        input_label = f"{labels.get('input', 'Input')} + {labels.get('source', 'source')}"
+    ax.legend(
+        handles=[
+            Patch(facecolor="#607580", alpha=0.83, label=output_label),
+            Patch(
+                facecolor="white",
+                edgecolor="#607580",
+                hatch="///",
+                label=labels.get("residual", "Residual"),
+            ),
+            Line2D(
+                [],
+                [],
+                color="#607580",
+                marker="D",
+                markerfacecolor="white",
+                linestyle="none",
+                markersize=4,
+                label=input_label,
+            ),
+        ],
+        loc="lower left",
+        bbox_to_anchor=(0, 1.025),
+        frameon=False,
+        ncol=3,
+        borderaxespad=0,
+        handlelength=1.4,
+        handletextpad=0.5,
+        columnspacing=1.3,
+    )
+    roles = [entry.get("role") for entry in entries]
+    for y in range(1, len(entries)):
+        if roles[y] is not None and roles[y] != roles[y - 1]:
+            ax.axhline(y - 0.5, color="#CBD3D8", linewidth=0.6)
+    return (ax,)
 
 
 def _plot_signed(fig, panel, entries, style):
@@ -447,6 +692,8 @@ def _plot_layered_signed(fig, panel, entries, style):
 
 
 def _plot_pair(fig, panel, entries, style):
+    if panel.get("view") == "decomposition":
+        return _plot_budget_decomposition(fig, panel, entries, style)
     budget = panel["kind"] == "budget"
     left, right = fig.subplots(1, 2, gridspec_kw={"width_ratios": [2, 1]})
     for y, entry in enumerate(entries):
@@ -541,10 +788,32 @@ def _caption(panel, entries):
             "are complementary diagnostics of the same solutions."
         ),
     }[panel["kind"]]
+    if panel.get("view") == "paired_change":
+        description = (
+            "Differences are comparison minus reference regional weighted means, paired by "
+            "the declared pair_id. Regions retain each source's supplied definition; "
+            "source-following regional changes are not fixed-coordinate field differences. "
+            "The complete-domain mean uses the full supplied physical measure."
+        )
+    elif panel.get("view") == "decomposition":
+        description = (
+            "Solid segments show output + storage; hatched segments show the algebraic "
+            "remainder (input + source − output − storage); diamonds mark input + source. "
+            "Numbers retain the same units as the horizontal axis. The remainder is derived "
+            "from the two displayed budget sides, not an independent path measurement."
+        )
     return f"{panel['title']} on {domains}. {description}"
 
 
-def _write_script(config_path, output_dir, style):
+def _write_script(
+    config_path,
+    output_dir,
+    style,
+    *,
+    combine=False,
+    figure_id="diagnostic-composite",
+    panel_ids=None,
+):
     script = output_dir / "plot.py"
     if script.exists():
         return
@@ -561,15 +830,154 @@ def _write_script(config_path, output_dir, style):
         f"    parser.add_argument('--config', type=Path, default=root / {relative!r})\n"
         "    parser.add_argument('--output', type=Path, default=root)\n"
         "    args = parser.parse_args()\n"
-        "    render_diagnostic_figures(args.config, args.output, style=STYLE)\n",
+        "    render_diagnostic_figures(args.config, args.output, style=STYLE, "
+        f"combine={combine!r}, figure_id={figure_id!r}, panel_ids={panel_ids!r})\n",
         encoding="utf-8",
     )
 
 
-def render_diagnostic_figures(config_path, output_dir, style=None) -> list[dict]:
+def _combined_caption(panel, entries):
+    """Reader-facing encodings; full support definitions remain in the source rows."""
+    title = panel["title"]
+    if panel.get("view") == "paired_change":
+        return (
+            f"{title}: changes in regional weighted means are comparison minus reference, "
+            "with each region retaining its declared spatial definition."
+        )
+    if panel["kind"] == "budget":
+        labels = panel.get("component_labels", {})
+        incoming = labels.get("input", "input")
+        outgoing = labels.get("output", "output")
+        if any(entry["result"]["source"] != 0 for entry in entries):
+            incoming += f" + {labels.get('source', 'source')}"
+        if any(entry["result"]["storage"] != 0 for entry in entries):
+            outgoing += f" + {labels.get('storage', 'storage')}"
+        input_expression = f"({incoming})" if " + " in incoming else incoming
+        output_expression = f"({outgoing})" if " + " in outgoing else outgoing
+        remainder = labels.get("residual", "remainder")
+        if panel.get("view") == "decomposition":
+            return (
+                f"{title}: solid segments show {outgoing}, hatched segments show {remainder}, "
+                f"and diamonds mark {incoming}; {remainder} = "
+                f"{input_expression} − {output_expression}."
+            )
+        return (
+            f"{title}: open and filled markers compare {incoming} with {outgoing}; "
+            f"the adjacent residual is {input_expression} − {output_expression}."
+        )
+    description = {
+        "regional": "regional weighted means and each region's share of the complete domain",
+        "signed_flux": (
+            "solid and hatched bars retain positive and negative exchanges; "
+            "diamonds show their signed sum"
+        ),
+        "matched_difference": (
+            "open and filled markers show reference and comparison weighted means; "
+            "the adjacent difference is comparison minus reference at matching locations"
+        ),
+    }[panel["kind"]]
+    caption = f"{title}: {description}."
+    if panel["kind"] == "signed_flux":
+        caption += " " + panel["sign_convention"]
+    return caption
+
+
+def _render_combined(data, panels, config_path, output_dir, style, figure_id, panel_ids=None):
+    import matplotlib.pyplot as plt
+
+    if not 2 <= len(panels) <= 3:
+        raise ValueError("A diagnostic composite requires two or three focused panels")
+    if not figure_id or any(
+        c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+        for c in figure_id
+    ):
+        raise ValueError("Composite figure_id must be a portable identifier")
+    fig = plt.figure(figsize=(style.width_mm / 25.4, style.height_mm / 25.4), layout="constrained")
+    rows, differences, captions, panel_axes = [], [], [], []
+    try:
+        for index, ((panel, entries), subfigure) in enumerate(
+            zip(panels, np.atleast_1d(fig.subfigures(len(panels), 1, hspace=0.06)), strict=True)
+        ):
+            metric = (
+                "residual"
+                if panel["kind"] == "budget"
+                else ("net" if panel["kind"] == "signed_flux" else "weighted_mean")
+            )
+            if len({_unit(entry, metric) for entry in entries}) != 1:
+                raise ValueError("Diagnostic panel series must have the same physical unit")
+            function = {
+                "regional": _plot_regional,
+                "signed_flux": _plot_signed,
+                "budget": _plot_pair,
+                "matched_difference": _plot_pair,
+            }[panel["kind"]]
+            axes = function(subfigure, panel, entries, style)
+            panel_axes.append(axes)
+            for ax in axes:
+                _axes_style(ax)
+            axes[0].set_title(f"({chr(97 + index)}) {panel['title']}", loc="left", pad=32)
+            rows.extend({"panel_id": panel["id"], **row} for row in _rows(entries))
+            if panel.get("view") == "paired_change":
+                differences.extend(
+                    {"panel_id": panel["id"], **row} for row in _paired_rows(entries)
+                )
+            captions.append(f"({chr(97 + index)}) {_combined_caption(panel, entries)}")
+        fig.canvas.draw()
+        # Single-axis panels share the same physical data-box edges despite different labels.
+        if all(len(axes) == 1 for axes in panel_axes):
+            positions = [axes[0].get_position() for axes in panel_axes]
+            left, right = max(p.x0 for p in positions), min(p.x1 for p in positions)
+            for axes, position in zip(panel_axes, positions, strict=True):
+                axes[0].set_position([left, position.y0, right - left, position.height])
+            fig.set_layout_engine("none")
+        checks = _export(fig, output_dir, figure_id, style)
+    finally:
+        plt.close(fig)
+    _write_csv(output_dir / f"{figure_id}-source-data.csv", rows)
+    if differences:
+        _write_csv(output_dir / f"{figure_id}-differences.csv", differences)
+    caption = " ".join(captions)
+    figure = {
+        "id": figure_id,
+        "path": f"{figure_id}.png",
+        "caption": caption,
+        "description": caption,
+        "sizing": {
+            key: checks[key]
+            for key in ("source_width_mm", "target_width_mm", "minimum_source_font_pt")
+        },
+        "evidence_ids": data.get("evidence_ids", []),
+    }
+    checks["panel_ids"] = [panel["id"] for panel, _ in panels]
+    (output_dir / "diagnostic-checks.json").write_text(
+        json.dumps({figure_id: checks}, indent=2), encoding="utf-8"
+    )
+    (output_dir / "diagnostic-figures.json").write_text(
+        json.dumps(
+            {"figures": [figure], "style": style.model_dump(), "visual_review": "required"},
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    _write_script(
+        config_path, output_dir, style, combine=True, figure_id=figure_id, panel_ids=panel_ids
+    )
+    return [figure]
+
+
+def render_diagnostic_figures(
+    config_path,
+    output_dir,
+    style=None,
+    *,
+    combine=False,
+    figure_id="diagnostic-composite",
+    panel_ids: list[str] | None = None,
+) -> list[dict]:
     """Calculate declared fields and render focused figures with exact source rows.
 
     Author-edited ``plot.py`` remains the refresh entry and is never overwritten.
+    ``panel_ids`` selects an ordered subset from the same canonical config.
     Returned records follow the existing research workspace figure format.
     """
     import matplotlib
@@ -578,10 +986,10 @@ def render_diagnostic_figures(config_path, output_dir, style=None) -> list[dict]
     import matplotlib.pyplot as plt
 
     config_path, output_dir = Path(config_path).resolve(), Path(output_dir).resolve()
-    data, panels = _read_panels(config_path)
+    data, panels = _read_panels(config_path, panel_ids)
     style = style or PlotStyle(
         width_mm=160,
-        height_mm=80,
+        height_mm=116 if combine else 80,
         font_family="Times New Roman",
         font_pt=9,
         axis_label_pt=9,
@@ -603,7 +1011,13 @@ def render_diagnostic_figures(config_path, output_dir, style=None) -> list[dict]
         "svg.fonttype": "none",
         "pdf.fonttype": 42,
     }
+    if combine:
+        rc["mathtext.fontset"] = "stix"
     with plt.rc_context(rc):
+        if combine:
+            return _render_combined(
+                data, panels, config_path, output_dir, style, figure_id, panel_ids
+            )
         for panel, entries in panels:
             # Mixing units in one axis must be corrected in the scientific declarations.
             metric = {
@@ -635,6 +1049,8 @@ def render_diagnostic_figures(config_path, output_dir, style=None) -> list[dict]
             finally:
                 plt.close(fig)
             _write_csv(output_dir / f"{panel['id']}-source-data.csv", _rows(entries))
+            if panel.get("view") == "paired_change":
+                _write_csv(output_dir / f"{panel['id']}-differences.csv", _paired_rows(entries))
             caption = _caption(panel, entries)
             figures.append(
                 {
@@ -649,7 +1065,7 @@ def render_diagnostic_figures(config_path, output_dir, style=None) -> list[dict]
                     "evidence_ids": data.get("evidence_ids", []),
                 }
             )
-    _write_script(config_path, output_dir, style)
+    _write_script(config_path, output_dir, style, panel_ids=panel_ids)
     (output_dir / "diagnostic-checks.json").write_text(
         json.dumps(checks, indent=2), encoding="utf-8"
     )

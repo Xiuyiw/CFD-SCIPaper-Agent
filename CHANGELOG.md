@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.26.0] — 2026-10-28
+
+### Added
+
+- Explicit initial manuscript figure selection for surface studies, including a table-led zero-figure
+  choice while retaining the generated field and distribution data.
+- Paired regional changes and budget decomposition can share a diagnostic canvas. The Python
+  attachment API retains panel selection, style and source-driven author-local refresh recipes.
+- A public research-expression example connects original constructed face arrays, calculations,
+  complementary panels, host-authored prose, native tables and a source-update continuation.
+
+### Fixed
+
+- Research builds honor explicit paragraph/table/figure order through the formal Word exporter,
+  including first builds without an author-recovery file.
+- Body indentation and before/after spacing stay scoped to prose, rather than leaking into figure
+  and equation paragraphs. Shared table units appear in headers without rounding the source data.
+- Diagnostic refresh reads metadata from registered recipes and retains author captions, scripts,
+  drafts and display precision for the same bound observation.
+- Near-equal paired-change annotations use separate vertical alignments without moving data,
+  changing axis limits or replacing the author's plotting style.
+- Budget compositions retain all signed endpoints for valid negative source, storage or remainder
+  terms. Custom legends and captions name the actual summed terms, including nonzero storage/source.
+
 ## [0.25.0] — 2026-10-26
 
 ### Added

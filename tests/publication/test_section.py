@@ -482,6 +482,36 @@ def test_table_and_equation_use_bound_values_and_native_word_elements(tmp_path):
         assert "<m:t" in xml
 
 
+@pytest.mark.parametrize("unit", ["K", "kg/s"])
+def test_table_common_unit_is_checked_without_changing_binding(tmp_path, unit):
+    source, _ = bound_input(tmp_path)
+    package = api().prepare_section(source, tmp_path / "package")
+    dpath, data = draft(tmp_path)
+    data["tables"] = [
+        {
+            "table_id": "1",
+            "caption": "Outlet summary",
+            "after_section_id": "s1",
+            "columns": ["Quantity", f"Mean ({unit})", "Original display"],
+            "column_units": [None, unit, None],
+            "rows": [["Flow", "{{value:e1}}", "{{value:e1}}"]],
+            "evidence_ids": ["e1"],
+            "numeric_columns": [1, 2],
+        }
+    ]
+    dpath.write_text(json.dumps(data), encoding="utf-8")
+    if unit != "kg/s":
+        with pytest.raises(ValueError, match="Shared unit does not match"):
+            api().assemble_section(package, dpath, tmp_path / "section")
+        assert not (tmp_path / "section").exists()
+        return
+    section = api().assemble_section(package, dpath, tmp_path / "section")
+    assembled = json.loads((section / "section.json").read_text(encoding="utf-8"))
+    assert assembled["tables"][0]["rows"] == [["Flow", "2.00", "2.00 kg/s"]]
+    assert assembled["resolved_values"]["e1"]["raw_value"] == 2.0
+    assert assembled["resolved_values"]["e1"]["unit"] == "kg/s"
+
+
 def test_inline_math_is_editable_and_uses_current_value_tokens(tmp_path):
     docx = pytest.importorskip("docx")
     source, _ = bound_input(tmp_path)

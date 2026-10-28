@@ -23,11 +23,19 @@ The v0.24 release adds selected-workbench transfer, shared CLI/Python/MCP tools 
 report writing with derived comparisons and native formulas. An actual second host completed a
 known-project report task. Numerical bindings worked; residual interpretation errors and missing
 real transient/multiphase evaluation remain explicit in the [v0.24 notes](releases/v0.24.0.md).
-The v0.25 candidate connects exact-case response figures directly to report calculations and
+The v0.25 release connects exact-case response figures directly to report calculations and
 host-written sections, and combines original-face maps with layer-wise signed diagnostics.
 An editable Studio mechanism trial uses the existing figure exchange rather than a new drawing
 engine. Release completion and tested scope are tracked in the [v0.25 notes](releases/v0.25.0.md).
 Existing releases and their limitations are retained below as history.
+
+The v0.26 increment improves source-driven research expression: selected rather than automatically
+published diagnostics, paired regional/budget compositions, header units, formal block order and
+author-preserving refresh. The public
+[research-expression example](../examples/research-expression/README.md) exercises the reusable
+chain, including source changes after author script edits. Version scope and release evidence are
+recorded in the [v0.26 notes](releases/v0.26.0.md). Actual manuscript quality remains assessed from
+figures and pages, not from export success.
 
 | Version | Complete user capability | Status |
 |---|---|---|
@@ -36,6 +44,7 @@ Existing releases and their limitations are retained below as history.
 | v0.23 | Ordered scientific document, research/report/conference profiles and limited author-edited Word return, connected to targeted scientific refresh | Implemented scope; actual human Word return, native-page inspection and portable automation replay described in v0.23.0 notes |
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Released within tested scope; known-project second-host bindings and report output work, scientific interpretation remains author-reviewed, and third-class real CFD validation remains open |
 | v0.25 | Question-driven interpretation, complementary bound figures and connected manuscript arguments | Implemented scope: multi-series report responses, original-face/layer diagnostics and editable Studio artwork exercised in connected Word/PDF trials; publication and platform evidence are linked in the v0.25.0 notes, with scientific interpretation still author-reviewed |
+| v0.26 | Selected, source-bound research figures and ordered formal manuscripts that continue after author edits | Implemented scope: paired regional/budget figures, native table header units, explicit block order and author-preserving refresh; reusable installed-package example and known-project page evaluation described in the v0.26.0 notes |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -50,7 +59,28 @@ The host remains responsible for changed scientific meaning. Existing diagnostic
 extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
 solver expansion, second-host evaluation and automatic submission are not part of this increment.
 
-## Current increment: v0.25 scientific synthesis and figure quality
+## Current increment: v0.26 research expression and author-preserving continuation
+
+The [Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section18, connects the quality
+corrections from the cooling trial to reusable production behavior:
+
+1. Select figures by their contribution to the argument rather than publishing every generated
+   diagnostic. Keep original field data available even when a figure is not selected.
+2. Combine explicit paired regional changes with a compatible budget view, keeping definitions,
+   original readings, units and signed contributions attached to the calculations.
+3. Use native table header units, declared display precision and explicit paragraph/figure/table
+   order in the formal Word exporter. Body formatting stays scoped to prose.
+4. Continue from the current author workspace: execute its plotting scripts with fresh source data,
+   retain draft wording and captions, and identify interpretations requiring host review.
+5. Exercise the same path in a portable public example and the installed-package smoke. Reuse the
+   actual page evaluation rather than treating another export as new scientific evidence.
+
+The host still develops and evaluates the argument. P04's final figures remain the manuscript-scale
+quality floor, not an automatically certified output style. Actual complex geometry schematics,
+whole-paper publication readiness and heterogeneous scientific validation remain separate quality
+targets; the synthetic replay does not close them.
+
+## Previous increment: v0.25 scientific synthesis and figure quality
 
 v0.24.0 is [released](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases/tag/v0.24.0).
 After the test-fixture-only PR #25 repair, [main CI finished successfully](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/actions/runs/39645728697):

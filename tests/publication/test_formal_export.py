@@ -121,7 +121,8 @@ def test_docx_has_native_math_table_order_and_editable_anchors(tmp_path):
     assert "w:tblHeader" in xml and "<w:sdt>" in xml
     assert "w:lock" not in xml and "w:dataBinding" not in xml
     assert xml.index("temperature is") < xml.index("<m:f>") < xml.index("ratio is")
-    assert 'firstLineChars="200"' in styles
+    assert 'firstLineChars="200"' in xml
+    assert 'firstLineChars="200"' not in styles
     assert "{{value:temperature}}" in state
     from cfdpaper.publication.word_return import read_word_return
 
@@ -142,6 +143,52 @@ def test_profiles_change_presentation_not_scientific_facts(tmp_path, profile, pt
     text = "".join(t.text or "" for t in doc._element.xpath(".//w:t"))
     assert "300\u00a0K" in text and "25" in text
     assert "before" not in text
+
+
+def test_formal_body_spacing_does_not_indent_figures_or_equations(tmp_path):
+    from docx import Document
+    from docx.oxml.ns import qn
+    from docx.text.paragraph import Paragraph
+
+    root = fixture(tmp_path)
+    path = root / "section.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["style"] = {"body_space_before_pt": 6, "body_space_after_pt": 12}
+    path.write_text(json.dumps(data), encoding="utf-8")
+    output = export_formal_manuscript(root, tmp_path / "spaced.docx")
+    document = Document(output)
+    paragraphs = [Paragraph(p, document._body) for p in document._element.body.xpath(".//w:p")]
+    body = next(p for p in paragraphs if "temperature is" in p._p.xml)
+    assert body.paragraph_format.space_before.pt == 6
+    assert body.paragraph_format.space_after.pt == 12
+    assert body.paragraph_format.first_line_indent.pt == 22
+    assert document.styles["Normal"].paragraph_format.first_line_indent is None
+    non_body = [p for p in paragraphs if p._p.xpath(".//wp:inline|.//m:oMath")]
+    assert len(non_body) == 2
+    for paragraph in non_body:
+        indent = paragraph._p.pPr.find(qn("w:ind"))
+        assert indent is None or indent.get(qn("w:firstLineChars")) in {None, "0"}
+        assert paragraph.paragraph_format.space_before is None
+        assert paragraph.paragraph_format.space_after is None
+
+
+def test_formal_nonbody_indent_still_accepts_author_override(tmp_path):
+    from docx import Document
+    from docx.text.paragraph import Paragraph
+
+    root = fixture(tmp_path)
+    path = root / "section.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["equations"][0]["paragraph_format"] = {"first_line_indent_pt": 9}
+    data["figures"][0]["paragraph_format"] = {"first_line_indent_pt": 7}
+    path.write_text(json.dumps(data), encoding="utf-8")
+    output = export_formal_manuscript(root, tmp_path / "author-indent.docx")
+    document = Document(output)
+    paragraphs = [Paragraph(p, document._body) for p in document._element.body.xpath(".//w:p")]
+    equation = next(p for p in paragraphs if p._p.xpath(".//m:oMath"))
+    figure = next(p for p in paragraphs if p._p.xpath(".//wp:inline"))
+    assert equation.paragraph_format.first_line_indent.pt == 9
+    assert figure.paragraph_format.first_line_indent.pt == 7
 
 
 def test_explicit_word_template_preserves_page_and_normal_style(tmp_path):
