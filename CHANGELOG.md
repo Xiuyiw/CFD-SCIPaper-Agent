@@ -25,6 +25,8 @@
   terms. Custom legends and captions name the actual summed terms, including nonzero storage/source.
 - Original-face maps size their automatic y-tick locator to the actual panel height, retaining
   nonoverlapping labels with the bundled serif fallback when Times New Roman is unavailable.
+- Shared field colorbars reserve the actual rendered panel-title width on older compressed-layout
+  backends, without shortening the title or changing the map scale.
 - Bounded figure-recipe diagnostics retain the beginning and end of stderr, so repeated font warnings
   no longer hide the actual rendering exception.
 

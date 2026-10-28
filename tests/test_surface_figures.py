@@ -83,6 +83,67 @@ def test_four_short_field_rows_keep_serif_y_ticks_readable(tmp_path):
     assert all(source.read_bytes() == content for source, content in originals.items())
 
 
+def test_complete_case_titles_do_not_intrude_into_shared_colorbar(tmp_path, monkeypatch):
+    import cfdpaper.publication.surface_figures as surface_figures
+
+    path, data = study(tmp_path, cases=4)
+    labels = (
+        "Structure A / reference",
+        "Structure A / comparison",
+        "Structure B / reference",
+        "Structure B / comparison",
+    )
+    values = ([334, 312], [331, 316], [329, 309], [328, 312])
+    for case, label, temperatures in zip(data["cases"], labels, values, strict=True):
+        case["label"] = label
+        source = tmp_path / case["source"]
+        with np.load(source, allow_pickle=False) as bundle:
+            arrays = {key: bundle[key].copy() for key in bundle.files}
+        arrays["vertices_m"] *= 0.01
+        arrays["area_m2"] *= 0.0001
+        arrays["face_value"] = temperatures
+        np.savez(source, **arrays)
+    data["thresholds"] = [320]
+    path.write_text(json.dumps(data), encoding="utf-8")
+    original_export = surface_figures._export
+
+    def inspect(fig, output, figure_id, style):
+        if figure_id == "field":
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            axes, colorbar = fig.axes[:-1], fig.axes[-1]
+            for index, ax in enumerate(axes):
+                assert ax._left_title.get_text() == f"({chr(97 + index)}) {labels[index]}"
+                assert ax.get_xlim() == (0, 0.04)
+                assert ax.get_ylim() == (0, 0.01)
+                assert ax._left_title.get_window_extent(renderer).x1 < (
+                    colorbar.get_window_extent().x0
+                )
+            assert colorbar.get_window_extent().y0 == pytest.approx(
+                min(ax.get_window_extent().y0 for ax in axes), abs=0.5
+            )
+            assert colorbar.get_window_extent().y1 == pytest.approx(
+                max(ax.get_window_extent().y1 for ax in axes), abs=0.5
+            )
+        return original_export(fig, output, figure_id, style)
+
+    monkeypatch.setattr(surface_figures, "_export", inspect)
+    render_surface_study(
+        path,
+        tmp_path / "figures",
+        style=PlotStyle(
+            width_mm=160,
+            height_mm=110,
+            font_family="DejaVu Serif",
+            font_pt=9,
+            axis_label_pt=9,
+            title_pt=10,
+            tick_pt=8,
+            legend_pt=9,
+        ),
+    )
+
+
 @pytest.mark.parametrize("cases,y_scale", [(2, 2.0), (4, 1.0), (2, 8.0)])
 def test_colorbar_matches_equal_aspect_field_bounds(tmp_path, monkeypatch, cases, y_scale):
     import cfdpaper.publication.surface_figures as surface_figures
