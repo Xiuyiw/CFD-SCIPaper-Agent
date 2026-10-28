@@ -33,7 +33,8 @@ def test_mechanism_continuation_preserves_sources_and_revises_interpretation(sho
     document = runpy.run_path(str(examples / "mechanism-continuation/run_example.py"))["run"](
         previous, output
     )
-    assert document == output / "interpretation-updated/manuscript.docx"
+    # Hosted Windows TEMP may use RUNNER~1; product paths are canonical long names.
+    assert document == (output / "interpretation-updated/manuscript.docx").resolve()
     assert document.is_file()
     for name, contents in original_sources.items():
         assert (original / "sources" / name).read_bytes() == contents
