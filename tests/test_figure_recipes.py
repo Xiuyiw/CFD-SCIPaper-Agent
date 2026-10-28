@@ -11,6 +11,17 @@ from PIL import Image
 from cfdpaper.publication.figure_recipes import execute_figure_recipes
 
 
+def test_bounded_recipe_log_keeps_failure_after_repeated_warnings():
+    from cfdpaper.publication.figure_recipes import _bounded
+
+    text = "font fallback warning\n" * 500 + "ValueError: actual rendering failure\n"
+    output = _bounded(text)
+    assert output.startswith("font fallback warning")
+    assert output.endswith("ValueError: actual rendering failure\n")
+    assert "truncated" in output
+    assert len(output) <= 4020
+
+
 def recipe(root, identity="one", color="purple"):
     folder = root / identity
     folder.mkdir(parents=True)

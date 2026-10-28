@@ -23,6 +23,10 @@
   changing axis limits or replacing the author's plotting style.
 - Budget compositions retain all signed endpoints for valid negative source, storage or remainder
   terms. Custom legends and captions name the actual summed terms, including nonzero storage/source.
+- Original-face maps size their automatic y-tick locator to the actual panel height, retaining
+  nonoverlapping labels with the bundled serif fallback when Times New Roman is unavailable.
+- Bounded figure-recipe diagnostics retain the beginning and end of stderr, so repeated font warnings
+  no longer hide the actual rendering exception.
 
 ## [0.25.0] — 2026-10-26
 

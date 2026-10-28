@@ -51,6 +51,38 @@ def csv_rows(output, filename):
         return list(csv.DictReader(stream))
 
 
+def test_four_short_field_rows_keep_serif_y_ticks_readable(tmp_path):
+    path, _ = study(tmp_path, cases=4)
+    for source in (tmp_path / "sources").iterdir():
+        with np.load(source, allow_pickle=False) as bundle:
+            arrays = {key: bundle[key].copy() for key in bundle.files}
+        arrays["vertices_m"] *= 0.01
+        arrays["area_m2"] *= 0.0001
+        np.savez(source, **arrays)
+    originals = {source: source.read_bytes() for source in (tmp_path / "sources").iterdir()}
+    output = tmp_path / "figures"
+    render_surface_study(
+        path,
+        output,
+        style=PlotStyle(
+            width_mm=160,
+            height_mm=110,
+            font_family="DejaVu Serif",
+            font_pt=9,
+            axis_label_pt=9,
+            title_pt=10,
+            tick_pt=8,
+            legend_pt=9,
+        ),
+    )
+    checks = json.loads((output / "surface-checks.json").read_text(encoding="utf-8"))
+    assert checks["coordinate_limits"] == [[0, 0], [0.04, 0.01]]
+    assert checks["field"]["text_nonoverlapping"] is True
+    assert checks["field"]["text_inside_canvas"] is True
+    assert checks["field"]["minimum_source_font_pt"] == 8
+    assert all(source.read_bytes() == content for source, content in originals.items())
+
+
 @pytest.mark.parametrize("cases,y_scale", [(2, 2.0), (4, 1.0), (2, 8.0)])
 def test_colorbar_matches_equal_aspect_field_bounds(tmp_path, monkeypatch, cases, y_scale):
     import cfdpaper.publication.surface_figures as surface_figures
