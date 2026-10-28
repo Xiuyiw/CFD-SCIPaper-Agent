@@ -178,8 +178,59 @@ def test_attach_figure_forwards_host_choices_without_building(tmp_path, workspac
             },
         )
     ]
+
+
+def test_explicit_figure_update_is_forwarded(tmp_path, workspace_backend):
+    _, calls = workspace_backend
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            "work",
+            "--attach-figure",
+            "figure",
+            "--section",
+            "discussion",
+            "--replace-figure",
+            "--output",
+            str(tmp_path / "out"),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls[0][-1]["replace_existing"] is True
     assert "Research workspace with figure ready" in result.stdout
     assert "approved" not in result.stdout.lower()
+
+
+def test_question_context_cli_is_read_only_and_rejects_mixed_actions(tmp_path, workspace_backend):
+    backend, calls = workspace_backend
+
+    def context(workspace, **kwargs):
+        calls.append(("context", workspace, kwargs))
+        return {"question": kwargs["question"], "evidence": []}
+
+    backend.research_question_context = context
+    args = [
+        "research",
+        "--workspace",
+        "work",
+        "--section",
+        "discussion",
+        "--evidence",
+        "a",
+        "--question-context",
+        "What distinguishes these explanations?",
+        "--output",
+        str(tmp_path / "out"),
+    ]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls[0][0] == "context" and len(calls) == 1
+    assert (tmp_path / "out/question-context.json").is_file()
+    result = runner.invoke(app, [*args, "--baseline", "old"])
+    assert result.exit_code == 2
+    assert len(calls) == 1
 
 
 @pytest.mark.parametrize(

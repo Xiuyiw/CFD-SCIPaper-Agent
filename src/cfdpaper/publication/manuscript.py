@@ -894,6 +894,37 @@ def _snapshot_scalar(state, sid, eid):
     return None
 
 
+def _snapshot_result_definition(state, scalar):
+    """Compare only this result's located definition and upstream calculations."""
+    sid, eid = scalar["owner"].split("/")
+    section = state["sections"][sid]
+    result = section.get("evidence", {}).get(eid, {}).get("resolved", {})
+    metadata = {key: value for key, value in result.items() if key not in {"raw_value", "value"}}
+    if "supporting_results" in metadata:
+        metadata["supporting_results"] = [
+            {key: value for key, value in parent.items() if key not in {"raw_value", "value"}}
+            for parent in metadata["supporting_results"]
+        ]
+    inputs = section.get("input", {})
+    declarations = {
+        item["id"]: item
+        for key in ("table_calculations", "result_comparisons")
+        for item in inputs.get(key, [])
+    }
+    selected = {}
+    pending = [scalar.get("calculation_id")]
+    while pending:
+        identifier = pending.pop()
+        if identifier in selected or identifier not in declarations:
+            continue
+        declaration = selected[identifier] = declarations[identifier]
+        for role in ("reference", "comparison"):
+            reference = declaration.get(role)
+            if isinstance(reference, dict) and "calculation_id" in reference:
+                pending.append(reference["calculation_id"])
+    return metadata, selected
+
+
 def _passage_context(previous, current, sid, paragraph):
     section = current["sections"][sid]
     result_changes = []
@@ -906,8 +937,13 @@ def _passage_context(previous, current, sid, paragraph):
         if (
             before
             and after
-            and before["unit"] == after["unit"]
-            and before["field"] == after["field"] == "difference"
+            and before.get("field") in {"difference", "difference_mean"}
+            and all(
+                before.get(key) == after.get(key)
+                for key in ("owner", "unit", "calculation_id", "group", "field")
+            )
+            and _snapshot_result_definition(previous, before)
+            == _snapshot_result_definition(current, after)
         ):
             left, right = before["raw_value"], after["raw_value"]
             sign_changed = ((left > 0) - (left < 0)) != ((right > 0) - (right < 0))

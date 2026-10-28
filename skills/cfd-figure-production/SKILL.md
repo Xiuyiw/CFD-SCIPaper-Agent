@@ -236,6 +236,13 @@ from the vector canvas by up to one pixel. Raising dpi does not increase the emb
 
 ## External drawing tools: portable tasks and mechanism figures
 
+To update an already attached imported diagram, use the existing figure-task route to revise the
+current author-editable source, then attach the returned candidate with `--replace-figure`
+(Python: `replace_existing=True`). Keep the exact figure ID. The new workspace retains earlier
+source files and numbering, takes the supplied new caption, and does not duplicate or overwrite
+body paragraphs. Inspect the changed arrow meanings with the new caption, then revise affected
+scientific prose explicitly. This is not an automatic scientific redraw of arbitrary SVG/draw.io.
+
 Use this route when the scientific argument needs a layout or schematic outside the existing
 data renderer. Read the packaged external-tool reference; choose the tool by the scientific
 relationship rather than starting a new canvas engine.

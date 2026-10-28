@@ -45,6 +45,7 @@ figures and pages, not from export success.
 | v0.24 | Portable workbench, thin host integrations, second-host use and heterogeneous real-task evaluation | Released within tested scope; known-project second-host bindings and report output work, scientific interpretation remains author-reviewed, and third-class real CFD validation remains open |
 | v0.25 | Question-driven interpretation, complementary bound figures and connected manuscript arguments | Implemented scope: multi-series report responses, original-face/layer diagnostics and editable Studio artwork exercised in connected Word/PDF trials; publication and platform evidence are linked in the v0.25.0 notes, with scientific interpretation still author-reviewed |
 | v0.26 | Selected, source-bound research figures and ordered formal manuscripts that continue after author edits | Implemented scope: paired regional/budget figures, native table header units, explicit block order and author-preserving refresh; reusable installed-package example and known-project page evaluation described in the v0.26.0 notes |
+| v0.27 | Current discriminating evidence → grounded mechanism artwork and scientific discussion → same-identity figure/caption/prose continuation | Implemented: selected current reading, imported-artwork updates and comparable difference reversals; known cooling and public continuation described in v0.27.0 notes |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -59,7 +60,23 @@ The host remains responsible for changed scientific meaning. Existing diagnostic
 extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
 solver expansion, second-host evaluation and automatic submission are not part of this increment.
 
-## Current increment: v0.26 research expression and author-preserving continuation
+## Current increment: mechanism explanation and connected artwork
+
+The v0.27 increment in
+[Workbench section19](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md)
+connects selected discriminating observations and actual method/geometry sources to host reasoning,
+Studio artwork and four-section writing. It reuses the current figure exchange for explicit
+same-identity candidate updates and the existing passage-level change context for regional
+difference reversals. Scientific explanations and artwork revisions remain host/author work.
+
+The acceptance target is an actual research unit that continues after a meaningful evidence or
+interpretation change, not another source-value refresh demonstration. Existing quantitative
+recipes, author edits and formal Word output are retained. Known cooling materials and targeted
+P04 references support development; they do not constitute unfamiliar-project validation.
+The [v0.27 version notes](releases/v0.27.0.md) distinguish implementation, actual outputs and
+scientific scope; the linked Release records platform and distribution checks.
+
+## Delivered increment: v0.26 research expression and author-preserving continuation
 
 The [Workbench plan](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md), section18, connects the quality
 corrections from the cooling trial to reusable production behavior:

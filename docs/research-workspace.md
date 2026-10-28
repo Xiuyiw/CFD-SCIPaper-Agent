@@ -355,3 +355,41 @@ host reconsideration; it does not automatically redraw conceptual arrows. Explic
 The result is an editable research candidate for author review. It does not establish
 solver convergence, physical comparability, experimental validation or publication readiness
 by itself; those judgments use the supplied study evidence and the actual rendered pages.
+
+### Read evidence for a specific mechanism question
+
+Select existing evidence IDs; the tool does not guess an explanation from the question:
+
+```console
+cfdpaper research --workspace current-build/workspace --section discussion --evidence mean-change --evidence method-definition --question-context "Does local cooling imply stronger lateral export?" --output question-reading
+```
+
+`question-reading/question-context.json` contains current recalculated readings, their owning
+definitions and source locators, bounded text excerpts where available, and related passages and
+figures in the target and owning sections. Large arrays are not copied into this view. Paths refer
+to the supplied workspace; keep that workspace with the reading view. Python exposes the same
+`research_question_context(workspace, question=..., section_id=..., evidence_ids=[...])` action.
+Reading does not revise drafts or create a scientific conclusion. Assess the explanation and its
+relevant alternative from the selected observations, then write the argument with the host.
+
+### Update imported artwork without changing its figure number
+
+After the host revises the actual drawing through the figure-task route:
+
+```console
+cfdpaper research --workspace current-build/workspace --attach-figure revised-import --replace-figure --section discussion --evidence heat-path --output updated-workspace
+cfdpaper research --workspace updated-workspace --baseline current-build --output updated-build
+```
+
+Replacement is explicit and applies only to an imported figure with the exact same ID. Its position
+and paragraphs remain; there is no second inserted introduction. New artwork and sources are stored
+in `sources/figure-tasks/ID-update-N`, beside the previous author sources. The incoming caption replaces
+this figure's caption; inspect it with the artwork. Inspection defaults to `not-viewed` for the new
+preview. Pass `--viewed` only after viewing that actual image.
+
+Body interpretation is not overwritten by the new delivery's `body_reference`. Read the located
+affected passages and revise scientific wording explicitly in the new workspace. For comparable
+differences, `difference_sign_changed` identifies crossing zero, including `difference_mean`;
+a changed domain, operator, baseline or unit is a definition change rather than an ordinary reversal.
+The [mechanism continuation example](../examples/mechanism-continuation/README.md) demonstrates
+the complete host action instead of treating a review prompt as a finished scientific revision.

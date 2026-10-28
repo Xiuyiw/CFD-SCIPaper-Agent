@@ -484,6 +484,14 @@ def research_workspace(
         Path | None,
         typer.Option("--attach-figure", help="Attach an imported figure to a new workspace copy"),
     ] = None,
+    replace_figure: Annotated[
+        bool,
+        typer.Option("--replace-figure", help="Update the attached figure ID in a fresh workspace"),
+    ] = False,
+    question_context: Annotated[
+        str | None,
+        typer.Option("--question-context", help="Read selected current evidence for this question"),
+    ] = None,
     section: Annotated[
         str | None, typer.Option("--section", help="Target manuscript section for --attach-figure")
     ] = None,
@@ -508,6 +516,37 @@ def research_workspace(
     try:
         if (study is None) == (workspace is None):
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
+        if question_context is not None:
+            if workspace is None or section is None or not evidence:
+                raise WorkflowInputError(
+                    "--question-context requires --workspace, --section and --evidence."
+                )
+            if (
+                any(
+                    value is not None
+                    for value in (
+                        baseline,
+                        author_candidate,
+                        diagnostics,
+                        attach_figure,
+                        paragraph_index,
+                    )
+                )
+                or replace_figure
+                or viewed
+                or observation_note
+            ):
+                raise WorkflowInputError("--question-context is a separate read action.")
+            from cfdpaper.publication.research_workspace import research_question_context
+            from cfdpaper.publication.section import _stage, _write
+
+            context = research_question_context(
+                workspace, question=question_context, section_id=section, evidence_ids=evidence
+            )
+            with _stage(output) as staged:
+                _write(staged / "question-context.json", context)
+            console.print(f"Current question evidence ready: {output}", markup=False)
+            return
         if baseline is not None and workspace is None:
             raise WorkflowInputError("--baseline requires --workspace and a previous build.")
         if author_candidate is not None and (
@@ -533,6 +572,7 @@ def research_workspace(
             or paragraph_index is not None
             or viewed
             or observation_note
+            or replace_figure
         ):
             raise WorkflowInputError("Figure attachment options require --attach-figure.")
         from cfdpaper.publication.research_workspace import (
@@ -557,6 +597,7 @@ def research_workspace(
                 paragraph_index=paragraph_index,
                 image_observation="viewed" if viewed else "not-viewed",
                 observation_note=observation_note,
+                **({"replace_existing": True} if replace_figure else {}),
             )
             console.print(f"Research workspace with figure ready: {output}", markup=False)
             console.print(
