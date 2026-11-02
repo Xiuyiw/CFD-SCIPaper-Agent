@@ -54,7 +54,12 @@ _TABLE_DECLARATION_KEYS = {
 
 def calculate_declared_table(path, declaration: dict) -> dict:
     """Forward calculation options only, without adding report identity or metadata."""
-    if declaration["operation"] in {"field_integral", "field_difference", "energy_budget"}:
+    if declaration["operation"] in {
+        "field_integral",
+        "field_difference",
+        "energy_budget",
+        "partition_change",
+    }:
         from .field_diagnostics import calculate_field_diagnostic
 
         result = calculate_field_diagnostic(path, declaration)
@@ -549,6 +554,15 @@ _COMPARABLE_FIELDS = {
     "temporal": TEMPORAL_FIELDS,
     "field_integral": {"net", "positive", "negative", "absolute", "measure", "weighted_mean"},
     "field_difference": {"reference_mean", "comparison_mean", "difference_mean"},
+    "partition_change": {
+        "reference_mean",
+        "comparison_mean",
+        "difference_mean",
+        "reference_weight",
+        "comparison_weight",
+        "contribution",
+        "measure",
+    },
     "energy_budget": {"input", "output", "source", "storage", "residual"},
 }
 
@@ -622,7 +636,15 @@ def calculate_result_comparison(
                 kind = "ordinary"
             elif field == "change" and kind == "absolute-temperature":
                 kind = "temperature-difference"
-        if field in {"weight_sum", "area", "rate", "mean_flux", "measure"}:
+        if field in {
+            "weight_sum",
+            "area",
+            "rate",
+            "mean_flux",
+            "measure",
+            "reference_weight",
+            "comparison_weight",
+        }:
             kind = "ordinary"
         elif operation == "field_integral" and field != "weighted_mean":
             if kind == "absolute-temperature":
@@ -631,8 +653,8 @@ def calculate_result_comparison(
                 )
             kind = "ordinary"
         elif (
-            operation == "field_difference"
-            and field == "difference_mean"
+            operation in {"field_difference", "partition_change"}
+            and field in {"difference_mean", "contribution"}
             and kind == "absolute-temperature"
         ):
             kind = "temperature-difference"
@@ -971,7 +993,12 @@ def resolve_table_result(
     if len(matches) != 1:
         raise ValueError(f"{location}: expected one calculation ID, found {len(matches)}")
     report = matches[0]
-    if report.get("operation") in {"field_integral", "field_difference", "energy_budget"}:
+    if report.get("operation") in {
+        "field_integral",
+        "field_difference",
+        "energy_budget",
+        "partition_change",
+    }:
         from .field_diagnostics import resolve_field_result
 
         if source_record is not None:

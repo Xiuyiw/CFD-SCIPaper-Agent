@@ -103,6 +103,9 @@ class _ResultRef(_Record):
         "reference_mean",
         "comparison_mean",
         "difference_mean",
+        "reference_weight",
+        "comparison_weight",
+        "contribution",
         "residual",
         "input",
         "output",
@@ -396,7 +399,7 @@ class _TableCalculation(_Record):
 class _FieldCalculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
-    operation: Literal["field_integral", "field_difference", "energy_budget"]
+    operation: Literal["field_integral", "field_difference", "energy_budget", "partition_change"]
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str = Field(min_length=1)
@@ -449,6 +452,9 @@ class _ScalarResult(_Record):
         "reference_mean",
         "comparison_mean",
         "difference_mean",
+        "reference_weight",
+        "comparison_weight",
+        "contribution",
         "residual",
         "input",
         "output",

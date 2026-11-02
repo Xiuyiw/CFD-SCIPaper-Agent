@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.28.0] — 2026-11-02
+
+### Added
+
+- Original planar-face partition-change analysis computes actual area weights and temperature
+  contributions across compatible meshes, retaining original means, source locations and support.
+- A contribution panel combines signed regional components with the whole mean change, alongside
+  the existing regional and budget views, with source data and author-local plotting scripts.
+- Explicit host-authored paragraph/caption revisions use stable IDs and current-text matching in a
+  fresh workspace, retaining native tables, formulas, citations, numbering and untouched author edits.
+- The MCP research tool now exposes current-question reading, explicit revisions and same-ID
+  imported-artwork replacement through the existing shared business functions.
+
+### Fixed
+
+- Question reading follows selected evidence into all downstream sections, including aliases,
+  related objects and located Markdown/line excerpts rather than unrelated file beginnings.
+- Legacy paragraphs without explicit IDs remain addressable through their existing document-block
+  identities; new native inline mathematics can accompany an explicit prose revision.
+
 ## [0.27.0] — 2026-10-28
 
 ### Added

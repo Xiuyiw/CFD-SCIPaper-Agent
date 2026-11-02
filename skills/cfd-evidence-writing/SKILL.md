@@ -193,9 +193,23 @@ For a focused physical question, use `research_question_context` or
 to read selected current calculations, exact definitions, source excerpts and related passages/figures.
 Choose evidence IDs from actual observations; the question does not discover a mechanism.
 Use discriminating observations to compare explanations, rather than adding every available scalar.
+Question reading follows owner identities through all section bindings, including downstream
+Discussion and Conclusions; it returns stable paragraph IDs and related objects. Use explicit
+`#L95-L110` or Markdown heading anchors when the needed source lies beyond a file's opening.
+An unresolved anchor is a missing excerpt, not permission to quote the file beginning instead.
 When a comparable `difference_mean` crosses zero, use the passage's before/after context to revise
 its directional interpretation and caption. A changed support or operator needs definition review,
 not a mechanical word swap. Preserve the first draft and the author's unrelated text.
+
+Apply explicit host wording through `apply_research_revision(workspace, proposal, output)` or
+`research --workspace ... --revision proposal.json --output ...`, then use the normal research
+build. Paragraph replacements identify `section_id`, `paragraph_id`, exact current `before` text,
+new `text` and, when changed, the complete `evidence_refs` list as `owner/evidence` identities.
+Caption replacements identify the existing figure and its current text. Optional `inline_math`
+uses native MathNode expressions. Unknown identities and author-text conflicts need reconciliation;
+do not work around them by rewriting whole drafts or resetting block order. The tool writes the
+provided interpretation, not an automatically verified scientific answer. `research_task` exposes
+question reading, revision and explicit same-ID artwork replacement through the same MCP function.
 
 An assembled workspace includes `CONTINUE.md`, portable `drafts.json`, each section's
 `input.json`, local-ID `draft.json`, sources, Skill and current manuscript context. Copy the whole

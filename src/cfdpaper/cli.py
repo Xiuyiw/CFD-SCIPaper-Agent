@@ -492,6 +492,12 @@ def research_workspace(
         str | None,
         typer.Option("--question-context", help="Read selected current evidence for this question"),
     ] = None,
+    revision: Annotated[
+        Path | None,
+        typer.Option(
+            "--revision", help="Apply explicit paragraph/caption revisions to a fresh workspace"
+        ),
+    ] = None,
     section: Annotated[
         str | None, typer.Option("--section", help="Target manuscript section for --attach-figure")
     ] = None,
@@ -516,6 +522,33 @@ def research_workspace(
     try:
         if (study is None) == (workspace is None):
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
+        if revision is not None:
+            if (
+                workspace is None
+                or any(
+                    value is not None
+                    for value in (
+                        baseline,
+                        author_candidate,
+                        diagnostics,
+                        attach_figure,
+                        question_context,
+                        paragraph_index,
+                        section,
+                    )
+                )
+                or evidence
+                or replace_figure
+                or viewed
+                or observation_note
+            ):
+                raise WorkflowInputError("--revision is a separate --workspace action.")
+            from cfdpaper.publication.research_revision import apply_research_revision
+            from cfdpaper.publication.section import _read
+
+            apply_research_revision(workspace, _read(revision), output)
+            console.print(f"Explicit host revision ready: {output}", markup=False)
+            return
         if question_context is not None:
             if workspace is None or section is None or not evidence:
                 raise WorkflowInputError(

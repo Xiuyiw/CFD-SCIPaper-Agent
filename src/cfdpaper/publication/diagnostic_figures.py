@@ -20,6 +20,7 @@ _OPERATIONS = {
     "signed_flux": "field_integral",
     "budget": "energy_budget",
     "matched_difference": "field_difference",
+    "partition_contribution": "partition_change",
 }
 
 
@@ -156,10 +157,18 @@ def _read_panels(config_path, panel_ids: list[str] | None = None):
                 available = {group["group"]: group for group in report["groups"]}
                 default_groups = (
                     [group for group in available if group != "all"]
-                    if kind == "regional"
+                    if kind in {"regional", "partition_contribution"}
                     else ["all"]
                 )
                 groups = item.get("groups", default_groups or ["all"])
+                if kind == "partition_contribution" and (
+                    not isinstance(groups, list)
+                    or set(groups) != set(available) - {"all"}
+                    or "all" in groups
+                ):
+                    raise ValueError(
+                        "Contribution panels must display all non-total partition groups"
+                    )
                 if (
                     not isinstance(groups, list)
                     or not groups
@@ -191,6 +200,13 @@ def _read_panels(config_path, panel_ids: list[str] | None = None):
                             case_id=item.get("case_id", ""),
                         )
                     entries.append(entry)
+        if kind == "partition_contribution":
+            group_sets = {
+                tuple(entry["group"] for entry in entries if entry["series_index"] == index)
+                for index in range(len(series))
+            }
+            if len(group_sets) != 1:
+                raise ValueError("Contribution series require the same ordered partition groups")
         if len(entries) > 16:
             raise ValueError("Use focused diagnostic panels with at most sixteen displayed groups")
         panels.append((panel, entries))
@@ -233,6 +249,14 @@ def _rows(entries):
         if "layer_id" in entry:
             record.update({key: entry[key] for key in ("layer_id", "layer_label", "case_id")})
         record.update({key: entry[key] for key in ("pair_id", "role") if key in entry})
+        if declaration["operation"] == "partition_change":
+            whole = next(g for g in entry["report"]["groups"] if g["group"] == "all")["result"]
+            record.update(
+                whole_reference_mean=whole["reference_mean"],
+                whole_comparison_mean=whole["comparison_mean"],
+                whole_difference=whole["difference_mean"],
+                support_mode=entry["report"]["support_mode"],
+            )
         if entry["total_measure"]:
             record["measure_fraction"] = entry["result"]["measure"] / entry["total_measure"]
         rows.append(record)
@@ -400,6 +424,125 @@ def _plot_regional_change(fig, panel, entries, style):
         handletextpad=0.4,
         columnspacing=1.5,
     )
+    return (ax,)
+
+
+def _plot_partition_contribution(fig, panel, entries, style):
+    """Diverging regional temperature components and their independently reduced mean."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    ax = fig.subplots()
+    series = list(dict.fromkeys(entry["series_index"] for entry in entries))
+    groups = [entry["group"] for entry in entries if entry["series_index"] == series[0]]
+    cases = [[entry for entry in entries if entry["series_index"] == index] for index in series]
+    extents = [
+        (
+            sum(min(0, e["result"]["contribution"]) for e in case),
+            sum(max(0, e["result"]["contribution"]) for e in case),
+        )
+        for case in cases
+    ]
+    low = min(0, *(bounds[0] for bounds in extents))
+    high = max(0, *(bounds[1] for bounds in extents))
+    span = max(high - low, 0.1)
+    hatches = ("", "///", "...", "\\\\")
+    for y, case in enumerate(cases):
+        negative = positive = 0.0
+        for entry in case:
+            index = groups.index(entry["group"])
+            value = entry["result"]["contribution"]
+            start = negative if value < 0 else positive
+            ax.barh(
+                y,
+                value,
+                left=start,
+                height=0.38,
+                color=_COLORS[index % len(_COLORS)],
+                hatch=hatches[index % len(hatches)],
+                alpha=0.72,
+                edgecolor="white",
+                linewidth=0.6,
+                zorder=2,
+            )
+            if value:
+                inside = abs(value) >= span * 0.10
+                ax.annotate(
+                    f"{value:+.2f}",
+                    (start + value / 2 if inside else start + value, y),
+                    xytext=(0 if inside else (-4 if value < 0 else 4), 0),
+                    textcoords="offset points",
+                    ha="center" if inside else ("right" if value < 0 else "left"),
+                    va="center",
+                    fontsize=style.annotation_pt,
+                    color="#25323B",
+                    zorder=4,
+                )
+            if value < 0:
+                negative += value
+            else:
+                positive += value
+        whole = next(g for g in case[0]["report"]["groups"] if g["group"] == "all")["result"]
+        net = whole["difference_mean"]
+        ax.plot(
+            net,
+            y,
+            marker="D",
+            color="#374750",
+            markerfacecolor="white",
+            markeredgewidth=1,
+            markersize=5,
+            linestyle="none",
+            zorder=5,
+            clip_on=False,
+        )
+        ax.annotate(
+            f"{net:+.2f}",
+            (net, y),
+            xytext=(0, 9),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=style.annotation_pt,
+            color="#374750",
+        )
+    handles = [
+        Patch(
+            facecolor=_COLORS[index % len(_COLORS)],
+            hatch=hatches[index % len(hatches)],
+            alpha=0.72,
+            edgecolor="white",
+            label=panel.get("group_labels", {}).get(group, group),
+        )
+        for index, group in enumerate(groups)
+    ]
+    handles.append(
+        Line2D(
+            [],
+            [],
+            marker="D",
+            linestyle="none",
+            color="#374750",
+            markerfacecolor="white",
+            markersize=5,
+            label="Whole mean change",
+        )
+    )
+    ax.legend(
+        handles=handles,
+        loc="lower left",
+        bbox_to_anchor=(0, 1.025),
+        ncol=min(3, len(handles)),
+        frameon=False,
+        borderaxespad=0,
+        handletextpad=0.4,
+        columnspacing=1.3,
+    )
+    ax.set_xlim(low - span * 0.22, high + span * 0.22)
+    ax.set_ylim(len(cases) - 0.5, -0.75)
+    ax.set_yticks(range(len(cases)), [case[0]["label"] for case in cases])
+    ax.axvline(0, color="#7C858D", linewidth=0.8, linestyle="--", zorder=0)
+    ax.set_xlabel(panel.get("change_label", "Temperature-change contribution (K)"))
     return (ax,)
 
 
@@ -787,6 +930,13 @@ def _caption(panel, entries):
             "difference. Spatial identity is checked before subtraction; derived differences "
             "are complementary diagnostics of the same solutions."
         ),
+        "partition_contribution": (
+            "Signed segments compose the area-weighted temperature change, with diamonds "
+            "showing the independently reduced whole-domain mean change. Regional weights "
+            "and original means are retained in source data. Contributions are in K, not heat "
+            "rates or independent causal evidence; regions retain their declared fixed or "
+            "source-following support."
+        ),
     }[panel["kind"]]
     if panel.get("view") == "paired_change":
         description = (
@@ -875,6 +1025,12 @@ def _combined_caption(panel, entries):
             "open and filled markers show reference and comparison weighted means; "
             "the adjacent difference is comparison minus reference at matching locations"
         ),
+        "partition_contribution": (
+            "signed segments compose the area-weighted temperature change; diamonds mark "
+            "the whole-domain mean change. These are temperature contributions in K, not heat "
+            "rates or independent causal evidence; source rows retain the original means, "
+            "area weights and spatial supports"
+        ),
     }[panel["kind"]]
     caption = f"{title}: {description}."
     if panel["kind"] == "signed_flux":
@@ -898,11 +1054,11 @@ def _render_combined(data, panels, config_path, output_dir, style, figure_id, pa
         for index, ((panel, entries), subfigure) in enumerate(
             zip(panels, np.atleast_1d(fig.subfigures(len(panels), 1, hspace=0.06)), strict=True)
         ):
-            metric = (
-                "residual"
-                if panel["kind"] == "budget"
-                else ("net" if panel["kind"] == "signed_flux" else "weighted_mean")
-            )
+            metric = {
+                "budget": "residual",
+                "signed_flux": "net",
+                "partition_contribution": "contribution",
+            }.get(panel["kind"], "weighted_mean")
             if len({_unit(entry, metric) for entry in entries}) != 1:
                 raise ValueError("Diagnostic panel series must have the same physical unit")
             function = {
@@ -910,6 +1066,7 @@ def _render_combined(data, panels, config_path, output_dir, style, figure_id, pa
                 "signed_flux": _plot_signed,
                 "budget": _plot_pair,
                 "matched_difference": _plot_pair,
+                "partition_contribution": _plot_partition_contribution,
             }[panel["kind"]]
             axes = function(subfigure, panel, entries, style)
             panel_axes.append(axes)
@@ -1025,6 +1182,7 @@ def render_diagnostic_figures(
                 "signed_flux": "net",
                 "budget": "residual",
                 "matched_difference": "weighted_mean",
+                "partition_contribution": "contribution",
             }[panel["kind"]]
             if len({_unit(entry, metric) for entry in entries}) != 1:
                 raise ValueError("Diagnostic panel series must have the same physical unit")
@@ -1041,6 +1199,7 @@ def render_diagnostic_figures(
                     "signed_flux": _plot_signed,
                     "budget": _plot_pair,
                     "matched_difference": _plot_pair,
+                    "partition_contribution": _plot_partition_contribution,
                 }[panel["kind"]]
                 axes = function(fig, panel, entries, style)
                 for ax in axes:

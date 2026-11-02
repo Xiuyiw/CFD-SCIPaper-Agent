@@ -17,6 +17,7 @@ from matplotlib.font_manager import findfont
 from PIL import Image, ImageDraw, ImageFont
 
 from cfdpaper.publication.figure_tasks import import_figure_task, prepare_figure_task
+from cfdpaper.publication.research_revision import apply_research_revision
 from cfdpaper.publication.research_workspace import (
     attach_imported_figure,
     build_research_workspace,
@@ -32,6 +33,11 @@ EVIDENCE_IDS = [
     *[
         f"temperature-A{case}-{region}-weighted_mean"
         for case in (0, 1)
+        for region in ("footprint", "rest")
+    ],
+    *[
+        f"contribution-{pair}-{region}-contribution"
+        for pair in ("A", "B")
         for region in ("footprint", "rest")
     ],
 ]
@@ -50,6 +56,150 @@ def context(workspace):
     return research_question_context(
         workspace, question=QUESTION, section_id="results", evidence_ids=EVIDENCE_IDS
     )
+
+
+def paragraph_revision(workspace, sid, index, text, extra_evidence=()):
+    """Address current paragraphs through product reading, including legacy IDs."""
+    mapping = read(workspace / "drafts.json")
+    paragraph = read(workspace / mapping[sid])["paragraphs"][index]
+    reading = research_question_context(
+        workspace,
+        question="Which current passage is being revised with this evidence?",
+        section_id=sid,
+        evidence_ids=paragraph["evidence_ids"],
+    )
+    targets = [
+        item
+        for item in reading["passages"]
+        if item["section_id"] == sid and item["text"] == paragraph["text"]
+    ]
+    if len(targets) != 1:
+        raise ValueError("Example revision requires an unambiguous current paragraph")
+    return {
+        "section_id": sid,
+        "paragraph_id": targets[0]["paragraph_id"],
+        "before": paragraph["text"],
+        "text": text,
+        "evidence_refs": list(
+            dict.fromkeys(
+                [
+                    *[f"{sid}/{key}" for key in paragraph["evidence_ids"]],
+                    *extra_evidence,
+                ]
+            )
+        ),
+    }
+
+
+def add_contribution_analysis(previous, output):
+    """Declare one supplementary analysis using the existing synthetic faces."""
+    workspace = output / "analysis-input"
+    shutil.copytree(previous, workspace)
+    path = workspace / "sections/results/diagnostics.json"
+    config = read(path)
+    for pair in ("A", "B"):
+        box = {"x": [0, 0.01], "y": [0, 0.01]}
+        config["field_calculations"].append(
+            {
+                "id": f"contribution-{pair}",
+                "operation": "partition_change",
+                "source": f"sources/{pair}1.npz",
+                "domain": "same complete original two-face interface",
+                "quantity_kind": "absolute-temperature",
+                "columns": {"value": "face_value", "measure": "area_m2"},
+                "units": {"value": "K", "measure": "m2"},
+                "field_options": {
+                    "association": "face",
+                    "integrand": "weighted_mean",
+                    "region_assignment": "polygon-clip",
+                    "partition_complete": True,
+                    "regions": [
+                        {"id": "footprint", "bounds": box},
+                        {"id": "rest", "bounds": box, "complement": True},
+                    ],
+                    "reference_source": f"{pair}0.npz",
+                    "support_mode": "fixed",
+                    "common_support": (
+                        "Complete 0.04 by 0.01 m interface at z=0; fixed face regions"
+                    ),
+                },
+            }
+        )
+    config["panels"].insert(
+        1,
+        {
+            "id": "area-contribution",
+            "kind": "partition_contribution",
+            "title": "Area-weighted temperature-change composition",
+            "series": [
+                {
+                    "label": f"Structure {pair}",
+                    "calculation_id": f"contribution-{pair}",
+                    "groups": ["footprint", "rest"],
+                }
+                for pair in ("A", "B")
+            ],
+            "group_labels": {"footprint": "Footprint", "rest": "Remaining interface"},
+        },
+    )
+    write(path, config)
+    # The example author deliberately adds a third panel. Give that composition
+    # enough print height in this isolated copy; retain every other local choice.
+    script = workspace / "sections/results/figures/diagnostics/plot.py"
+    marker = "if __name__ == '__main__':"
+    author_source = script.read_text(encoding="utf-8")
+    if marker not in author_source:
+        raise ValueError("Inspect the author's script before changing its composition height")
+    script.write_text(
+        author_source.replace(
+            marker, "STYLE.height_mm = max(STYLE.height_mm, 174)\n\n" + marker, 1
+        ),
+        encoding="utf-8",
+    )
+    build = build_research_workspace(workspace, output / "source-analysis", baseline_dir=previous)
+    current = build / "workspace"
+    mapping = read(current / "drafts.json")
+    methods = read(current / mapping["methods"])
+    results = read(current / mapping["results"])
+    summary = read(current / "sections/results/figures/diagnostics/diagnostic-figures.json")
+    caption = next(f["caption"] for f in summary["figures"] if f["id"] == "thermal-budget")
+    proposal = {
+        "paragraphs": [
+            paragraph_revision(
+                current,
+                "methods",
+                0,
+                methods["paragraphs"][0]["text"]
+                + " A regional temperature-change contribution is its original physical-area "
+                "fraction times its mean-temperature change. The complete fixed partition "
+                "makes these contributions sum to the whole-interface mean change; they "
+                "are not heat fractions or independent transport observations.",
+            ),
+            paragraph_revision(
+                current,
+                "results",
+                1,
+                results["paragraphs"][1]["text"] + " The Structure A footprint contributes "
+                "{{value:contribution-A-footprint-contribution}} and its remaining region "
+                "{{value:contribution-A-rest-contribution}} to the overall rise; Structure B "
+                "has corresponding contributions of "
+                "{{value:contribution-B-footprint-contribution}} "
+                "and {{value:contribution-B-rest-contribution}}.",
+                [f"results/{key}" for key in EVIDENCE_IDS if key.startswith("contribution-")],
+            ),
+        ],
+        "captions": [
+            {
+                "section_id": "results",
+                "figure_id": "thermal-budget",
+                "before": results["captions"]["thermal-budget"],
+                "text": caption,
+                "image_observation": "author-provided",
+            }
+        ],
+    }
+    write(output / "initial-revision-proposal.json", proposal)
+    return apply_research_revision(current, proposal, output / "analysis-revised-workspace")
 
 
 def draw_support(destination, material, reading):
@@ -239,44 +389,45 @@ def artwork_package(workspace, output, reading):
     return import_figure_task(prepared, returned / "delivery.json", output / "imported")
 
 
-def revise_interpretation(workspace):
+def revise_interpretation(workspace, output):
     """Explicit example-author revisions, not text inferred by the change detector."""
     drafts = read(workspace / "drafts.json")
     method = read(workspace / drafts["methods"])
-    method["paragraphs"][0]["text"] += (
+    method_text = method["paragraphs"][0]["text"] + (
         " In the isolated continuation, both prescribed A1 face temperatures are reduced "
         "uniformly by 4 K; geometry, areas, definitions and the independent budgets remain "
         "unchanged. This is a constructed software-change demonstration, not a new CFD solution."
     )
-    write(workspace / drafts["methods"], method)
     results = read(workspace / drafts["results"])
-    results["paragraphs"][0]["text"] = (
-        "After the uniform shift, the whole-interface mean for Structure A falls from "
-        "{{value:A0-mean}} to {{value:A1-mean}}, giving a comparison-minus-reference change "
-        "of {{value:paired-A-all-difference_mean}}. Structure B retains its original rise "
-        "from {{value:B0-mean}} to {{value:B1-mean}} and change "
-        "{{value:paired-B-all-difference_mean}}. {{table:paired-means}} retains the original "
-        "means rather than treating their differences as independent evidence."
-    )
-    results["paragraphs"][1]["text"] = (
-        "The Structure A footprint mean falls from "
-        "{{value:temperature-A0-footprint-weighted_mean}} to "
-        "{{value:temperature-A1-footprint-weighted_mean}}, while its remaining-region mean "
-        "is unchanged at {{value:temperature-A1-rest-weighted_mean}}. "
-        "{{figure:thermal-budget}} retains the regional comparison beside the separately "
-        "prescribed budgets in {{table:local-budget}}; the budgets themselves did not change."
-    )
-    results["paragraphs"][2]["text"] = (
-        "{{figure:observation-support}} retains the same original faces and area weighting "
-        "while showing the now negative whole-interface change "
-        "{{value:paired-A-all-difference_mean}}. The cooler footprint and unchanged remaining "
-        "region account for that arithmetic; the comparison arrow is not a heat-flow pathway."
-    )
-    results["observation_notes"]["thermal-budget"] = (
-        "Example-author reading after the constructed shift: Structure A's footprint cools "
-        "and its remaining region is unchanged; budgets remain independent prescribed values."
-    )
-    write(workspace / drafts["results"], results)
+    result_texts = [
+        (
+            "After the uniform shift, the whole-interface mean for Structure A falls from "
+            "{{value:A0-mean}} to {{value:A1-mean}}, giving a comparison-minus-reference change "
+            "of {{value:paired-A-all-difference_mean}}. Structure B retains its original rise "
+            "from {{value:B0-mean}} to {{value:B1-mean}} and change "
+            "{{value:paired-B-all-difference_mean}}. {{table:paired-means}} retains the original "
+            "means rather than treating their differences as independent evidence."
+        ),
+        (
+            "The Structure A footprint mean falls from "
+            "{{value:temperature-A0-footprint-weighted_mean}} to "
+            "{{value:temperature-A1-footprint-weighted_mean}}, while its remaining-region mean "
+            "is unchanged at {{value:temperature-A1-rest-weighted_mean}}. "
+            "{{figure:thermal-budget}} retains the regional comparison beside the separately "
+            "prescribed budgets in {{table:local-budget}}; the budgets themselves did not change. "
+            "Its footprint contributes {{value:contribution-A-footprint-contribution}} and its "
+            "remaining region {{value:contribution-A-rest-contribution}} to the whole-interface "
+            "change. Structure B retains contributions of "
+            "{{value:contribution-B-footprint-contribution}} and "
+            "{{value:contribution-B-rest-contribution}}."
+        ),
+        (
+            "{{figure:observation-support}} retains the same original faces and area weighting "
+            "while showing the now negative whole-interface change "
+            "{{value:paired-A-all-difference_mean}}. The cooler footprint and unchanged remaining "
+            "region account for that arithmetic; the comparison arrow is not a heat-flow pathway."
+        ),
+    ]
     interpretations = {
         "discussion": (
             "The changed Structure A fields no longer support the earlier local-cooling versus "
@@ -295,10 +446,43 @@ def revise_interpretation(workspace):
             "cooling from being used alone as evidence of whole-interface cooling."
         ),
     }
-    for sid, paragraph in interpretations.items():
-        draft = read(workspace / drafts[sid])
-        draft["paragraphs"][0]["text"] = paragraph
-        write(workspace / drafts[sid], draft)
+    contribution_refs = [
+        f"results/{key}" for key in EVIDENCE_IDS if key.startswith("contribution-")
+    ]
+    patches = [paragraph_revision(workspace, "methods", 0, method_text)]
+    patches.extend(
+        paragraph_revision(
+            workspace,
+            "results",
+            index,
+            text,
+            contribution_refs if index == 1 else (),
+        )
+        for index, text in enumerate(result_texts)
+    )
+    patches.extend(
+        paragraph_revision(workspace, sid, 0, paragraph, contribution_refs)
+        for sid, paragraph in interpretations.items()
+    )
+    proposal = {
+        "paragraphs": patches,
+        "captions": [
+            {
+                "section_id": "results",
+                "figure_id": "thermal-budget",
+                "before": results["captions"]["thermal-budget"],
+                "text": results["captions"]["thermal-budget"],
+                "image_observation": "author-provided",
+                "observation_note": (
+                    "Example-author reading after the constructed shift: Structure A's footprint "
+                    "cools and its remaining region is unchanged; the regional contributions "
+                    "compose that temperature change. Budgets remain independent prescribed values."
+                ),
+            }
+        ],
+    }
+    write(output.parent / "host-revision-proposal.json", proposal)
+    return apply_research_revision(workspace, proposal, output)
 
 
 def run(previous_output, output):
@@ -311,11 +495,12 @@ def run(previous_output, output):
     if output.is_relative_to(previous_output) or previous_output.is_relative_to(output):
         raise ValueError("Use a fresh output outside the research-expression input directory")
     output.mkdir(parents=True, exist_ok=False)
-    before = context(previous)
+    analyzed = add_contribution_analysis(previous, output)
+    before = context(analyzed)
     write(output / "context-before.json", before)
-    imported = artwork_package(previous, output / "artwork-before", before)
+    imported = artwork_package(analyzed, output / "artwork-before", before)
     attached = attach_imported_figure(
-        previous,
+        analyzed,
         imported,
         output / "initial-workspace",
         section_id="results",
@@ -356,9 +541,7 @@ def run(previous_output, output):
         observation_note="Example-author schematic of the same support after a uniform -4 K shift.",
         replace_existing=True,
     )
-    host_workspace = output / "host-revised-workspace"
-    shutil.copytree(art_workspace, host_workspace)
-    revise_interpretation(host_workspace)
+    host_workspace = revise_interpretation(art_workspace, output / "host-revised-workspace")
     final = build_research_workspace(
         host_workspace, output / "interpretation-updated", baseline_dir=numerical
     )
@@ -371,7 +554,7 @@ def run(previous_output, output):
             "first_document": "first-candidate/manuscript.docx",
             "direction_review": "numerical-refresh/manuscript/CHANGES.md",
             "final_document": "interpretation-updated/manuscript.docx",
-            "interpretation_author": "Example-author revisions in revise_interpretation()",
+            "interpretation_author": "Example-author wording applied by apply_research_revision()",
         },
     )
     return final / "manuscript.docx"

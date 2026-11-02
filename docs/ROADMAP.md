@@ -46,6 +46,7 @@ figures and pages, not from export success.
 | v0.25 | Question-driven interpretation, complementary bound figures and connected manuscript arguments | Implemented scope: multi-series report responses, original-face/layer diagnostics and editable Studio artwork exercised in connected Word/PDF trials; publication and platform evidence are linked in the v0.25.0 notes, with scientific interpretation still author-reviewed |
 | v0.26 | Selected, source-bound research figures and ordered formal manuscripts that continue after author edits | Implemented scope: paired regional/budget figures, native table header units, explicit block order and author-preserving refresh; reusable installed-package example and known-project page evaluation described in the v0.26.0 notes |
 | v0.27 | Current discriminating evidence → grounded mechanism artwork and scientific discussion → same-identity figure/caption/prose continuation | Implemented: selected current reading, imported-artwork updates and comparable difference reversals; known cooling and public continuation described in v0.27.0 notes |
+| v0.28 | Question-driven supplementary analysis → complementary figures and cross-section arguments → explicit host-authored revisions | Implemented scope: original-face temperature contributions, complementary panels, all-section evidence reading and explicit host revision; actual cooling/constructed continuation and release checks in v0.28.0 notes |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -60,7 +61,29 @@ The host remains responsible for changed scientific meaning. Existing diagnostic
 extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
 solver expansion, second-host evaluation and automatic submission are not part of this increment.
 
-## Current increment: mechanism explanation and connected artwork
+## Current increment: v0.28 question-driven analysis and connected scientific revision
+
+The v0.27 scoped workflow is delivered. Its actual cooling manuscript still required host-written
+JSON integration scripts, and question reading did not include every downstream use of selected
+evidence. These are concrete continuation gaps, not reasons to rebuild numerical refresh or the
+same-ID figure update already released.
+
+The v0.28 increment in [Workbench section20](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md) connects a
+useful supplementary analysis to the same figures and manuscript: explain local cooling alongside
+whole-interface warming through source-calculated regional contributions, while distinguishing
+moving supports, fixed locations and heat budgets. The host supplies the scientific reasoning;
+the toolkit should support all related passages and explicit, author-preserving prose/caption
+updates without bespoke file-editing scripts. Existing Python/CLI/MCP functions share the path.
+
+The actual cooling task adds source-calculated regional contributions to a three-panel comparison
+and six-page four-section manuscript. Explicit host revisions correct related prose and a changed
+panel reference while retaining author assets and all figure identities. The public continuation
+uses the same analysis and revision functions, not a private draft-moving script. Version scope
+and platform/distribution evidence are linked from the [v0.28 notes](releases/v0.28.0.md).
+Known-project and constructed-data success do not close real transient/multiphase or unfamiliar
+scientific validation. Publication quality remains assessed from the actual figures and pages.
+
+## Delivered increment: v0.27 mechanism explanation and connected artwork
 
 The v0.27 increment in
 [Workbench section19](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md)

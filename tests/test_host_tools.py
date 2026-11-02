@@ -10,6 +10,52 @@ from cfdpaper.analysis_suggestions import compile_analysis
 from cfdpaper.publication.table_evidence import resolve_table_result
 
 
+def test_research_host_reads_question_context_through_existing_function(tmp_path, monkeypatch):
+    from cfdpaper.publication import research_workspace
+
+    expected = {"question": "Physical question", "evidence": [], "passages": []}
+    calls = []
+
+    def reading(workspace, **kwargs):
+        calls.append((workspace, kwargs))
+        return expected
+
+    monkeypatch.setattr(research_workspace, "research_question_context", reading)
+    result = host_tools.research_task(
+        tmp_path / "reading",
+        workspace=tmp_path / "workspace",
+        question="Physical question",
+        section_id="results",
+        evidence_ids=["mean"],
+    )
+    assert calls[0][1] == {
+        "question": "Physical question",
+        "section_id": "results",
+        "evidence_ids": ["mean"],
+    }
+    assert read(tmp_path / "reading/question-context.json") == expected
+    assert result["context"] == expected
+
+
+def test_research_host_revision_forwards_explicit_proposal(tmp_path, monkeypatch):
+    from cfdpaper.publication import research_revision
+
+    calls = []
+    proposal = {"paragraphs": [], "captions": []}
+
+    def apply(workspace, submitted, output):
+        calls.append((workspace, submitted, output))
+        output.mkdir()
+        return output
+
+    monkeypatch.setattr(research_revision, "apply_research_revision", apply)
+    monkeypatch.setattr(host_tools, "_research_response", lambda task, root: {"task": task})
+    result = host_tools.research_task(
+        tmp_path / "new", workspace=tmp_path / "workspace", revision=proposal
+    )
+    assert calls[0][1] is proposal and result["task"] == "research-revision"
+
+
 def read(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
