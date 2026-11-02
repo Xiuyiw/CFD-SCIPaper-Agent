@@ -278,6 +278,54 @@ def attach_imported_figure(
     return output_dir
 
 
+def _located_excerpt(root, source, locator):
+    """Read a bounded exact line/Markdown section when a local locator supplies one."""
+    name, _, anchor = locator.split(";", 1)[0].strip().partition("#")
+    if not name or Path(name).suffix.lower() not in {".md", ".txt", ".json"}:
+        return None
+    try:
+        material = _asset(source.parent, name)
+    except ValueError:
+        return None
+    lines = material.read_text(encoding="utf-8").splitlines()
+    start, stop = 0, len(lines)
+    if anchor:
+        match = re.fullmatch(r"L([1-9]\d*)(?:-L?([1-9]\d*))?", anchor)
+        if match:
+            start, stop = int(match[1]) - 1, int(match[2] or match[1])
+            found = 0 <= start < stop <= len(lines)
+        else:
+            headings = []
+            for index, line in enumerate(lines):
+                heading = re.match(r"^(#{1,6})\s+(.+?)\s*#*\s*$", line)
+                if heading:
+                    title = heading[2].casefold()
+                    slug = re.sub(r"[^\w\s-]", "", title).replace(" ", "-")
+                    headings.append((index, len(heading[1]), title, slug))
+            matches = [h for h in headings if anchor.casefold() in {h[2], h[3]}]
+            found = len(matches) == 1
+            if found:
+                start, level, _, _ = matches[0]
+                stop = next(
+                    (i for i, depth, _, _ in headings if i > start and depth <= level), len(lines)
+                )
+        if not found:
+            return {
+                "path": material.relative_to(root).as_posix(),
+                "available": False,
+                "reason": f"Source locator could not be resolved: {anchor}",
+            }
+    bounded = lines[start : min(stop, start + 80)]
+    text = "\n".join(bounded)
+    return {
+        "path": material.relative_to(root).as_posix(),
+        "first_line": start + 1,
+        "last_line": start + len(bounded),
+        "text": text[:8000],
+        "truncated": stop > start + 80 or len(text) > 8000,
+    }
+
+
 def research_question_context(workspace_dir, *, question, section_id, evidence_ids):
     """Read selected current evidence and its definitions for one host research question.
 
@@ -328,24 +376,7 @@ def research_question_context(workspace_dir, *, question, section_id, evidence_i
             ),
             None,
         )
-        excerpt = None
-        # Only a declared local text source is read. Narrative locators remain locators.
-        name = record.source.split(";", 1)[0].split("#", 1)[0].strip()
-        if name and Path(name).suffix.lower() in {".md", ".txt", ".json"}:
-            try:
-                material = _asset(source.parent, name)
-            except ValueError:
-                material = None
-            if material is not None:
-                lines = material.read_text(encoding="utf-8").splitlines()
-                text = "\n".join(lines[:80])
-                excerpt = {
-                    "path": material.relative_to(root).as_posix(),
-                    "first_line": 1,
-                    "last_line": min(80, len(lines)),
-                    "text": text[:8000],
-                    "truncated": len(lines) > 80 or len(text) > 8000,
-                }
+        excerpt = _located_excerpt(root, source, record.source)
         records.append(
             {
                 "id": identity,
@@ -379,14 +410,41 @@ def research_question_context(workspace_dir, *, question, section_id, evidence_i
             }
         )
     drafts = _read(root / "drafts.json")
-    passages, figures = [], []
+    passages, figures, tables, equations = [], [], [], []
     owners = {record["owner"] for record in records}
-    selected_sections = [section_id, *[record["owner"].split("/")[0] for record in records]]
-    for sid in dict.fromkeys(selected_sections):
+    object_refs = {"figure": set(), "table": set(), "equation": set()}
+    current_drafts = {}
+    for sid in entries:
         if sid not in drafts:
             continue
         source, data = loaded[sid]
         draft = _read(_asset(root, drafts[sid]))
+        current_drafts[sid] = draft
+        from cfdpaper.publication.document_blocks import paragraph_identity
+
+        occurrences = {}
+        for paragraph in draft.get("paragraphs", []):
+            text = paragraph["text"]
+            paragraph.setdefault("paragraph_id", paragraph_identity(text, occurrences.get(text, 0)))
+            occurrences[text] = occurrences.get(text, 0) + 1
+
+        def uses_selected(ids, texts=(), sid=sid):
+            references = set(ids)
+            for text in texts:
+                references.update(re.findall(r"\{\{(?:value|cite):([A-Za-z0-9_.-]+)\}\}", text))
+            return any(
+                entries[sid].evidence_bindings.get(key, f"{sid}/{key}") in owners
+                for key in references
+            )
+
+        for fid, caption in draft.get("captions", {}).items():
+            if uses_selected([], [caption]):
+                object_refs["figure"].add((sid, fid))
+        for kind in ("table", "equation"):
+            for item in draft.get(kind + "s", []):
+                texts = [cell for row in item.get("rows", []) for cell in row]
+                if uses_selected(item.get("evidence_ids", []), texts):
+                    object_refs[kind].add((sid, item[kind + "_id"]))
         relevant = [
             p
             for p in draft.get("paragraphs", [])
@@ -396,23 +454,38 @@ def research_question_context(workspace_dir, *, question, section_id, evidence_i
             )
         ]
         passages.extend({"section_id": sid, **p} for p in relevant)
-        figure_ids = {fid for p in relevant for fid in p.get("figure_ids", [])}
-        figures.extend(
-            {
-                **f.model_dump(),
-                "section_id": sid,
-                "path": (source.parent / f.path).relative_to(root).as_posix(),
-                "caption": draft.get("captions", {}).get(f.id, f.caption),
-            }
-            for f in data.figures
-            if f.id in figure_ids
-        )
+        for paragraph in relevant:
+            object_refs["figure"].update((sid, fid) for fid in paragraph.get("figure_ids", []))
+            for kind, reference in re.findall(
+                r"\{\{(figure|table|equation):([^{}]+)\}\}", paragraph["text"]
+            ):
+                owner, identity = reference.split("/", 1) if "/" in reference else (sid, reference)
+                object_refs[kind].add((owner, identity))
+    for sid, draft in current_drafts.items():
+        source, data = loaded[sid]
+        for figure in data.figures:
+            if (sid, figure.id) in object_refs["figure"]:
+                figures.append(
+                    {
+                        **figure.model_dump(),
+                        "section_id": sid,
+                        "path": (source.parent / figure.path).relative_to(root).as_posix(),
+                        "caption": draft.get("captions", {}).get(figure.id, figure.caption),
+                    }
+                )
+        for kind, items in (("table", tables), ("equation", equations)):
+            for item in draft.get(kind + "s", []):
+                identity = item.get("id", item.get(kind + "_id"))
+                if (sid, identity) in object_refs[kind]:
+                    items.append({"section_id": sid, **item})
     return {
         "question": question,
         "section_id": section_id,
         "evidence": records,
         "passages": passages,
         "figures": figures,
+        "tables": tables,
+        "equations": equations,
         "reading": "Current calculations and declared sources inform host interpretation; "
         "select discriminating observations and read the actual figures.",
     }
@@ -688,18 +761,38 @@ def _diagnostic_sources(config):
 
 
 def _diagnostic_evidence(config, reports):
-    if "evidence" in config:
+    selected = config.get("auto_evidence", [])
+    if not isinstance(selected, list) or any(not isinstance(key, str) for key in selected):
+        raise ValueError("auto_evidence must list calculation IDs")
+    if len(selected) != len(set(selected)) or set(selected) - {r["id"] for r in reports}:
+        raise ValueError("auto_evidence must select unique existing calculation IDs")
+    if "evidence" in config and not selected:
         return config["evidence"]
-    evidence = []
+    evidence = list(config.get("evidence", []))
+    retained = {item["id"] for item in evidence}
     declarations = {item["id"]: item for item in config["field_calculations"]}
     for report in reports:
+        if "evidence" in config and report["id"] not in selected:
+            continue
         declaration = declarations[report["id"]]
         fields = {
             "field_integral": ["net", "positive", "negative", "measure"],
             "field_difference": ["reference_mean", "comparison_mean", "difference_mean"],
             "energy_budget": ["input", "output", "source", "storage", "residual"],
+            "partition_change": [
+                "reference_mean",
+                "comparison_mean",
+                "difference_mean",
+                "reference_weight",
+                "comparison_weight",
+                "contribution",
+                "measure",
+            ],
         }[report["operation"]]
-        if declaration.get("field_options", {}).get("integrand") == "weighted_mean":
+        if (
+            report["operation"] == "field_integral"
+            and declaration.get("field_options", {}).get("integrand") == "weighted_mean"
+        ):
             fields = ["weighted_mean", "measure"]
         for group in report["groups"]:
             if group["status"] != "computed":
@@ -707,9 +800,12 @@ def _diagnostic_evidence(config, reports):
             for field in fields:
                 if group["result"].get(field) is None:
                     continue
+                identity = f"{report['id']}-{group['group']}-{field}"
+                if identity in retained:
+                    continue
                 evidence.append(
                     {
-                        "id": f"{report['id']}-{group['group']}-{field}",
+                        "id": identity,
                         "kind": "metric",
                         "text": f"{report['domain']}: {group['group']} {field}",
                         "source": report["source"],

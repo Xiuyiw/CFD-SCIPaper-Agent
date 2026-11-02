@@ -366,7 +366,8 @@ cfdpaper research --workspace current-build/workspace --section discussion --evi
 
 `question-reading/question-context.json` contains current recalculated readings, their owning
 definitions and source locators, bounded text excerpts where available, and related passages and
-figures in the target and owning sections. Large arrays are not copied into this view. Paths refer
+figures across all sections that use the selected owner evidence, including downstream aliases.
+Related table/equation definitions accompany the passages. Large arrays are not copied into this view. Paths refer
 to the supplied workspace; keep that workspace with the reading view. Python exposes the same
 `research_question_context(workspace, question=..., section_id=..., evidence_ids=[...])` action.
 Reading does not revise drafts or create a scientific conclusion. Assess the explanation and its
@@ -393,3 +394,47 @@ differences, `difference_sign_changed` identifies crossing zero, including `diff
 a changed domain, operator, baseline or unit is a definition change rather than an ordinary reversal.
 The [mechanism continuation example](../examples/mechanism-continuation/README.md) demonstrates
 the complete host action instead of treating a review prompt as a finished scientific revision.
+
+### Compute regional temperature-change contributions
+
+For original planar NPZ faces, add a `partition_change` calculation to the current diagnostic
+configuration. It uses `columns: {value: face_value, measure: area_m2}`, temperature units K or
+degC, area units m2 and `quantity_kind: absolute-temperature`. Its field options declare
+`association: face`, `integrand: weighted_mean`, `region_assignment: polygon-clip`, complete
+`regions`, `partition_complete: true`, the relative `reference_source`, `support_mode` (`fixed`
+or `moving`) and a nonblank `common_support`. Moving partitions additionally provide
+`reference_regions` with the same region IDs at the reference location.
+
+Both meshes are integrated separately over the same complete physical surface. The finite
+recipe requires matching regional area fractions; it rejects a fixed-weight decomposition if
+those weights change. Results retain original regional means, both physical-area weights,
+temperature differences and weighted `contribution` values in K. These components describe the
+mean-temperature change, not heat paths. With explicit diagnostic evidence already present,
+`auto_evidence: [NEW_CALCULATION_ID, ...]` adds new result bindings without replacing earlier choices.
+
+The `partition_contribution` panel consumes that calculation and shows signed regional components
+with the independently reduced whole mean difference. Keep the original means/regional changes
+and any complementary heat budget visible in the appropriate table or panel. The extended
+[continuation example](../examples/mechanism-continuation/README.md) demonstrates this path with
+redistributable constructed data and a three-panel figure.
+
+### Apply explicit host-authored revisions
+
+```console
+cfdpaper research --workspace current-build/workspace --revision host-revision.json --output revised-workspace
+cfdpaper research --workspace revised-workspace --baseline current-build --output revised-build
+```
+
+The proposal contains `paragraphs` and/or `captions` lists. A paragraph entry supplies
+`section_id`, the returned `paragraph_id`, exact current `before` text and new `text`. Optional
+`evidence_refs` is the complete new list of qualified `owner/evidence` identities; existing aliases
+are preserved and unambiguous new ones are connected. Optional `figure_ids` updates local figure
+uses, and `inline_math` adds explicit native MathNode expressions. Caption entries supply
+`section_id`, `figure_id`, `before`, `text` and optional actual image-observation information.
+
+Python exposes `apply_research_revision(workspace, proposal, output)`. MCP's existing `research_task`
+accepts the same dictionary as `revision=...`; `question=...` exposes question reading, and
+`replace_existing=True` enables explicit artwork replacement. These are separate actions with
+fresh outputs. The host supplies the interpretation; the toolkit resolves identities and writes it
+without overwriting the author's current file, moving unselected blocks or modifying source results.
+An author-text conflict requires reconciliation rather than a whole-draft overwrite.

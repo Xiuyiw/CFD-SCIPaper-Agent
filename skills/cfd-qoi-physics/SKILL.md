@@ -108,6 +108,19 @@ a selection pool, not a request to narrate every value. Inspect `table-results.j
 numeric claims should replace `result_ref`. Keep zero-mean CV undefined rather than reporting zero.
 Changing copied source values requires recalculation and fresh downstream figure/writing output.
 
+For a local-versus-whole temperature question, `partition_change` is a finite original-face
+recipe over planar NPZ geometry with exact polygon clipping. Declare both source files, complete
+disjoint regions, `support_mode: fixed` or `moving`, and the common physical support. It integrates
+each mesh separately, so different tessellations are allowed; it does not subtract unmatched faces.
+Actual physical-area weights must agree between cases. Changed weights, missing regions or
+different surface supports require a revised analysis, not the fixed-weight identity.
+Read `reference_mean`, `comparison_mean`, `difference_mean`, both weights and `contribution`
+together. Contributions sum to the whole mean change in K: they are temperature composition,
+not heat fractions, a causal attribution or independent evidence. Moving regions follow the source
+and do not establish cooling at the same physical location. In an existing diagnostic config with
+explicit evidence, `auto_evidence: [CALCULATION_ID, ...]` adds computed bindings for selected new
+calculations without replacing the author's earlier evidence choices.
+
 Before combining analyses into a manuscript, distinguish physical cases from repeated displays
 of a baseline and from model/mesh realizations of the same prescribed case. Use the existing
 case definitions and proposal notes, not a new case registry. State which controls are matched;

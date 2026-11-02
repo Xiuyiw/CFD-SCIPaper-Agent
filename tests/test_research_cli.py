@@ -323,6 +323,55 @@ def test_research_documentation_has_both_user_actions():
     assert "drafts.json" in text and "NPZ" in text
 
 
+def test_explicit_revision_cli_forwards_proposal_without_rebuilding(tmp_path, monkeypatch):
+    from cfdpaper.publication import research_revision
+
+    calls = []
+    proposal = tmp_path / "proposal.json"
+    proposal.write_text(
+        json.dumps({"captions": [{"text": "Explicit host wording"}]}), encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        research_revision,
+        "apply_research_revision",
+        lambda workspace, data, output: calls.append((workspace, data, output)),
+    )
+    output = tmp_path / "updated"
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            str(tmp_path / "workspace"),
+            "--revision",
+            str(proposal),
+            "--output",
+            str(output),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls == [(tmp_path / "workspace", json.loads(proposal.read_text()), output)]
+
+
+def test_explicit_revision_cli_does_not_mix_reading_or_attachment(tmp_path):
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            "workspace",
+            "--revision",
+            "patch.json",
+            "--question-context",
+            "Question",
+            "--output",
+            str(tmp_path / "out"),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "separate" in result.stdout + result.stderr
+
+
 def test_documented_surface_study_runs_prepare_and_build_through_cli(tmp_path):
     pytest.importorskip("docx")
     document = Path(__file__).resolve().parents[1] / "docs/research-workspace.md"

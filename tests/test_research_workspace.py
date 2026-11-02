@@ -912,6 +912,120 @@ def test_question_context_keeps_a_declared_report_reading(assets, tmp_path):
     assert reading["resolved"] == {} and reading["source_excerpt"] is None
 
 
+def test_question_context_follows_downstream_aliases_and_exact_source_lines(assets, tmp_path):
+    from cfdpaper.publication.research_workspace import research_question_context
+
+    work, _ = clone(assets, tmp_path)
+    manifest = read(work / "manuscript-input.json")
+    entry = next(item for item in manifest["sections"] if item["section_id"] == "discussion")
+    entry["evidence_bindings"]["alias-A"] = "results/A-mean"
+    write(work / "manuscript-input.json", manifest)
+    path = work / "sections/discussion/draft.json"
+    draft = read(path)
+    draft["paragraphs"] = [
+        {
+            "paragraph_id": "downstream",
+            "text": "This interpretation uses {{value:alias-A}}.",
+            "evidence_ids": ["alias-A"],
+            "figure_ids": [],
+        },
+        {
+            "paragraph_id": "unrelated",
+            "text": "Unrelated wording.",
+            "evidence_ids": [],
+            "figure_ids": [],
+        },
+    ]
+    write(path, draft)
+    definition = work / "sections/results/sources/located.md"
+    definition.write_text("\n".join(f"Line {i}" for i in range(1, 121)), encoding="utf-8")
+    path = work / "sections/results/input.json"
+    data = read(path)
+    data["evidence"].append(
+        {
+            "id": "located",
+            "kind": "observation",
+            "text": "Actual support.",
+            "source": "sources/located.md#L95-L97",
+        }
+    )
+    data["source_files"].append("sources/located.md")
+    write(path, data)
+    reading = research_question_context(
+        work,
+        question="How is this interpreted?",
+        section_id="results",
+        evidence_ids=["A-mean", "located"],
+    )
+    downstream = [p for p in reading["passages"] if p["section_id"] == "discussion"]
+    assert [p["paragraph_id"] for p in downstream] == ["downstream"]
+    excerpt = reading["evidence"][1]["source_excerpt"]
+    assert excerpt["first_line"] == 95 and excerpt["last_line"] == 97
+    assert excerpt["text"] == "Line 95\nLine 96\nLine 97"
+
+
+def test_question_context_locates_heading_and_does_not_substitute_file_start(assets, tmp_path):
+    from cfdpaper.publication.research_workspace import research_question_context
+
+    work, _ = clone(assets, tmp_path)
+    definition = work / "sections/results/sources/located.md"
+    definition.write_text(
+        "# Overview\nWrong excerpt\n## Physical support\nExact definition\n"
+        "## Other section\nOther material\n",
+        encoding="utf-8",
+    )
+    path = work / "sections/results/input.json"
+    data = read(path)
+    for identity, anchor in [("located", "physical-support"), ("absent", "not-present")]:
+        data["evidence"].append(
+            {
+                "id": identity,
+                "kind": "observation",
+                "text": "Support.",
+                "source": "sources/located.md#" + anchor,
+            }
+        )
+    data["source_files"].append("sources/located.md")
+    write(path, data)
+    reading = research_question_context(
+        work, question="What is defined?", section_id="results", evidence_ids=["located", "absent"]
+    )
+    excerpt = reading["evidence"][0]["source_excerpt"]
+    assert excerpt["first_line"] == 3 and "Exact definition" in excerpt["text"]
+    assert "Wrong excerpt" not in excerpt["text"] and "Other material" not in excerpt["text"]
+    missing = reading["evidence"][1]["source_excerpt"]
+    assert missing["available"] is False and "not-present" in missing["reason"]
+
+
+def test_question_reading_includes_object_only_evidence_consumers(assets, tmp_path):
+    from cfdpaper.publication.research_workspace import research_question_context
+
+    work, _ = clone(assets, tmp_path)
+    for sid, name in read(work / "drafts.json").items():
+        path = work / name
+        draft = read(path)
+        for paragraph in draft["paragraphs"]:
+            paragraph["evidence_ids"] = []
+        if sid == "results":
+            draft["captions"]["field"] = "Current mean {{value:A-mean}}."
+            draft["tables"][0]["evidence_ids"] = ["A-mean"]
+            draft["equations"] = [
+                {
+                    "equation_id": "weighted",
+                    "evidence_ids": ["A-mean"],
+                    "expression": {"kind": "symbol", "text": "T"},
+                }
+            ]
+        write(path, draft)
+    reading = research_question_context(
+        work, question="Where is the mean used?", section_id="results", evidence_ids=["A-mean"]
+    )
+    assert not reading["passages"]
+    assert any(f["id"] == "field" for f in reading["figures"])
+    assert any(t["table_id"] == "surface-summary" for t in reading["tables"])
+    assert [e["equation_id"] for e in reading["equations"]] == ["weighted"]
+
+
 @pytest.mark.parametrize(
     "failure",
     ["missing-token", "unknown-evidence", "section", "index", "preview", "observation", "source"],

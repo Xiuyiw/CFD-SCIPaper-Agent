@@ -46,7 +46,17 @@ def test_mechanism_continuation_preserves_sources_and_revises_interpretation(sho
         assert delta["resolved"]["raw_value"] == pytest.approx(expected)
         assert delta["calculation"]["operation"] == "field_difference"
         assert context["passages"]
-        assert all(r["id"].startswith(("paired-A-", "temperature-A")) for r in context["evidence"])
+        assert all(
+            r["id"].startswith(("paired-A-", "temperature-A", "contribution-"))
+            for r in context["evidence"]
+        )
+        expected_contribution = -0.75 if label == "before" else -1.75
+        footprint = next(
+            r for r in context["evidence"] if r["id"] == "contribution-A-footprint-contribution"
+        )
+        assert footprint["resolved"]["raw_value"] == pytest.approx(expected_contribution)
+        assert footprint["resolved"]["unit"] == "K"
+        assert footprint["calculation"]["operation"] == "partition_change"
 
     changes = read(output / "numerical-refresh/manuscript/changes.json")
     sign_changes = [
@@ -72,7 +82,12 @@ def test_mechanism_continuation_preserves_sources_and_revises_interpretation(sho
     texts = [node.text for node in svg.iter() if node.tag.endswith("}text")]
     assert any("-1.750 K" in text for text in texts if text)
     assert not any(node.tag.endswith("}image") for node in svg.iter())
-    assert (final / "figures/diagnostics/plot.py").read_bytes() == original_script
+    continued_script = output / "analysis-input/sections/results/figures/diagnostics/plot.py"
+    assert (final / "figures/diagnostics/plot.py").read_bytes() == continued_script.read_bytes()
+    # A third panel needs deliberate author height, not smaller fonts or deleted data.
+    assert continued_script.read_text(encoding="utf-8").replace(
+        "STYLE.height_mm = max(STYLE.height_mm, 154)\n\n", ""
+    ) == original_script.decode("utf-8").replace("\r\n", "\n")
     for case in ("A0", "B0", "B1"):
         assert (final / "sources" / f"{case}.npz").read_bytes() == original_sources[f"{case}.npz"]
     with np.load(original / "sources/A1.npz") as before, np.load(final / "sources/A1.npz") as after:
@@ -115,6 +130,22 @@ def test_mechanism_continuation_preserves_sources_and_revises_interpretation(sho
     assert "-1.750 K" in text
     assert "{{" not in text
     assert "causal heat-transfer mechanism" in text
+    assert "area" in text and "contribution" in text
+    proposal = read(output / "host-revision-proposal.json")
+    assert len(proposal["paragraphs"]) == 6
+    assert {p["section_id"] for p in proposal["paragraphs"]} == {
+        "methods",
+        "results",
+        "discussion",
+        "conclusion",
+    }
+    assert all(p["paragraph_id"] and p["before"] for p in proposal["paragraphs"])
+    final_reports = read(final / "table-results.json")
+    report = next(r for r in final_reports if r["id"] == "contribution-A")
+    regional = {g["group"]: g["result"] for g in report["groups"]}
+    assert regional["footprint"]["reference_weight"] == pytest.approx(0.25)
+    assert regional["rest"]["contribution"] == pytest.approx(0.0)
+    assert report["contribution_sum"] == pytest.approx(-1.75)
 
 
 def test_mechanism_continuation_requires_a_completed_predecessor_and_fresh_output(tmp_path):

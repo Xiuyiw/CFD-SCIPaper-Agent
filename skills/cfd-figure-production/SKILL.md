@@ -172,11 +172,21 @@ figure at its final width and use the generated local script on later source ref
 
 For attached physical diagnostics, `diagnostic_figures` consumes the declared
 `field_calculations` and selected `panels` rather than a second hand-entered metric table.
-Its implemented panel kinds are `regional`, `signed_flux`, `budget` and
-`matched_difference`. Choose the needed combination: regional mean with area support,
+Its implemented panel kinds are `regional`, `signed_flux`, `budget`,
+`matched_difference` and `partition_contribution`. Choose the needed combination: regional mean with area support,
 positive/negative exchange with its net, independent budget terms with the residual,
 or original means beside their matched difference. The temperature field and distribution
 remain useful spatial context. A difference or residual alone cannot identify its cause.
+
+Use `partition_contribution` only with a complete `partition_change` calculation. Signed regional
+segments compose the area-weighted temperature change; a diamond retains the independently
+reduced whole mean difference. Keep original means or regional changes alongside it where needed.
+K-valued components are not heat rates or transport arrows. If adding a third panel to an author's
+two-panel figure, allow enough physical height to retain its original type scale and label clearance;
+do not merely squeeze three axes into the old canvas or shrink fonts to pass an overlap check.
+Retain the prior author script and make any necessary size change only in the new working copy.
+When a new panel changes the order, revise both its caption and existing body-panel letters through
+the manuscript revision interface; a stable figure ID alone does not update a literal `(b)` to `(c)`.
 
 Keep the `signed_flux` panel's `sign_convention` explicit. A `budget` panel needs actual
 input, output, source and storage definitions; a prescribed example budget does not close

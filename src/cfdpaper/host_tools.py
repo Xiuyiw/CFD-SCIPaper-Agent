@@ -359,8 +359,11 @@ def research_task(
     paragraph_index: int | None = None,
     image_observation: Literal["viewed", "not-viewed"] = "not-viewed",
     observation_note: str = "",
+    question: str | None = None,
+    revision: dict[str, Any] | None = None,
+    replace_existing: bool = False,
 ) -> dict[str, Any]:
-    """Prepare, attach diagnostics/artwork, or build/refresh an existing research workspace.
+    """Read a question, apply explicit prose, attach artwork, or build a research workspace.
 
     Choose study for preparation or workspace for other operations. Builds use
     current local figure scripts and drafts, preserve inputs, and require fresh
@@ -371,11 +374,55 @@ def research_task(
         attach_research_diagnostics,
         build_research_workspace,
         prepare_surface_workspace,
+        research_question_context,
     )
 
     output = Path(output)
     if (study is None) == (workspace is None):
         raise ValueError("Choose exactly one of study or workspace")
+    if question is not None or revision is not None:
+        if (
+            workspace is None
+            or (question is not None and revision is not None)
+            or any(
+                value is not None
+                for value in (
+                    baseline,
+                    author_candidate,
+                    diagnostics,
+                    attach_figure,
+                    paragraph_index,
+                )
+            )
+            or image_observation != "not-viewed"
+            or observation_note
+            or replace_existing
+        ):
+            raise ValueError(
+                "Question reading and explicit revision are separate workspace actions"
+            )
+        if question is not None:
+            if section_id is None or not evidence_ids:
+                raise ValueError("Question reading requires section_id and evidence_ids")
+            from cfdpaper.publication.section import _stage, _write
+
+            context = research_question_context(
+                Path(workspace), question=question, section_id=section_id, evidence_ids=evidence_ids
+            )
+            with _stage(output) as staged:
+                _write(staged / "question-context.json", context)
+            return _response(
+                "research-question",
+                output,
+                {"context": str((output / "question-context.json").resolve())},
+                context,
+            )
+        if section_id is not None or evidence_ids:
+            raise ValueError("Revision targets are supplied inside the explicit proposal")
+        from cfdpaper.publication.research_revision import apply_research_revision
+
+        result = apply_research_revision(Path(workspace), revision, output)
+        return _research_response("research-revision", result)
     if baseline is not None and workspace is None:
         raise ValueError("baseline requires workspace")
     if author_candidate is not None and (
@@ -397,6 +444,7 @@ def research_task(
         or paragraph_index is not None
         or image_observation != "not-viewed"
         or observation_note
+        or replace_existing
     ):
         raise ValueError("Figure attachment options require attach_figure")
     if diagnostics is not None:
@@ -412,6 +460,7 @@ def research_task(
             paragraph_index=paragraph_index,
             image_observation=image_observation,
             observation_note=observation_note,
+            **({"replace_existing": True} if replace_existing else {}),
         )
         task = "research-attach-figure"
     elif study is not None:

@@ -707,7 +707,7 @@ def calculate_field_diagnostic(path: Path, declaration: dict) -> dict:
     """Calculate a declared physical operation with original source locations."""
     path = Path(path)
     operation = declaration.get("operation")
-    if operation not in {"field_integral", "field_difference", "energy_budget"}:
+    if operation not in {"field_integral", "field_difference", "energy_budget", "partition_change"}:
         raise ValueError("Unsupported field diagnostic operation")
     for key in ("id", "source", "domain"):
         if not isinstance(declaration.get(key), str) or not declaration[key].strip():
@@ -718,10 +718,13 @@ def calculate_field_diagnostic(path: Path, declaration: dict) -> dict:
         or not isinstance(declaration.get("field_options"), dict)
     ):
         raise ValueError("Field diagnostic requires columns, units and field_options")
+    from .partition_change import calculate_partition_change
+
     calculation = {
         "field_integral": _integral,
         "field_difference": _difference,
         "energy_budget": _budget,
+        "partition_change": calculate_partition_change,
     }[operation](path, declaration)
     return {
         **{key: declaration[key] for key in ("operation", "id", "source", "domain", "units")},
