@@ -152,7 +152,7 @@ def add_contribution_analysis(previous, output):
         raise ValueError("Inspect the author's script before changing its composition height")
     script.write_text(
         author_source.replace(
-            marker, "STYLE.height_mm = max(STYLE.height_mm, 154)\n\n" + marker, 1
+            marker, "STYLE.height_mm = max(STYLE.height_mm, 174)\n\n" + marker, 1
         ),
         encoding="utf-8",
     )

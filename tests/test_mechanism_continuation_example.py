@@ -86,7 +86,7 @@ def test_mechanism_continuation_preserves_sources_and_revises_interpretation(sho
     assert (final / "figures/diagnostics/plot.py").read_bytes() == continued_script.read_bytes()
     # A third panel needs deliberate author height, not smaller fonts or deleted data.
     assert continued_script.read_text(encoding="utf-8").replace(
-        "STYLE.height_mm = max(STYLE.height_mm, 154)\n\n", ""
+        "STYLE.height_mm = max(STYLE.height_mm, 174)\n\n", ""
     ) == original_script.decode("utf-8").replace("\r\n", "\n")
     for case in ("A0", "B0", "B1"):
         assert (final / "sources" / f"{case}.npz").read_bytes() == original_sources[f"{case}.npz"]
