@@ -27,7 +27,7 @@ MAX_TOTAL_BYTES = 32 * 1024 * 1024
 MAX_EXCERPT_LINES = 120
 MAX_EXCERPT_CHARS = 8000
 MAX_PREVIEW_ROWS = 20
-_DOCUMENTS = {".md", ".txt", ".json", ".py"}
+_DOCUMENTS = {".md", ".txt", ".json", ".py", ".c", ".h"}
 _FIGURES = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".svg", ".webp", ".gif"}
 _EXCLUDED = {
     ".git",
@@ -202,7 +202,7 @@ def _table(path: Path, relative: str) -> dict[str, Any]:
 
 
 def _document(path: Path, relative: str) -> dict[str, Any]:
-    # Method scripts and JSON are source text, never imported or executed.
+    # Method scripts, C/UDF sources and JSON are text, never imported or executed.
     text = path.read_text(encoding="utf-8-sig")
     lines = text.splitlines()
     excerpt: list[str] = []
@@ -477,7 +477,7 @@ def profile_materials(root: Path, *, paths: list[Path] | None = None) -> dict[st
                     issues,
                     relative,
                     "unsupported",
-                    "Select CSV, Markdown, text, JSON, Python source text or images.",
+                    "Select CSV, NPZ, Markdown, text, JSON, Python/C/header source text or images.",
                 )
                 continue
             size = path.stat().st_size

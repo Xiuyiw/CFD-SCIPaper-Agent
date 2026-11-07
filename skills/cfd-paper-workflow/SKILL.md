@@ -125,6 +125,12 @@ mechanism rewrite. If Word has independent author edits, retain that file and re
 them with the workspace first; this route does not silently merge arbitrary Word edits.
 The repository's `docs/research-workspace.md` gives the portable input and output layout.
 
+For connected regional figures, call `research_task` with the existing diagnostic declaration
+as an object and `diagnostic_figure={"surface_partition_panel": PANEL_ID}`. Read the returned
+`context.selected_figures` preview, current panel definitions and bound regional readings before
+writing. This keeps original-face maps, their contribution comparison and prose in one workspace;
+do not create intermediate value tables or duplicate the established figure refresh chain.
+
 When a spatial observation leaves a transport explanation unresolved, attach the relevant
 original-field calculations to that workspace. Select the diagnostics from the question:
 fixed versus moving regions, opposing signed transfers, a defined budget, or a matched

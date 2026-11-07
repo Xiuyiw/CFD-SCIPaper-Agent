@@ -449,7 +449,7 @@ def _plot_partition_contribution(fig, panel, entries, style):
     hatches = ("", "///", "...", "\\\\")
     for y, case in enumerate(cases):
         negative = positive = 0.0
-        for entry in case:
+        for position, entry in enumerate(case):
             index = groups.index(entry["group"])
             value = entry["result"]["contribution"]
             start = negative if value < 0 else positive
@@ -467,13 +467,29 @@ def _plot_partition_contribution(fig, panel, entries, style):
             )
             if value:
                 inside = abs(value) >= span * 0.10
+                adjacent = not inside and any(
+                    later["result"]["contribution"] * value > 0 for later in case[position + 1 :]
+                )
                 ax.annotate(
                     f"{value:+.2f}",
-                    (start + value / 2 if inside else start + value, y),
-                    xytext=(0 if inside else (-4 if value < 0 else 4), 0),
+                    (start + value / 2 if inside or adjacent else start + value, y),
+                    xytext=(
+                        (0, -14) if adjacent else (0 if inside else (-4 if value < 0 else 4), 0)
+                    ),
                     textcoords="offset points",
-                    ha="center" if inside else ("right" if value < 0 else "left"),
-                    va="center",
+                    ha=("center" if inside or adjacent else ("right" if value < 0 else "left")),
+                    va="top" if adjacent else "center",
+                    arrowprops=(
+                        {
+                            "arrowstyle": "-",
+                            "color": "#56636C",
+                            "lw": 0.5,
+                            "shrinkA": 2,
+                            "shrinkB": 2,
+                        }
+                        if adjacent
+                        else None
+                    ),
                     fontsize=style.annotation_pt,
                     color="#25323B",
                     zorder=4,

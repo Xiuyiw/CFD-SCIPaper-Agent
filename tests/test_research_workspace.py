@@ -275,7 +275,8 @@ def test_diagnostic_metadata_reads_registered_secondary_bundle_without_replacing
     assert figure["caption"] == "Author caption"
 
 
-def test_attach_field_diagnostics_uses_existing_research_and_refresh(tmp_path):
+@pytest.mark.parametrize("as_object", [False, True])
+def test_attach_field_diagnostics_uses_existing_research_and_refresh(tmp_path, as_object):
     from cfdpaper.publication.research_workspace import attach_research_diagnostics
 
     materials = tmp_path / "materials"
@@ -308,8 +309,12 @@ def test_attach_field_diagnostics_uses_existing_research_and_refresh(tmp_path):
     }
     write(materials / "diagnostics.json", config)
     attached = attach_research_diagnostics(
-        workspace, materials / "diagnostics.json", tmp_path / "attached"
+        workspace,
+        config if as_object else materials / "diagnostics.json",
+        tmp_path / "attached",
+        **({"source_root": materials} if as_object else {}),
     )
+    assert config == read(materials / "diagnostics.json")
     result = read(attached / "sections/results/input.json")
     assert any(e["id"] == "heat-path-all-net" for e in result["evidence"])
     attached_reports = read(attached / "sections/results/table-results.json")
@@ -322,6 +327,12 @@ def test_attach_field_diagnostics_uses_existing_research_and_refresh(tmp_path):
     assert "csv_records" not in heat["groups"][0]
     assert heat["groups"][0]["full_result"].startswith("sections/results/table-results.json#/")
     assert (attached / "sections/results/figures/diagnostics/plot.py").is_file()
+    figures = read(attached / "research-context.json")["selected_figures"]
+    selected = next(f for f in figures if f["id"] == "heat-path-figure")
+    assert (attached / selected["preview"]).is_file()
+    assert selected["image_observation"] == "not-viewed"
+    assert selected["sizing"]["target_width_mm"] == 160
+    assert selected["caption"]
     assert read(workspace / "drafts.json") == read(attached / "drafts.json")
     first = build_research_workspace(attached, tmp_path / "first")
     author = first / "workspace"
@@ -522,7 +533,15 @@ def test_source_update_refreshes_images_tables_bindings_but_preserves_author_tex
     assert scalar(data, "results", "A-exceedance-1") == 1
     assert "100.000" in Document(result / "manuscript.docx").tables[0].rows[1].cells[3].text
     for name, raw in drafts.items():
-        assert (result / "workspace" / name).read_bytes() == raw
+        if name == "sections/results/draft.json":
+            expected = json.loads(raw)
+            expected["image_observations"] = {
+                "field": "not-viewed",
+                "distribution": "not-viewed",
+            }
+            assert read(result / "workspace" / name) == expected
+        else:
+            assert (result / "workspace" / name).read_bytes() == raw
     assert (result / "workspace/sections/results/figures/field.png").read_bytes() != (
         old / "workspace/sections/results/figures/field.png"
     ).read_bytes()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import shutil
+from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -640,9 +641,54 @@ def _figure_metadata(workspace, *, initial=False, selected_figures=None):
     _write(root / "input.json", data)
 
 
+def _figure_observation_images(workspace):
+    images = {}
+    for entry in _read(workspace / "manuscript-input.json")["sections"]:
+        section = (workspace / entry["input"]).parent
+        for figure in _read(section / "input.json").get("figures", []):
+            path = section / figure["path"]
+            if path.is_file():
+                images[(entry["section_id"], figure["id"])] = path.read_bytes()
+    return images
+
+
+def _invalidate_changed_figure_observations(workspace, previous):
+    """A previous visual reading belongs to its image, not just its stable ID."""
+    current = _figure_observation_images(workspace)
+    changed = {key for key, value in current.items() if key in previous and value != previous[key]}
+    for entry in _read(workspace / "manuscript-input.json")["sections"]:
+        identities = {identity for sid, identity in changed if sid == entry["section_id"]}
+        if not identities:
+            continue
+        path = (workspace / entry["input"]).parent / "draft.json"
+        if not path.is_file():
+            continue
+        draft = _read(path)
+        identities = {
+            identity
+            for identity in identities
+            if draft.get("image_observations", {}).get(identity) in ("viewed", "author-provided")
+        }
+        if not identities:
+            continue
+        for identity in identities:
+            draft.setdefault("image_observations", {})[identity] = "not-viewed"
+            draft.get("observation_notes", {}).pop(identity, None)
+        _write(path, draft)
+
+
 def _host_context(root, data):
     diagnostics_path = root / _RESULTS / "diagnostics.json"
     diagnostics = _read(diagnostics_path) if diagnostics_path.is_file() else None
+    result_root = root / _RESULTS
+    draft_path = result_root / "draft.json"
+    draft = _read(draft_path) if draft_path.is_file() else {}
+    reading_path = result_root / "figures/diagnostics/diagnostic-figures.json"
+    readings = {
+        figure["id"]: figure["reading"]
+        for figure in (_read(reading_path)["figures"] if reading_path.is_file() else [])
+        if "reading" in figure
+    }
     reports_path = root / _RESULTS / "table-results.json"
     summaries = []
     for index, report in enumerate(_read(reports_path) if reports_path.is_file() else []):
@@ -689,7 +735,15 @@ def _host_context(root, data):
             "result_summary": summaries,
             "figure_script": "sections/results/figures/plot.py",
             "selected_figures": [
-                {key: item[key] for key in ("id", "path", "description")}
+                {
+                    **{key: item[key] for key in ("id", "path", "description", "sizing")},
+                    "caption": draft.get("captions", {}).get(item["id"], item["caption"]),
+                    "preview": (_RESULTS / item["path"]).as_posix(),
+                    "image_observation": draft.get("image_observations", {}).get(
+                        item["id"], "not-viewed"
+                    ),
+                    **({"reading": readings[item["id"]]} if item["id"] in readings else {}),
+                }
                 for item in _read(root / _RESULTS / "input.json")["figures"]
             ],
             **(
@@ -916,8 +970,10 @@ def _sync_diagnostics(workspace):
         recipes = _read(recipe_path)
         for recipe in recipes:
             if recipe["id"] == "physical-diagnostics":
+                study_input = (_RESULTS / "study.json").as_posix()
                 recipe["inputs"] = [
                     (_RESULTS / "diagnostics.json").as_posix(),
+                    *([study_input] if study_input in recipe["inputs"] else []),
                     *[(_RESULTS / name).as_posix() for name in _diagnostic_sources(config)],
                 ]
         _write(recipe_path, recipes)
@@ -970,21 +1026,36 @@ def attach_research_diagnostics(
     figure_id="diagnostic-composite",
     panel_ids=None,
     style=None,
+    source_root=None,
+    surface_partition_panel=None,
 ):
     """Attach selected source-driven diagnostics and their author-local refresh recipe.
 
+    A declaration object uses existing workspace sources unless source_root is
+    supplied. File declarations resolve sources beside the file, as before.
     All declared calculations remain available to writing. Panel selection and
     composition affect the figures, not the underlying numerical evidence.
     """
     from .diagnostic_figures import render_diagnostic_figures
 
-    workspace_dir, config_path, output_dir = (
-        Path(path).resolve() for path in (workspace_dir, config_path, output_dir)
-    )
+    workspace_dir, output_dir = (Path(path).resolve() for path in (workspace_dir, output_dir))
     _distinct_output(workspace_dir, output_dir)
-    config = _read(config_path)
+    if isinstance(config_path, dict):
+        config = deepcopy(config_path)
+        source_root = Path(source_root).resolve() if source_root else workspace_dir / _RESULTS
+    else:
+        if source_root is not None:
+            raise ValueError("source_root is only used with an object diagnostic declaration")
+        config_path = Path(config_path).resolve()
+        config, source_root = _read(config_path), config_path.parent
+    if not isinstance(config, dict):
+        raise ValueError("Diagnostics must be an object declaration")
     if not config.get("field_calculations") or not config.get("panels"):
         raise ValueError("Diagnostics need field_calculations and complementary panels")
+    if surface_partition_panel is not None and (combine or panel_ids is not None):
+        raise ValueError("Select either a surface partition panel or diagnostic-only composition")
+    if (workspace_dir / _RESULTS / "diagnostics.json").exists():
+        raise ValueError("Workspace already has diagnostics; edit its current configuration")
     existing = _read(workspace_dir / _RESULTS / "input.json")
     if {c["id"] for c in config["field_calculations"]} & {
         c["id"] for c in existing.get("table_calculations", [])
@@ -997,31 +1068,47 @@ def attach_research_diagnostics(
             relative = Path(name)
             if relative.parts[:1] != ("sources",) or ".." in relative.parts:
                 raise ValueError("Diagnostic sources must use relative sources/ paths")
-            source = _asset(config_path.parent, name)
+            source = _asset(source_root, name)
             target = root / relative
             if target.is_file() and target.read_bytes() != source.read_bytes():
                 raise ValueError(f"Diagnostic source would replace an author source: {name}")
             target.parent.mkdir(parents=True, exist_ok=True)
             if not target.is_file():
                 shutil.copy2(source, target)
-        if (root / "diagnostics.json").exists():
-            raise ValueError("Workspace already has diagnostics; edit its current configuration")
         _write(root / "diagnostics.json", config)
         _sync_diagnostics(staged)
-        figures = render_diagnostic_figures(
-            root / "diagnostics.json",
-            root / "figures/diagnostics",
-            combine=combine,
-            figure_id=figure_id,
-            panel_ids=panel_ids,
-            style=style,
-        )
+        if surface_partition_panel is not None:
+            from .surface_partition_figure import render_surface_partition
+
+            figures = [
+                render_surface_partition(
+                    root / "study.json",
+                    root / "diagnostics.json",
+                    root / "figures/diagnostics",
+                    panel_id=surface_partition_panel,
+                    style=style,
+                )
+            ]
+        else:
+            figures = render_diagnostic_figures(
+                root / "diagnostics.json",
+                root / "figures/diagnostics",
+                combine=combine,
+                figure_id=figure_id,
+                panel_ids=panel_ids,
+                style=style,
+            )
         _diagnostic_metadata(staged, initial=True)
         prefix = (_RESULTS / "figures/diagnostics").as_posix()
         outputs = [
             f"{prefix}/{f['id']}.{ext}" for f in figures for ext in ("png", "svg", "pdf", "tiff")
         ]
         outputs += [f"{prefix}/{f['id']}-source-data.csv" for f in figures]
+        outputs += [
+            f"{prefix}/{f['id']}-field-source-data.csv"
+            for f in figures
+            if (root / "figures/diagnostics" / f"{f['id']}-field-source-data.csv").is_file()
+        ]
         outputs += [
             f"{prefix}/{f['id']}-differences.csv"
             for f in figures
@@ -1044,6 +1131,7 @@ def attach_research_diagnostics(
                 ],
                 "inputs": [
                     (_RESULTS / "diagnostics.json").as_posix(),
+                    *([(_RESULTS / "study.json").as_posix()] if surface_partition_panel else []),
                     *[(_RESULTS / name).as_posix() for name in _diagnostic_sources(config)],
                 ],
                 "outputs": outputs,
@@ -1187,9 +1275,17 @@ def prepare_surface_workspace(study_path: Path, output_dir: Path) -> Path:
                 "columns": [
                     "Case",
                     "Area-weighted mean",
-                    "Population SD",
+                    "Spatial SD",
                     *[
-                        "Area fraction at {{value:threshold-" + str(index) + "}}"
+                        "Area fraction "
+                        + (
+                            "above "
+                            if data.get("exceedance_relation", "above") == "above"
+                            else "at or above "
+                        )
+                        + "{{value:threshold-"
+                        + str(index)
+                        + "}}"
                         for index in range(1, len(data["thresholds"]) + 1)
                     ],
                 ],
@@ -1365,6 +1461,7 @@ def build_research_workspace(
         # Only the declared dependency paths change; the author's script, arguments
         # and output declarations remain the current execution entry point.
         _write(workspace / "figure-recipes.json", recipes)
+        previous_images = _figure_observation_images(workspace)
         statuses = execute_figure_recipes(
             workspace,
             recipes,
@@ -1373,6 +1470,7 @@ def build_research_workspace(
         )
         _figure_metadata(workspace)
         _diagnostic_metadata(workspace)
+        _invalidate_changed_figure_observations(workspace, previous_images)
         if baseline is not None:
             state = next(
                 (

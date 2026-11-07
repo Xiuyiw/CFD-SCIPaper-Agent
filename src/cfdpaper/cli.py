@@ -480,6 +480,13 @@ def research_workspace(
             help="Attach declared regional/transport diagnostics to a workspace copy",
         ),
     ] = None,
+    surface_partition_panel: Annotated[
+        str | None,
+        typer.Option(
+            "--surface-partition-panel",
+            help="Link original face maps to this partition contribution panel",
+        ),
+    ] = None,
     attach_figure: Annotated[
         Path | None,
         typer.Option("--attach-figure", help="Attach an imported figure to a new workspace copy"),
@@ -520,6 +527,8 @@ def research_workspace(
 ) -> None:
     """Prepare a workspace, attach an imported figure, or build the host-written candidate."""
     try:
+        if surface_partition_panel is not None and diagnostics is None:
+            raise WorkflowInputError("--surface-partition-panel requires --diagnostics.")
         if (study is None) == (workspace is None):
             raise WorkflowInputError("Choose exactly one of --study or --workspace.")
         if revision is not None:
@@ -616,7 +625,16 @@ def research_workspace(
         )
 
         if diagnostics is not None:
-            attach_research_diagnostics(workspace, diagnostics, output)
+            attach_research_diagnostics(
+                workspace,
+                diagnostics,
+                output,
+                **(
+                    {"surface_partition_panel": surface_partition_panel}
+                    if surface_partition_panel is not None
+                    else {}
+                ),
+            )
             console.print(
                 f"Research workspace with physical diagnostics ready: {output}", markup=False
             )

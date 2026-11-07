@@ -10,6 +10,15 @@ Use version 0.6.0 or later with the `docs` extra. Replace `STUDY` with a
 folder of exported CSV, readable method notes, and optional existing figures.
 Use fresh output directories (preferably outside STUDY, to avoid profiling prior outputs).
 
+Python and MCP callers can pass a host-selected proposal object directly to
+`run_analysis_task(package, proposal, candidate_id, output)`. It uses the same
+proposal schema and calculation checks as the JSON-file route, without writing a
+temporary proposal file. The returned writing package already contains computed
+bindings; the host should not transcribe the numbers. Existing CLI file inputs remain supported.
+Material inspection and literal search also read `.c`/`.h` method and UDF sources
+with line locations. Source presence does not establish that a function was loaded,
+hooked or executed in a saved solver case.
+
 ```text
 cfdpaper inspect STUDY --materials --output profile
 cfdpaper plan STUDY --artifact analysis --question "Explain the observed thermal response" --output analysis-materials

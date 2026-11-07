@@ -134,6 +134,61 @@ The named files, including `sources/definition.md`, must exist relative to `stud
 Optional `selected_figures` selects `field` and/or `distribution` in the requested initial manuscript
 order. Omission keeps both; `[]` starts without either figure while retaining their calculated data
 and output files. An existing author's chosen figure set is preserved during refresh.
+
+### Connect original surfaces to a regional temperature explanation
+
+For a temperature comparison that requires both spatial location and regional contributions,
+the Python/MCP `research_task` accepts the diagnostic declaration directly. The host selects
+the question, comparison and physical regions from the source materials; the author need not
+transcribe a separate JSON proposal. Existing file-based declarations remain supported.
+
+```python
+from cfdpaper.host_tools import research_task
+
+result = research_task(
+    output="research-with-regions",
+    workspace="research-workspace",
+    diagnostics=diagnostic_declaration,
+    diagnostic_figure={"surface_partition_panel": "regional-contribution"},
+)
+```
+
+The equivalent existing-file CLI action is:
+
+```console
+cfdpaper research --workspace research-workspace --diagnostics materials/diagnostics.json --surface-partition-panel regional-contribution --output research-with-regions
+```
+
+`diagnostic_declaration` is the existing `field_calculations` / `panels` object described
+below. Select one `partition_contribution` panel containing one or two `partition_change`
+comparisons. Each comparison must name the exact original-face source, value array, physical
+area array and units used by the surface study. The renderer draws the actual reference and
+comparison region bounds, including moving supports, above their signed regional contributions.
+It does not interpolate surfaces, match cases by labels or equate temperature composition with
+a heat budget. Use `selected_figures: []` when starting a new manuscript around this composite
+to avoid automatically repeating its maps in a second figure.
+This finite composite currently accepts `absolute-temperature` observations in K with planar
+polygon-clip partitions. It does not silently reinterpret pressure, heat flux or Celsius fields.
+
+Object declarations resolve `sources/` inside the existing Results directory by default;
+`diagnostic_sources` can instead name the directory containing external `sources/` exports.
+File declarations retain their original file-relative behavior. Conflicting author sources
+are not replaced. `diagnostic_figure` also exposes existing `combine`, `panel_ids`, `figure_id`
+and `style` choices for diagnostic-only figures; do not combine those composition selectors
+with `surface_partition_panel`.
+
+The returned `context.selected_figures` contains the preview path, physical insertion width,
+current caption, observation status and (for the linked composite) panel definitions and
+calculated regional readings. Open the preview at its target width before interpreting it.
+Write Methods from the actual region/weight/support definition, Results from the viewed field
+and bound readings, and Discussion from evidence that distinguishes the proposed explanations.
+Use the existing explicit revision action for subsequent paragraph/caption changes. A rendered
+image remains `not-viewed` until the host actually inspects it; no automatic visual approval
+is inferred. The author-local `plot.py` remains the refresh entry and is not overwritten.
+After a changed image is rendered, its old `viewed`/`author-provided` observation and note
+are invalidated; captions and prose stay in place for explicit host review. Already-unviewed
+drafts and unchanged images are not rewritten merely to reset that status.
+
 This example illustrates the data contract, not an assertion that new cases are physically
 comparable or converged. The host fills support and definition fields from the actual
 study materials, retaining any limits or missing evidence rather than copying these claims.

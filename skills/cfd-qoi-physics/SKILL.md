@@ -28,6 +28,11 @@ Compile the selected proposal:
 cfdpaper plan PROJECT_ROOT --artifact analysis --package PACKAGE_DIR --proposal PROPOSAL_JSON --select CANDIDATE_ID --output OUTPUT_DIR
 ```
 
+In Python/MCP, `run_analysis_task(package, proposal, candidate_id, output)` accepts that same
+proposal directly as an object. Use the source-derived physical definitions; the author need
+not transcribe JSON. File input remains available. Automatic displayed precision preserves small
+nonzero readings, but explicit author precision wins and never implies measurement accuracy.
+
 The numeric operations reuse the existing table engine: `population` uses equal records to
 return count/sum/mean and population CV (`ddof=0`); `partition` sums declared area and
 already-integrated rate and derives flux/shares. `weighted_population` returns weighted_mean,

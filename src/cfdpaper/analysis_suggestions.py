@@ -9,8 +9,9 @@ from __future__ import annotations
 import json
 import re
 import shutil
+from decimal import Decimal
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, StrictStr, field_validator, model_serializer, model_validator
 
@@ -30,6 +31,7 @@ from cfdpaper.publication.style import PublicationStyle
 from cfdpaper.publication.table_evidence import (
     calculate_declared_table,
     calculate_result_comparison,
+    format_value,
     read_source_records,
     resolve_table_result,
 )
@@ -253,7 +255,10 @@ for alternatives or --material-path for exact files. Hits locate text, not physi
 Actually view relevant images if your host can; otherwise
 say they were not viewed. Do not claim quantitative image measurements from sight.
 
-Write proposal.json using proposal-example.json and proposal-schema.json. Propose
+Build a proposal using proposal-example.json and proposal-schema.json. Python/MCP
+callers can pass that object directly to run_analysis_task; the CLI also accepts a
+saved proposal.json. C/header method or UDF files are source text, not evidence of
+library loading, solver hooks or execution in a saved case. Propose
 1–3 grounded analysis candidates, or zero plus specific minimum gaps if none is
 supported. Recommend one by physical value, not by how many statistics can be
 computed. Respect the author's question when supplied. The author chooses a
@@ -583,15 +588,26 @@ def _check_calculation(package: Path, calc: _Calculation) -> dict:
 
 
 def compile_analysis(
-    package_dir: Path, proposal_path: Path, candidate_id: str, output_dir: Path
+    package_dir: Path,
+    proposal_path: Path | dict[str, Any],
+    candidate_id: str,
+    output_dir: Path,
 ) -> Path:
     """Validate the selected host proposal and emit inputs for section assembly.
 
     The returned analysis-input.json is an assembly payload, not yet a full section:
     the caller supplies actual figures and paragraph duties via the existing path.
+    The proposal can be a JSON file or the same host-supplied object; both use the
+    same scientific-definition checks. Input objects are not modified.
     """
     package, output_dir = Path(package_dir).resolve(), Path(output_dir)
-    proposal = json.loads(Path(proposal_path).read_text(encoding="utf-8"))
+    proposal = (
+        proposal_path
+        if isinstance(proposal_path, dict)
+        else json.loads(Path(proposal_path).read_text(encoding="utf-8"))
+    )
+    if not isinstance(proposal, dict):
+        raise ValueError("Proposal must be a JSON object containing candidates")
     candidates = proposal.get("candidates")
     if not isinstance(candidates, list) or len(candidates) > 3:
         raise ValueError("Proposal must contain zero to three candidates")
@@ -764,6 +780,17 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             for field in fields:
                 if group["result"].get(field) is None:
                     continue  # Undefined CV for zero mean remains unavailable, not zero.
+                percentage = field == "exceedance_fraction"
+                display = Decimal(str(group["result"][field])) * (100 if percentage else 1)
+                # Keep three decimal places for ordinary readings, but retain at
+                # least three significant digits for small nonzero auto-selected
+                # readings. This is display precision, not an uncertainty estimate.
+                places = max(3, min(12, 2 - display.copy_abs().adjusted())) if display else 3
+                if display and Decimal(format_value(display, places)) == 0:
+                    raise ValueError(
+                        f"{report['id']}/{field}: automatic decimal display would hide a "
+                        "nonzero value; supply explicit metrics or a documented unit conversion"
+                    )
                 metrics.append(
                     _Metric(
                         id=f"{report['id']}-{number}-{field}",
@@ -772,7 +799,8 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
                             calculation_id=report["id"],
                             group=group["group"],
                             field=field,
-                            percentage=field == "exceedance_fraction",
+                            places=places,
+                            percentage=percentage,
                         ),
                     )
                 )

@@ -111,9 +111,12 @@ def test_author_word_and_source_updates_share_the_current_recipe(tmp_path):
     assert "0.00" in block["rendered_text"]
     assert any(item.get("bold") for item in block["formatting"])
     assert "{{value:A-mean}}" in block["text"]
-    assert read(updated / "workspace/sections/results/draft.json") == read(
-        authored / "sections/results/draft.json"
-    )
+    expected_draft = read(authored / "sections/results/draft.json")
+    expected_draft["image_observations"] = {
+        "field": "not-viewed",
+        "distribution": "not-viewed",
+    }
+    assert read(updated / "workspace/sections/results/draft.json") == expected_draft
     refresh = read(updated / "refresh.json")
     assert refresh["interpretation_review_required"]
     assert "thresholds" in refresh["definition_changes"]

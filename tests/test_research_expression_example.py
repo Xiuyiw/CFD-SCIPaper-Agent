@@ -104,5 +104,11 @@ def test_research_expression_preserves_originals_and_binds_changes_with_header_u
         refreshed / "workspace" / relative / "plot.py"
     ).read_bytes()
     for name in read(working / "drafts.json").values():
-        assert (working / name).read_bytes() == (refreshed / "workspace" / name).read_bytes()
+        expected = read(working / name)
+        if name == "sections/results/draft.json":
+            expected["image_observations"]["thermal-budget"] = "not-viewed"
+            expected["observation_notes"].pop("thermal-budget")
+        else:
+            assert (working / name).read_bytes() == (refreshed / "workspace" / name).read_bytes()
+        assert read(refreshed / "workspace" / name) == expected
     assert read(refreshed / "refresh.json")["interpretation_review_required"] is True
