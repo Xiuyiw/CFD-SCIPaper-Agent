@@ -25,7 +25,7 @@ def search_materials(
 ) -> dict:
     """Case-insensitive literal OR search; matches are locations, not interpretations.
 
-    Text, JSON, Python definitions and CSVs are read but never executed. Results
+    Text, JSON, Python/C/header sources and CSVs are read but never executed. Results
     retain source line numbers, and long lines expose their actual column offset.
     Explicit files use the same root/link boundary as the material profiler.
     """

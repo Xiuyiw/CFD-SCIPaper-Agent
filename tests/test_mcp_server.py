@@ -103,7 +103,10 @@ def test_sdk_protocol_lists_and_calls_same_business_function(tmp_path):
     asyncio.run(check())
 
 
-def test_sdk_stdio_subprocess_preserves_analysis_values_sources_and_definitions(tmp_path):
+@pytest.mark.parametrize("proposal_input", ["file", "object"])
+def test_sdk_stdio_subprocess_preserves_analysis_values_sources_and_definitions(
+    tmp_path, proposal_input
+):
     import sys
 
     pytest.importorskip("mcp")
@@ -152,7 +155,7 @@ def test_sdk_stdio_subprocess_preserves_analysis_values_sources_and_definitions(
                 "run_analysis_task",
                 {
                     "package": str(package),
-                    "proposal": str(proposal_path),
+                    "proposal": proposal if proposal_input == "object" else str(proposal_path),
                     "candidate_id": "regional-transport",
                     "output": str(tmp_path / "stdio"),
                 },

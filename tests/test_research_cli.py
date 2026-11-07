@@ -60,6 +60,45 @@ def test_diagnostic_attachment_forwards_without_building(tmp_path, workspace_bac
     assert "physical diagnostics ready" in result.stdout
 
 
+def test_surface_partition_selection_uses_same_diagnostic_function(workspace_backend):
+    backend, calls = workspace_backend
+
+    def diagnostics(workspace, config, output, **kwargs):
+        calls.append(kwargs)
+
+    backend.attach_research_diagnostics = diagnostics
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            "work",
+            "--diagnostics",
+            "config.json",
+            "--surface-partition-panel",
+            "temperature-change",
+            "--output",
+            "out",
+        ],
+    )
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert calls == [{"surface_partition_panel": "temperature-change"}]
+    rejected = runner.invoke(
+        app,
+        [
+            "research",
+            "--workspace",
+            "work",
+            "--surface-partition-panel",
+            "x",
+            "--output",
+            "out",
+        ],
+    )
+    assert rejected.exit_code == 2
+    assert len(calls) == 1
+
+
 @pytest.mark.parametrize("other", [["--baseline", "old"], ["--attach-figure", "figure"]])
 def test_diagnostic_attachment_rejects_combined_actions(other, workspace_backend):
     _, calls = workspace_backend

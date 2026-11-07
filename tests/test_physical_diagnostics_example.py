@@ -86,7 +86,12 @@ def test_refresh_preserves_author_script_and_updates_bound_diagnostics(example, 
     assert (
         refreshed / "workspace/sections/results/figures/diagnostics/plot.py"
     ).read_bytes() == author_script
-    assert all(
-        (refreshed / "workspace" / name).read_bytes() == content for name, content in drafts.items()
-    )
+    for name, content in drafts.items():
+        updated = refreshed / "workspace" / name
+        if name != "sections/results/draft.json":
+            assert updated.read_bytes() == content
+            continue
+        expected = json.loads(content)
+        expected["image_observations"] = dict.fromkeys(expected["image_observations"], "not-viewed")
+        assert read(updated) == expected
     assert read(refreshed / "refresh.json")["interpretation_review_required"] is True

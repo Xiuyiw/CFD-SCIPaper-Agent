@@ -9,6 +9,39 @@ import pytest
 from cfdpaper.analysis_suggestions import compile_analysis, prepare_analysis
 
 
+@pytest.mark.parametrize(
+    "raw,expected,places",
+    [(0.0016, "0.00160", 5), (-0.00012, "-0.000120", 6), (0.0, "0.000", 3)],
+)
+def test_automatic_metrics_do_not_round_small_values_to_misleading_readings(raw, expected, places):
+    from cfdpaper.analysis_suggestions import _automatic_metrics
+    from cfdpaper.publication.table_evidence import resolve_table_result
+
+    reports = [
+        {
+            "id": "selected",
+            "source": "sources/area.csv",
+            "operation": "scalar_select",
+            "domain": "declared surface",
+            "columns": {"value": "area"},
+            "units": {"value": "m2"},
+            "groups": [
+                {
+                    "group": "all",
+                    "status": "computed",
+                    "csv_records": [2],
+                    "result": {"value": raw},
+                }
+            ],
+        }
+    ]
+    metric = _automatic_metrics(reports)[0]
+    assert metric.result_ref.places == places
+    resolved = resolve_table_result(reports, **metric.result_ref.model_dump())
+    assert resolved["value"] == expected
+    assert resolved["raw_value"] == raw
+
+
 def test_material_package_preserves_python_definitions_without_execution(tmp_path):
     root = tmp_path / "materials"
     root.mkdir()
@@ -25,6 +58,21 @@ def test_material_package_preserves_python_definitions_without_execution(tmp_pat
     profile = json.loads((prepared / "materials.json").read_text(encoding="utf-8"))
     assert "sources/postprocess.py" in profile["source_files"]
     assert profile["documents"][0]["source"]["locator"] == "line:1-line:2"
+
+
+def test_automatic_metrics_reports_unrepresentable_nonzero_value():
+    from cfdpaper.analysis_suggestions import _automatic_metrics
+
+    reports = [
+        {
+            "id": "tiny",
+            "operation": "scalar_select",
+            "domain": "declared domain",
+            "groups": [{"group": "all", "result": {"value": 1e-15}}],
+        }
+    ]
+    with pytest.raises(ValueError, match="automatic decimal display would hide a nonzero value"):
+        _automatic_metrics(reports)
 
 
 @pytest.fixture
@@ -77,6 +125,28 @@ def compile_data(package, data, output=None):
     path = package / "proposal.json"
     path.write_text(json.dumps(data), encoding="utf-8")
     return compile_analysis(package, path, "regional-transport", output or package.parent / "run")
+
+
+def test_explicit_metric_display_precision_is_not_changed(package):
+    data = proposal(package)
+    data["candidates"][0]["metrics"] = [
+        {
+            "id": "selected-area",
+            "text": "Area of the selected regions",
+            "result_ref": {
+                "calculation_id": "partition",
+                "group": "A",
+                "field": "area",
+                "places": 1,
+            },
+        }
+    ]
+    # Use the existing example's exact calculation ID, not a second declaration.
+    data["candidates"][0]["metrics"][0]["result_ref"]["calculation_id"] = data["candidates"][0][
+        "calculations"
+    ][0]["id"]
+    compiled = json.loads(compile_data(package, data).read_text(encoding="utf-8"))
+    assert compiled["evidence"][0]["result_ref"]["places"] == 1
 
 
 def test_proposal_comparison_survives_serialization_without_becoming_pair_selector(package):

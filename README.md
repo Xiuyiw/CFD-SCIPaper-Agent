@@ -17,15 +17,14 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-Version 0.28.0 connects question-driven analysis to complementary figures and explicit scientific
-revision. Original-face regional contributions explain local cooling alongside whole-interface
-warming; current-question reading finds related passages across sections. The host can submit
-paragraph and caption changes through a stable-ID, author-preserving interface instead of bespoke
-JSON editing scripts. Same-ID artwork updates and comparable difference-reversal context remain.
-Start with the
-[research-expression example](examples/research-expression/README.md), continue through
+Version 0.29.0 connects original-face maps, physical-region contributions and the current figure
+reading to source-bound prose. Analysis and diagnostic requests accept host objects without extra
+proposal files. A linked figure shares the exact source arrays and region definitions with its
+calculations; author plotting edits survive data changes, while changed interpretations remain
+explicit host work. Current captions, previews and compact physical readings travel together.
+Try the [linked-surface example](examples/research-expression/README.md), continue through
 [mechanism and manuscript updates](examples/mechanism-continuation/README.md), and read the
-[version notes](docs/releases/v0.28.0.md).
+[version notes](docs/releases/v0.29.0.md).
 
 The earlier [bound-response report example](examples/bound-response-report/README.md) remains
 available for saved reports and multi-series response figures. Original-face maps, signed-transfer
@@ -102,7 +101,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.28.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.29.0 checkout or source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -114,7 +113,7 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.28.0-py3-none-any.whl[docs,geometry]"
+python -m pip install "./cfd_paper_agent-0.29.0-py3-none-any.whl[docs,geometry]"
 ```
 
 The examples live in the source checkout/archive, not the wheel. Start with a complete constructed
@@ -422,7 +421,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
 - [v0.27.0 version notes](docs/releases/v0.27.0.md)
-- [v0.28.0 version notes](docs/releases/v0.28.0.md)
+- [v0.29.0 version notes](docs/releases/v0.29.0.md)
 - [v0.26.0 version notes](docs/releases/v0.26.0.md)
 - [Source-bound research expression and refresh](examples/research-expression/README.md)
 - [v0.25.0 version notes](docs/releases/v0.25.0.md)

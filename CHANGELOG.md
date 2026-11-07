@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.29.0] — 2026-11-07
+
+### Added
+
+- Analysis proposals and research diagnostics accept host objects as well as existing files,
+  through shared Python, CLI and MCP paths. C/header sources can be read and searched as text.
+- A finite linked surface figure combines two/four original planar temperature maps, explicit
+  fixed or moving region outlines and signed regional contributions on the same physical data.
+  Editable SVG/PDF, PNG/TIFF, source CSVs and author-local scripts accompany the output.
+- Current figure context includes the actual caption, preview, dimensions, region definitions
+  and compact bound readings for explicit host-written prose and caption continuation.
+- A public constructed-data example exercises source changes after author styling, retained
+  untouched prose, a response-direction reversal and targeted host interpretation revision.
+
+### Fixed
+
+- Automatic metric precision no longer rounds small nonzero readings to a misleading zero;
+  explicit author precision and raw values remain unchanged.
+- Diagnostic synchronization retains the linked study dependency. Redrawn images invalidate
+  their previous visual-observation state without discarding captions or author prose.
+- Small stacked contributions adjacent to a same-sign component use a short leader to their
+  own segment. Surface table headings distinguish spatial SD and threshold inclusion.
+
 ## [0.28.0] — 2026-11-02
 
 ### Added

@@ -25,8 +25,9 @@ below when an initialized project already has declared scientific records and ob
    missing values, category hints and source locations. Read `host-task.md` and the relevant
    `sources/` documents in full when excerpts are truncated. Open relevant figures when possible;
    otherwise state that they were not viewed. The summary does not establish physical meaning.
-   Python postprocessing/setup files are included as readable source with line locations, not run.
+   Python and C/header postprocessing/setup files are readable source with line locations, not run.
    Read their definitions without importing them; a check present in code is not evidence it passed.
+   A Fluent UDF source file does not establish that its library compiled or was hooked in the case.
 
    When a setting or definition is missing from the preview, locate it in the actual text:
 

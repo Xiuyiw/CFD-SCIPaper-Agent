@@ -140,13 +140,16 @@ def prepare_analysis_task(
 
 
 def run_analysis_task(
-    package: Path, proposal: Path, candidate_id: str, output: Path
+    package: Path, proposal: Path | dict[str, Any], candidate_id: str, output: Path
 ) -> dict[str, Any]:
     """Compute the selected analysis and prepare its figures and host-writing package.
 
     Return exact metric values/units and declared definitions, with full source
     records located in table_results. This is not a scientific approval decision.
     Adapt prepare_analysis_task's proposal_example/schema, then select its ID here.
+    Pass proposal as an object directly (Python/MCP), or as an existing JSON path;
+    no temporary proposal file is required for object input. Definitions and
+    comparison scope still come from the host's reading of the actual materials.
     Use the returned writing_package/input.json and draft_template for writing;
     they already carry calculated result_ref bindings. Do not retype the values.
     """
@@ -157,9 +160,7 @@ def run_analysis_task(
 
     output = Path(output)
     with _stage(output) as staged:
-        compiled = compile_analysis(
-            Path(package), Path(proposal), candidate_id, staged / "compiled"
-        )
+        compiled = compile_analysis(Path(package), proposal, candidate_id, staged / "compiled")
         build_analysis_section(compiled, staged / "section-input")
     result = output / "compiled" / "analysis-input.json"
     payload = _read(result)
@@ -310,6 +311,18 @@ def _research_response(task: str, root: Path) -> dict[str, Any]:
     workspace = root / "workspace" if (root / "workspace").is_dir() else root
     context_path = workspace / "research-context.json"
     context = _read(context_path) if context_path.is_file() else {}
+    # A prose-only revision does not rebuild numerical context. Read its current
+    # captions/observation declarations, not the cached pre-revision wording.
+    draft_path = workspace / "sections/results/draft.json"
+    if draft_path.is_file():
+        current_draft = _read(draft_path)
+        for figure in context.get("selected_figures", []):
+            identity = figure["id"]
+            if identity in current_draft.get("captions", {}):
+                figure["caption"] = current_draft["captions"][identity]
+                figure["image_observation"] = current_draft.get("image_observations", {}).get(
+                    identity, "not-viewed"
+                )
     artifacts = _existing(
         root,
         {
@@ -352,7 +365,9 @@ def research_task(
     workspace: Path | None = None,
     baseline: Path | None = None,
     author_candidate: Path | None = None,
-    diagnostics: Path | None = None,
+    diagnostics: Path | dict[str, Any] | None = None,
+    diagnostic_sources: Path | None = None,
+    diagnostic_figure: dict[str, Any] | None = None,
     attach_figure: Path | None = None,
     section_id: str | None = None,
     evidence_ids: list[str] | None = None,
@@ -368,6 +383,9 @@ def research_task(
     Choose study for preparation or workspace for other operations. Builds use
     current local figure scripts and drafts, preserve inputs, and require fresh
     output. baseline enables targeted refresh; prose interpretation is host-owned.
+    diagnostics accepts a file or an object; object sources default to the existing
+    results directory. diagnostic_figure selects combine/figure_id/panel_ids/style
+    or surface_partition_panel, which connects original faces to their contribution.
     """
     from cfdpaper.publication.research_workspace import (
         attach_imported_figure,
@@ -378,6 +396,25 @@ def research_task(
     )
 
     output = Path(output)
+    if diagnostics is None and (diagnostic_sources is not None or diagnostic_figure is not None):
+        raise ValueError("Diagnostic source/figure options require diagnostics")
+    diagnostic_options = {}
+    if diagnostic_figure is not None:
+        if not isinstance(diagnostic_figure, dict) or set(diagnostic_figure) - {
+            "combine",
+            "figure_id",
+            "panel_ids",
+            "style",
+            "surface_partition_panel",
+        }:
+            raise ValueError("Unknown diagnostic_figure option")
+        diagnostic_options = dict(diagnostic_figure)
+        if "style" in diagnostic_options:
+            from cfdpaper.publication.render_figure import PlotStyle
+
+            diagnostic_options["style"] = PlotStyle.model_validate(diagnostic_options["style"])
+    if diagnostic_sources is not None:
+        diagnostic_options["source_root"] = Path(diagnostic_sources)
     if (study is None) == (workspace is None):
         raise ValueError("Choose exactly one of study or workspace")
     if question is not None or revision is not None:
@@ -448,7 +485,12 @@ def research_task(
     ):
         raise ValueError("Figure attachment options require attach_figure")
     if diagnostics is not None:
-        result = attach_research_diagnostics(Path(workspace), Path(diagnostics), output)
+        result = attach_research_diagnostics(
+            Path(workspace),
+            diagnostics if isinstance(diagnostics, dict) else Path(diagnostics),
+            output,
+            **diagnostic_options,
+        )
         task = "research-diagnostics"
     elif attach_figure is not None:
         result = attach_imported_figure(

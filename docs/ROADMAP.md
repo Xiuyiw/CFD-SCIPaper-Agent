@@ -47,6 +47,7 @@ figures and pages, not from export success.
 | v0.26 | Selected, source-bound research figures and ordered formal manuscripts that continue after author edits | Implemented scope: paired regional/budget figures, native table header units, explicit block order and author-preserving refresh; reusable installed-package example and known-project page evaluation described in the v0.26.0 notes |
 | v0.27 | Current discriminating evidence → grounded mechanism artwork and scientific discussion → same-identity figure/caption/prose continuation | Implemented: selected current reading, imported-artwork updates and comparable difference reversals; known cooling and public continuation described in v0.27.0 notes |
 | v0.28 | Question-driven supplementary analysis → complementary figures and cross-section arguments → explicit host-authored revisions | Implemented scope: original-face temperature contributions, complementary panels, all-section evidence reading and explicit host revision; actual cooling/constructed continuation and release checks in v0.28.0 notes |
+| v0.29 | Research intent and existing materials → executable post-processing → visually inspected figures and connected scientific writing | Implemented scope: two known cooling tasks link original-face maps, regional composition and bound prose; public source-change/style/revision continuation and actual Word pages inspected. Platform and release evidence in v0.29.0 notes; unfamiliar-project quality remains open |
 
 Each release must improve an actual research task. Later task ordering can change with observed
 results, but scientific depth, readable publication output and author-edit preservation cannot be
@@ -61,7 +62,37 @@ The host remains responsible for changed scientific meaning. Existing diagnostic
 extraction and first drafts are retained, not regenerated. Arbitrary Word round-tripping,
 solver expansion, second-host evaluation and automatic submission are not part of this increment.
 
-## Current increment: v0.28 question-driven analysis and connected scientific revision
+## v0.29 question-to-figure research delivery
+
+The [Workbench plan, section21](research/CFD_RESEARCH_WORKBENCH_UPGRADE.md) develops three connected
+improvements: turn a research question and available materials into a usable analysis request;
+carry author styling and bounded render–view–repair into actual figure production; and connect
+the current panels, physical definitions and observed features to captions and related sections.
+The host supplies scientific judgment and views the output; the toolkit performs source-bound
+calculations and explicit updates. Existing CLI/Python/MCP, retrieval and author protection remain.
+
+The plan responds to a real first-use figure-layout complaint and a post-processing training
+summary. The external furnace trial has not yet returned inspectable artifacts or tested writing;
+its root causes and Fluent 2025 R1 compatibility remain unverified. Known cooling materials and
+accepted P04 figure references support development, not unfamiliar-project validation. Large-data
+batching or session reuse is conditional on measured need, not a new platform requirement.
+
+Actual figures at manuscript size, scientific definitions, retained author edits and
+first-versus-revised output determine success. A green export or manually repaired example alone
+does not close the increment. Current publication evidence is in the [v0.29 notes](releases/v0.29.0.md).
+
+The first implementation batch accepts host proposal objects through the existing analysis API,
+reads C/header sources without executing them, and preserves small nonzero readings in automatically
+selected metrics. The integrated increment connects diagnostic objects to original-face maps, actual region
+outlines and signed regional temperature contributions in one publication-sized figure. Current panel
+definitions and captions feed the existing host revision and Word assembly paths. A known-cooling
+three-page candidate exercised the chain and native-page inspection. A second Cu/TIM comparison
+used fixed regions and the same interfaces; actual image review prompted a reusable small-component
+label repair. A constructed public example retains author styling and untouched prose across a
+source reversal, then explicitly revises the interpretation. Its single-page Word output was viewed.
+These results do not establish automatic discovery or general publication readiness.
+
+## Delivered increment: v0.28 question-driven analysis and connected scientific revision
 
 The v0.27 scoped workflow is delivered. Its actual cooling manuscript still required host-written
 JSON integration scripts, and question reading did not include every downstream use of selected

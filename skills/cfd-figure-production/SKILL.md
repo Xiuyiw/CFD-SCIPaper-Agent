@@ -22,6 +22,14 @@ new approval sequence. Keep numerical CFD plots and real field images data-drive
 
 ## Scientific figure selection
 
+For a planar temperature partition comparison, the research tool's
+`diagnostic_figure={"surface_partition_panel": PANEL_ID}` links two/four original Kelvin face maps
+to their actual region outlines and contribution panel. Select the existing `partition_change`
+calculations; use a shared scale and inspect the preview at its returned insertion width.
+Source changes reuse the current local `plot.py`; changed images require a new visual reading.
+Check small segment labels in particular: their position must identify the correct contribution,
+not just avoid a bounding-box collision. The linked figure is not a heat-flow diagram.
+
 Before rendering, state the question and what the reader should learn from seeing the figure
 rather than reading a sentence or table. Select quantities and comparisons from that purpose,
 not from the first available scalar output or the renderer's default chart.

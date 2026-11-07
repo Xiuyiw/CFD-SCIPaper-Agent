@@ -47,6 +47,13 @@ the same candidate, analysis, ceiling, and scientific inputs for the legacy para
 For sections, supply readable figures, exact source locators and resolvable evidence/figure IDs.
 Install the optional `docs` extra for DOCX. The host AI, not the CLI, writes the scientific prose.
 
+For research-workspace figures, use the current `context.selected_figures` caption, preview,
+panel/region definitions and calculated readings rather than an earlier chat description.
+Explain the visible field first, then the bound comparison; keep a regional temperature
+composition distinct from transport evidence. When a refreshed image becomes `not-viewed`,
+inspect it before recording a new observation. Update only affected captions and passages with
+the existing explicit revision action; retain unrelated author wording and native document objects.
+
 ## Workflow
 
 ### Existing results-paragraph path

@@ -77,3 +77,61 @@ Read the source definitions, actual figure preview and rendered Word pages, then
 revise the prose if changed evidence alters the argument. The exported Word text
 and tables are editable, but Word-only edits must be reconciled into the managed
 drafts before a rebuild. The example does not automate that editorial decision.
+
+## Original surfaces, author style and a changed interpretation
+
+The separate linked-surface example uses two synthetic 64-face temperature fields
+and one three-panel figure: two original-face maps on a shared Kelvin scale, then
+fixed-region contributions to the mean change. It needs the geometry and Word extras:
+
+```console
+python -m pip install ".[geometry,docs]"
+python examples/research-expression/run_linked_surface_example.py output/linked-surface
+```
+
+Use a new output directory. `candidate/manuscript.docx` is the initial host-authored
+note. Its 160 by 110 mm figure links the actual polygons, a fixed quarter-area footprint
+and its complement; `candidate/workspace/sections/results/figures/diagnostics/`
+retains editable SVG/PDF, PNG/TIFF, both original-field and contribution CSVs and
+the author-local `plot.py`. Source data are prescribed static values, not a solver
+solution. The displayed pixel blocks are the original faces, not interpolated data.
+
+The script then copies the candidate workspace to `author-working/`, changes only
+the local script's tick font to 9 pt, and subtracts 1 K from the copied comparison
+field. A normal baseline refresh creates `refreshed/`: the whole-surface change
+reverses from +0.500 to -0.500 K, while the author script and draft wording survive.
+`CHANGES.md` and `refresh.json` request review of affected current passages and
+captions. `refreshed-response.json` retains the current bound readings and the
+still-unrevised caption; it does not automatically endorse a new interpretation.
+
+Finally, the example host supplies `host-revision.json` through the existing
+explicit revision API. Only the affected Results paragraph and caption are
+replaced; the figure ID `surface-change`, all source bindings and the unrelated
+scope paragraph stay in place. `revised/manuscript.docx` is the resulting candidate,
+and `revised/workspace/` is its continuation entry. The fixed-footprint and remaining-
+surface contributions are now -1.250 and +0.750 K. These contributions compose a
+temperature change; they are not heat flows or independently discovered mechanisms.
+The script leaves figure observation status `not-viewed`: inspect the PNG and
+actual Word pages before treating a particular run as visually reviewed.
+
+The public entry uses an in-memory diagnostic object rather than a second JSON
+proposal file:
+
+```python
+host_tools.research_task(
+    output / "workspace",
+    workspace=output / "prepared",
+    diagnostics=diagnostics,
+    diagnostic_figure={"surface_partition_panel": "surface-change"},
+)
+host_tools.research_task(
+    output / "refreshed",
+    workspace=output / "author-working",
+    baseline=output / "candidate",
+)
+```
+
+To check an installed wheel independently of the source import path, install that
+wheel with `[geometry,docs]` in a fresh environment, copy only this example script
+to a separate working directory, and run it there. It imports the installed
+`cfdpaper` package and does not require repository fixtures or private files.

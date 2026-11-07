@@ -212,6 +212,59 @@ def test_analysis_task_failure_does_not_publish_half_a_writing_package(
     assert not output.exists()
 
 
+def test_analysis_accepts_host_object_without_proposal_file(analysis_package, tmp_path):
+    _, package, proposal_path = analysis_package
+    proposal = read(proposal_path)
+    # This caller passes an object over Python/MCP, not a temporary JSON path.
+    original = json.dumps(proposal, sort_keys=True)
+    direct = compile_analysis(package, proposal_path, "regional-transport", tmp_path / "direct")
+    proposal_path.unlink()
+
+    result = host_tools.run_analysis_task(
+        package, proposal, "regional-transport", tmp_path / "host-object"
+    )
+
+    assert read(result["artifacts"]["analysis_input"]) == read(direct)
+    assert read(result["artifacts"]["table_results"]) == read(direct.parent / "table-results.json")
+    assert json.dumps(proposal, sort_keys=True) == original
+    assert Path(result["artifacts"]["writing_package"]).is_dir()
+    assert not proposal_path.exists()
+
+
+def test_object_proposal_retains_scientific_comparison_check(analysis_package, tmp_path):
+    _, package, path = analysis_package
+    proposal = read(path)
+    proposal["candidates"][0]["calculations"][0]["comparison"]["status"] = "unknown"
+    output = tmp_path / "unknown"
+    with pytest.raises(ValueError, match="comparison is unknown"):
+        host_tools.run_analysis_task(package, proposal, "regional-transport", output)
+    assert not output.exists()
+
+
+def test_analysis_rejects_non_object_json_with_actionable_error(analysis_package, tmp_path):
+    _, package, path = analysis_package
+    path.write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError, match="Proposal must be a JSON object"):
+        compile_analysis(package, path, "regional-transport", tmp_path / "invalid")
+
+
+def test_udf_source_is_available_to_read_search_and_analysis_package(tmp_path):
+    source = tmp_path / "source"
+    source.mkdir()
+    code = '#include "udf.h"\nDEFINE_PROPERTY(test_property,c,t) { return 1.0; }\n'
+    (source / "property.c").write_text(code, encoding="utf-8")
+    (source / "constants.h").write_text("#define REFERENCE_T 300.0\n", encoding="utf-8")
+    profile = host_tools.inspect_materials(source)["context"]
+    assert {item["path"] for item in profile["documents"]} == {"property.c", "constants.h"}
+    found = host_tools.inspect_materials(source, find=["DEFINE_PROPERTY"])["context"]
+    assert [(item["path"], item["locator"]) for item in found["matches"]] == [("property.c", "L2")]
+    prepared = host_tools.prepare_analysis_task(source, tmp_path / "package")
+    packaged = Path(prepared["root"]) / "sources/property.c"
+    assert packaged.read_text(encoding="utf-8") == code
+    assert (source / "property.c").read_text(encoding="utf-8") == code
+    assert profile["issues"] == []
+
+
 def test_analysis_cli_and_python_use_same_values_definitions_and_source_records(
     analysis_package, tmp_path
 ):
@@ -324,6 +377,40 @@ def test_research_diagnostics_and_attachment_delegate_existing_public_apis(tmp_p
         "image_observation": "viewed",
         "observation_note": "Actual host observation",
     }
+
+
+def test_research_diagnostic_object_and_plot_options_reach_same_renderer(tmp_path, monkeypatch):
+    from cfdpaper.publication import research_workspace
+
+    declaration = {"field_calculations": [{"id": "existing"}], "panels": []}
+    calls = []
+
+    def attach(workspace, config, output, **options):
+        calls.append((workspace, config, options))
+        output.mkdir()
+        return output
+
+    monkeypatch.setattr(research_workspace, "attach_research_diagnostics", attach)
+    host_tools.research_task(
+        tmp_path / "out",
+        workspace=tmp_path / "work",
+        diagnostics=declaration,
+        diagnostic_sources=tmp_path / "material",
+        diagnostic_figure={"surface_partition_panel": "change", "style": {"width_mm": 160}},
+    )
+    assert calls[0][1] is declaration
+    assert calls[0][2]["surface_partition_panel"] == "change"
+    assert calls[0][2]["source_root"] == tmp_path / "material"
+    assert calls[0][2]["style"].width_mm == 160
+    with pytest.raises(ValueError, match="require diagnostics"):
+        host_tools.research_task(tmp_path / "bad", workspace=tmp_path, diagnostic_figure={})
+    with pytest.raises(ValueError, match="Unknown diagnostic_figure"):
+        host_tools.research_task(
+            tmp_path / "bad",
+            workspace=tmp_path,
+            diagnostics=declaration,
+            diagnostic_figure={"silently_change_data": True},
+        )
 
 
 def test_author_return_summary_preserves_real_conflicts(tmp_path, monkeypatch):
