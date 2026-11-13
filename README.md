@@ -17,6 +17,10 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
+The v0.30.0 candidate connects nonlinear face-wise calculations to the author's own plot scripts,
+captions and prose. Try the [synthetic section-refresh example](examples/material-analysis/README.md#refresh-an-authors-figure-caption-and-section)
+or read the [v0.30 notes](docs/releases/v0.30.0.md). A successful rebuild is not approval of an interpretation.
+
 Version 0.29.0 connects original-face maps, physical-region contributions and the current figure
 reading to source-bound prose. Analysis and diagnostic requests accept host objects without extra
 proposal files. A linked figure shares the exact source arrays and region definitions with its
@@ -101,7 +105,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.29.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use this checkout, or a matching published source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -113,7 +117,7 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.29.0-py3-none-any.whl[docs,geometry]"
+python -m pip install "./cfd_paper_agent-0.30.0-py3-none-any.whl[docs,geometry]"
 ```
 
 The examples live in the source checkout/archive, not the wheel. Start with a complete constructed
@@ -421,6 +425,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
 - [v0.27.0 version notes](docs/releases/v0.27.0.md)
+- [v0.30.0 candidate notes](docs/releases/v0.30.0.md)
 - [v0.29.0 version notes](docs/releases/v0.29.0.md)
 - [v0.26.0 version notes](docs/releases/v0.26.0.md)
 - [Source-bound research expression and refresh](examples/research-expression/README.md)

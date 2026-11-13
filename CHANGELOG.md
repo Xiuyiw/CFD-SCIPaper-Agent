@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.30.0] — release candidate
+
+- Evaluate a declared finite nonlinear response per face before area weighting. Bind the resulting
+  quantity, reference denominator and definition to figure tables and manuscript values.
+- Refresh local figure recipes and author-written paragraphs together, without regenerating an
+  unaffected plot. Stop when a stated ordering reverses; scientific wording remains the author's.
+- Inspect a changed physical definition before rendering. Reconcile affected figure readings,
+  paragraphs and captions against their current author text; separate display-only material
+  from quantitative measurements and their comparison purpose.
+- See the [candidate notes](docs/releases/v0.30.0.md) for usage and limits.
+
 ## [0.29.0] — 2026-11-07
 
 ### Added

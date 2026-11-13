@@ -105,6 +105,40 @@ def test_reversed_reading_stops_at_exact_author_object(demo, tmp_path):
     assert "greater" in read(work / "draft.json")["paragraphs"][0]["text"]
 
 
+def test_display_change_redraws_just_its_figure_without_new_scientific_values(demo, tmp_path):
+    base = demo / "before"
+    work = tmp_path / "current"
+    shutil.copytree(base / "workspace", work)
+    panel = {
+        "figure_id": "1",
+        "panel": "local",
+        "source": "rate/display.csv",
+        "values": "reading",
+        "quantity": "heat rate",
+        "unit": "W",
+        "source_kind": "reduced-table",
+        "use": "visual-reading",
+        "scale": {
+            "knots": [0, 100],
+            "positions": [0, 1],
+            "colors": ["white", "blue"],
+            "clipping": "forbid",
+        },
+    }
+    path = work / "display-evidence.json"
+    path.write_text(json.dumps([panel]), encoding="utf-8")
+    first = tmp_path / "display"
+    out = refresh_section(work, first, baseline=base)
+    assert out["calculation"] == "reused" and not out["changed_results"]
+    assert [(r["recipe_id"], r["status"]) for r in out["figure_recipes"]] == [
+        ("rate", "executed"),
+        ("area", "unchanged"),
+    ]
+    assert out["changed_panel_readings"] == [{"figure_id": "1", "panel": "local"}]
+    returned = refresh_section(first / "workspace", tmp_path / "unchanged", baseline=first)
+    assert not returned["readers_to_review"] and not returned["changed_panel_readings"]
+
+
 def test_redefined_domain_with_identical_numbers_needs_new_figure_reading(demo, tmp_path):
     work = tmp_path / "work"
     shutil.copytree(demo / "before/workspace", work)
@@ -114,6 +148,68 @@ def test_redefined_domain_with_identical_numbers_needs_new_figure_reading(demo, 
     with pytest.raises(ValueError, match="physical definition changed"):
         refresh_section(work, tmp_path / "new", baseline=demo / "before")
     assert not (tmp_path / "new").exists()
+
+
+def test_reconcile_selected_region_updates_actual_figure_caption_and_text(demo, tmp_path):
+    """An upper-region comparison is not a new value of the whole-wall integral."""
+    work = tmp_path / "current"
+    base = demo / "before"
+    shutil.copytree(base / "workspace", work)
+    data = read(work / "input.json")
+    data["table_calculations"][0].update(row_filters={"region": "upper"}, domain="Upper patch only")
+    data["mechanism_questions"] = [
+        {
+            "question": "Did local heat transport change with area?",
+            "diagnostics": ["rate-Reference", "area-Reference"],
+        }
+    ]
+    (work / "input.json").write_text(json.dumps(data), encoding="utf-8")
+    draft = read(work / "draft.json")
+    draft["paragraphs"].append(
+        {
+            "paragraph_id": "note",
+            "text": "Author correction outside this comparison.",
+            "figure_ids": [],
+            "evidence_ids": [],
+        }
+    )
+    (work / "draft.json").write_text(json.dumps(draft), encoding="utf-8")
+    plan = refresh_section(work, tmp_path / "inspect", baseline=base, inspect_change=True)
+    assert [p.name for p in (tmp_path / "inspect").iterdir()] == ["reconcile.json"]
+    assert plan["basis"]["results"]["rate-Modified"]["after"]["raw_value"] == 42
+    assert plan["basis"]["results"]["rate-Modified"]["before"]["raw_value"] == 70
+    context = plan["mechanism_questions"][0]["located_results"]
+    assert context["area-Reference"]["domains"] == ["Upper patch only"]
+    assert context["rate-Reference"]["value"] == "30.0"
+    for f in plan["figures"]:
+        f["reading"] = "The two markers refer only to the upper patch, not the whole wall."
+    for item in plan["readers"]:
+        item["after"] = "On the upper patch: " + item["before"]
+    assert not any(item["id"] == "note" for item in plan["readers"])
+    import copy
+
+    partial = copy.deepcopy(plan)
+    partial["readers"].pop()
+    with pytest.raises(ValueError, match="Incomplete"):
+        refresh_section(work, tmp_path / "partial", baseline=base, reconciliation=partial)
+    # An intervening edit to a targeted sentence must survive rather than being overwritten.
+    altered = copy.deepcopy(draft)
+    altered["paragraphs"][0]["text"] += " Author's late addition."
+    (work / "draft.json").write_text(json.dumps(altered), encoding="utf-8")
+    with pytest.raises(ValueError, match="target changed"):
+        refresh_section(work, tmp_path / "conflict", baseline=base, reconciliation=plan)
+    assert not (tmp_path / "conflict").exists()
+    (work / "draft.json").write_text(json.dumps(draft), encoding="utf-8")
+    out = tmp_path / "revised"
+    refresh_section(work, out, baseline=base, reconciliation=plan, docx=True)
+    result = read(out / "section/section.json")
+    assert result["paragraphs"][0]["text"].startswith("On the upper patch:")
+    assert "42.0 W" in result["figures"][0]["caption"]
+    assert result["paragraphs"][-1]["text"] == "Author correction outside this comparison."
+    assert (out / "workspace/rate/plot.py").read_bytes() == (work / "rate/plot.py").read_bytes()
+    assert result["image_observations"] == {"1": "not-viewed", "2": "not-viewed"}
+    baseline_render = (base / "section/section.md").read_text(encoding="utf-8")
+    assert "70.0 W" in baseline_render and "On the upper patch:" not in baseline_render
 
 
 def test_percent_conversion_is_explicit_full_precision_not_formatting_or_unit_guess(tmp_path):

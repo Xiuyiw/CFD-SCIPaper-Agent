@@ -545,6 +545,7 @@ class _Input(_Record):
     evidence: list[_Evidence] = Field(min_length=1)
     duties: list[_Duty] = Field(min_length=1)
     context: str = ""
+    mechanism_questions: list[dict] = Field(default_factory=list)
     source_files: list[str] = Field(default_factory=list)
     table_calculations: list[_TableCalculation | _FieldCalculation] = Field(default_factory=list)
     result_comparisons: list[_ResultComparison] = Field(default_factory=list)
@@ -555,6 +556,8 @@ class _Input(_Record):
         result = handler(self)
         if not self.result_comparisons:
             result.pop("result_comparisons", None)
+        if not self.mechanism_questions:
+            result.pop("mechanism_questions", None)
         return result
 
 

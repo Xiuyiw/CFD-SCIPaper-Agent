@@ -59,6 +59,8 @@ def _metrics(data, root, reports):
             "ref": (e.result_ref or e.json_value_ref).model_dump(),
             "calculations": sorted(({calc} if calc else set()) | parents),
         }
+        if e.evidence_role is not None:
+            metrics[e.id]["evidence_role"] = e.evidence_role
         if "supporting_results" in v:
             # An unchanged ratio can still have a new physical reference. Keep the two
             # actual operands, not the per-face indices already in table-results.json.
@@ -139,7 +141,7 @@ def _patch_table(path, binding, metrics):
             writer.writerows(rows)
 
 
-def _prepare_recipes(root, data, metrics, revised_definitions):
+def _prepare_recipes(root, data, metrics):
     raw = _read(_asset(root, "figure-recipes.json"))
     if not isinstance(raw, list) or not raw or not all(isinstance(r, dict) for r in raw):
         raise ValueError("Declare at least one explicitly trusted local figure recipe")
@@ -152,6 +154,7 @@ def _prepare_recipes(root, data, metrics, revised_definitions):
             "draft.json",
             "figure-recipes.json",
             "reading-relations.json",
+            "display-evidence.json",
             *data.source_files,
         )
     }
@@ -180,12 +183,6 @@ def _prepare_recipes(root, data, metrics, revised_definitions):
             if name in patches and patches[name] != b:
                 raise ValueError(f"Conflicting result bindings for {name}")
             patches[name] = b
-            for column in b["columns"].values():
-                if set(column["by_row"].values()) & revised_definitions:
-                    raise ValueError(
-                        f"{name}: physical definition changed. Reconcile the author's figure "
-                        "labels, display and text before establishing a new baseline."
-                    )
     for name, binding in patches.items():
         _patch_table(_asset(root, name), binding, metrics)
     return recipes
@@ -274,7 +271,13 @@ def _reading_relations(root, draft, metrics):
 
 
 def refresh_section(
-    workspace: Path, output: Path, *, baseline: Path | None = None, docx=False
+    workspace: Path,
+    output: Path,
+    *,
+    baseline: Path | None = None,
+    docx=False,
+    inspect_change=False,
+    reconciliation=None,
 ) -> dict:
     """Explicitly execute the current, trusted local scripts in a new section workspace.
 
@@ -288,9 +291,14 @@ def refresh_section(
         if src is not None and (output.is_relative_to(src) or src.is_relative_to(output)):
             raise ValueError("Use a fresh output outside the current workspace and baseline")
     previous = _read(_asset(baseline, "refresh.json")) if baseline else None
+    if inspect_change and (reconciliation is not None or docx):
+        raise ValueError("Inspection does not run figure scripts, apply edits or export Word")
+    if (inspect_change or reconciliation is not None) and previous is None:
+        raise ValueError("Definition-change inspection and reconciliation require a baseline")
     with _stage(output) as staged:
-        root = staged / "workspace"
-        shutil.copytree(workspace, root)
+        root = workspace if inspect_change else staged / "workspace"
+        if not inspect_change:
+            shutil.copytree(workspace, root)
         data = _load_input(root / "input.json", check_images=False)
         source_digests = {name: source_sha256(_asset(root, name)) for name in data.source_files}
         # Use the saved values for a prose/style-only return, but only when the complete
@@ -311,29 +319,92 @@ def refresh_section(
             else _calculate_sources(data, root, write=False)
         )
         metrics, definitions = _metrics(data, root, reports)
+        from cfdpaper.publication.definition_revision import mechanism_context
+
+        mechanism = mechanism_context(data.mechanism_questions, data, metrics, definitions)
         redefined = set()
         if previous:
+            demoted = set(previous["results"]) & ({e.id for e in data.evidence} - set(metrics))
+            if demoted:
+                raise ValueError(
+                    "Cannot silently replace calculated evidence with a manual value: "
+                    + ", ".join(sorted(demoted))
+                )
             for k, v in metrics.items():
                 old = previous["results"].get(k)
                 if not old:
                     continue
                 if (
                     old["unit"] != v["unit"]
-                    or old["ref"] != v["ref"]
+                    or old.get("evidence_role") != v.get("evidence_role")
+                    or {key: val for key, val in old["ref"].items() if key != "places"}
+                    != {key: val for key, val in v["ref"].items() if key != "places"}
                     or any(
                         definitions.get(c) != previous["definitions"].get(c)
                         for c in v["calculations"]
                     )
                 ):
                     redefined.add(k)
+        display_path = root / "display-evidence.json"
+        display_plan = _read(display_path) if display_path.exists() else []
+
+        def panel_readings(items):
+            return {(d["figure_id"], d["panel"]): d for d in items}
+
+        old_plan = panel_readings(previous.get("display_plan", [])) if previous else {}
+        new_plan = panel_readings(display_plan)
+        display_edits = {
+            f
+            for f, p in set(old_plan) | set(new_plan)
+            if old_plan.get((f, p)) != new_plan.get((f, p))
+        }
+        affected_recipes = set(display_edits)
+        if inspect_change or reconciliation is not None or redefined:
+            from cfdpaper.publication.definition_revision import describe_changes, reconcile
+
+            plan = describe_changes(
+                previous,
+                metrics,
+                definitions,
+                redefined,
+                draft,
+                _read(_asset(root, "figure-recipes.json")),
+                data.figures,
+                _affected,
+                source_digests,
+                _read(root / "reading-relations.json")
+                if (root / "reading-relations.json").is_file()
+                else [],
+            )
+            plan["basis"]["display_plan"] = display_plan
+            plan["mechanism_questions"] = mechanism
+            if inspect_change:
+                _write(staged / "reconcile.json", plan)
+                return plan
+            if redefined and reconciliation is None:
+                raise ValueError(
+                    "A physical definition changed. Use --inspect-change to locate affected "
+                    "readers, then --reconcile with their revised text and figure reading."
+                )
+            if not redefined and reconciliation is not None:
+                raise ValueError("No current physical definition change to reconcile")
+            if reconciliation is not None:
+                reconcile(draft, plan, reconciliation)
+                affected_recipes.update(f["id"] for f in plan["figures"])
         relations = _reading_relations(root, draft, metrics)
-        recipes = _prepare_recipes(root, data, metrics, redefined)
+        recipes = _prepare_recipes(root, data, metrics)
         statuses = execute_figure_recipes(
             root,
             recipes,
             baseline_root=baseline / "workspace" if baseline else None,
             baseline_states=previous["figure_recipes"] if previous else None,
-            baseline_definitions=previous["recipes"] if previous else None,
+            # A new scientific definition can have the very same numerical values.
+            # Force only those recipes to rerun their current labels and source assets.
+            baseline_definitions=[
+                r for r in previous["recipes"] if r.get("figure_id") not in affected_recipes
+            ]
+            if previous
+            else None,
         )
         # A source workspace can itself be the last build's mutable workspace;
         # compare with the frozen rendered section, never with today's author edits.
@@ -357,10 +428,6 @@ def refresh_section(
                 different = not initial.is_file() or current.read_bytes() != initial.read_bytes()
             if different:
                 changed_images.append(f.id)
-                draft["image_observations"][f.id] = "not-viewed"
-                draft.get("observation_notes", {}).pop(f.id, None)
-        if draft != _read(draft_path):
-            _write(draft_path, draft)
         changes = {}
         if previous:
             for key in sorted(metrics.keys() | previous["results"].keys()):
@@ -369,7 +436,26 @@ def refresh_section(
                 if a == b and key not in redefined:
                     continue
                 changes[key] = {"before": a, "after": b}
-        readers = _affected(draft, changes, changed_images)
+        from cfdpaper.publication.display_evidence import review_display_evidence
+
+        displays = review_display_evidence(root, data, draft)
+        previous_displays = previous.get("display_evidence", []) if previous else []
+
+        old_panels, new_panels = panel_readings(previous_displays), panel_readings(displays)
+        display_changes = sorted(
+            k
+            for k in set(old_panels) | set(new_panels)
+            if previous and old_panels.get(k) != new_panels.get(k)
+        )
+        reread = set(changed_images) | {k[0] for k in display_changes}
+        if reconciliation is not None:
+            reread.update(f["id"] for f in plan["figures"])
+        for fid in reread & draft["image_observations"].keys():
+            draft["image_observations"][fid] = "not-viewed"
+            draft.get("observation_notes", {}).pop(fid, None)
+        if draft != _read(draft_path):
+            _write(draft_path, draft)
+        readers = _affected(draft, changes, reread)
         _assemble_section(root, draft_path, staged / "section", computed_reports=reports)
         if docx:
             export_section_docx(
@@ -388,6 +474,11 @@ def refresh_section(
             ),
             "readers_to_review": readers,
             "checked_relations": relations,
+            "display_evidence": displays,
+            "display_plan": display_plan,
+            "changed_panel_readings": [dict(figure_id=f, panel=p) for f, p in display_changes],
+            "definition_revision": reconciliation,
+            "mechanism_questions": mechanism,
             "section_input": data.model_dump(),
             "source_digests": source_digests,
             "calculation": "reused" if same_inputs else "computed",

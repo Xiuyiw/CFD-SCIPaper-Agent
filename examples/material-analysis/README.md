@@ -178,9 +178,42 @@ paragraphs. The tool never infers a new mechanism. Where wording depends on an
 ordering, declare it in the optional `reading-relations.json`, e.g.
 `[{"kind":"paragraph","id":"rate","left":"rate-Modified","op":">","right":"rate-Reference"}]`.
 A reversal stops this build and names the exact object and its new values. Edit just
-that interpretation in the author's current draft. If the physical definition rather
-than a value changes, reconcile the figure's labels, readout and text before starting
-a new baseline. Only declared conditions are checked; free prose still needs a reader.
+that interpretation in the author's current draft. Only declared conditions are checked;
+free prose still needs a reader.
+
+### When the physical definition changes
+
+Use the same baseline. Keep the author's latest prose in the current workspace, update
+the physical declaration (for example, filter the actual rows to a named region), then:
+
+    cfdpaper refresh-section current --baseline before --inspect-change --output inspection
+    cfdpaper refresh-section current --baseline before --reconcile edited.json --output revised --docx
+
+Inspection runs the scientific calculations but no plot scripts. Copy
+`inspection/reconcile.json` to `edited.json`. For each affected reader supply the
+actual `after` text, or explicitly retain its present text. Review the figure's
+labels, units and accepted local script; fill in `reading` with what that figure now
+represents. For an affected native table or equation, supply the corresponding
+retained or revised object. Keep `basis` and `before` as returned: an intervening
+edit to a targeted object or its data requires reading the current version, not replacing it.
+The second command stages revisions in a fresh copy, executes the affected recipe even
+if the numbers happen to agree, and reassembles bound text. A relabelled domain alone
+does not change which data were sampled; define the actual selection and weighting.
+
+For a section that compares competing explanations, use `input.json`'s optional
+`mechanism_questions`, e.g. `[{"question":"Does the total change hold in the selected
+region?","diagnostics":["total","region","opposite-region"],"interpretation":"Compare
+matched domains and the opposite-region response."}]`. IDs refer to actual calculations
+or bound evidence. The context returns their values, scopes, units, sources and declared
+evidence roles, including unchanged counterexamples; the host writes the interpretation.
+An identity and a second diagnostic of the same numerical solution are not new measurements.
+
+Panel source roles are optional declarations in `display-evidence.json`: each row
+locates a figure, panel and actual source. A raster cache, smoothed representation or
+compressed difference can illustrate a trend, not supply a raw quantitative validation.
+Where comparable field panels use a common color scale, describe its physical knots,
+color positions and clipping; compare a fresh visual reading at the real target width.
+These checks cover the declared evidence, not arbitrary author code or an image's scientific truth.
 
 ## Continue into a manuscript
 

@@ -218,7 +218,13 @@ def run_analysis_task(
 
 
 def refresh_section_task(
-    workspace: Path, output: Path, *, baseline: Path | None = None, docx: bool = False
+    workspace: Path,
+    output: Path,
+    *,
+    baseline: Path | None = None,
+    docx: bool = False,
+    inspect_change: bool = False,
+    reconciliation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Refresh an evidence-bound section with the explicitly selected trusted local recipes.
 
@@ -230,7 +236,21 @@ def refresh_section_task(
     """
     from cfdpaper.publication.linked_section import refresh_section
 
-    result = refresh_section(workspace, output, baseline=baseline, docx=docx)
+    result = refresh_section(
+        workspace,
+        output,
+        baseline=baseline,
+        docx=docx,
+        inspect_change=inspect_change,
+        reconciliation=reconciliation,
+    )
+    if inspect_change:
+        return _response(
+            "section-change-inspection",
+            output,
+            _existing(output, {"reconciliation": "reconcile.json"}),
+            result,
+        )
     return _response(
         "section-refresh",
         output,
@@ -247,6 +267,9 @@ def refresh_section_task(
             "section_id": result["section_id"],
             "calculation": result["calculation"],
             "changed_results": result["changed_results"],
+            "display_evidence": result["display_evidence"],
+            "changed_panel_readings": result["changed_panel_readings"],
+            "mechanism_questions": result["mechanism_questions"],
             "changed_images": result["changed_images"],
             "unlinked_figures": result["unlinked_figures"],
             "readers_to_review": result["readers_to_review"],
