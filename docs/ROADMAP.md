@@ -71,11 +71,9 @@ the current panels, physical definitions and observed features to captions and r
 The host supplies scientific judgment and views the output; the toolkit performs source-bound
 calculations and explicit updates. Existing CLI/Python/MCP, retrieval and author protection remain.
 
-The plan responds to a real first-use figure-layout complaint and a post-processing training
-summary. The external furnace trial has not yet returned inspectable artifacts or tested writing;
-its root causes and Fluent 2025 R1 compatibility remain unverified. Known cooling materials and
-accepted P04 figure references support development, not unfamiliar-project validation. Large-data
-batching or session reuse is conditional on measured need, not a new platform requirement.
+The known cooling tasks exercise the interface and figure workflow. They do not establish
+quality on unfamiliar projects or compatibility with untested solver versions. Large-data
+batching or session reuse is conditional on measured need.
 
 Actual figures at manuscript size, scientific definitions, retained author edits and
 first-versus-revised output determine success. A green export or manually repaired example alone
