@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.30.0] — release candidate
+## [0.30.0] — 2026-11-13
 
 - Evaluate a declared finite nonlinear response per face before area weighting. Bind the resulting
   quantity, reference denominator and definition to figure tables and manuscript values.
@@ -9,7 +9,7 @@
 - Inspect a changed physical definition before rendering. Reconcile affected figure readings,
   paragraphs and captions against their current author text; separate display-only material
   from quantitative measurements and their comparison purpose.
-- See the [candidate notes](docs/releases/v0.30.0.md) for usage and limits.
+- See the [release notes](docs/releases/v0.30.0.md) for usage and limits.
 
 ## [0.29.0] — 2026-11-07
 

@@ -17,7 +17,7 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
-The v0.30.0 candidate connects nonlinear face-wise calculations to the author's own plot scripts,
+Version 0.30.0 connects nonlinear face-wise calculations to the author's own plot scripts,
 captions and prose. Try the [synthetic section-refresh example](examples/material-analysis/README.md#refresh-an-authors-figure-caption-and-section)
 or read the [v0.30 notes](docs/releases/v0.30.0.md). A successful rebuild is not approval of an interpretation.
 
