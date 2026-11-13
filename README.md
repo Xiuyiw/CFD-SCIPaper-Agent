@@ -32,7 +32,7 @@ diagnostics and Studio-guided editable mechanism artwork continue through the ex
 exchange and manuscript attachment paths. The host chooses the scientific argument and diagram;
 these tools do not automatically discover a mechanism.
 
-The optional local MCP server shares nine task functions with CLI/Python. Existing report
+The optional local MCP server shares task functions with CLI/Python. Existing report
 bindings, explicit reference denominators, native Word formulas, portable workspaces and
 [managed Word collaboration](docs/releases/v0.23.0.md) remain available. See the
 [portable host guide](docs/portable-workbench.md) and
@@ -89,7 +89,7 @@ covers whole-manuscript feedback and selected editing.
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
 | Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate. Managed Word edits return through `cfdpaper author`; other detached Word files require host reconciliation. Original returns and unresolved comments are retained. |
-| Portable workbench and host tools | Available | Selective workspace/baseline/author export, inspection and relocation recovery; nine shared CLI/Python task functions through optional local stdio MCP. This is not whole-project SQLite migration or an AI runtime. |
+| Portable workbench and host tools | Available | Selective workspace/baseline/author export, inspection and relocation recovery; shared CLI/Python task functions through optional local stdio MCP. This is not whole-project SQLite migration or an AI runtime. |
 | Saved JSON reports to bound writing | Available | Exact JSON pointers, named setup/reference sources, unit conversions, differences/ratios/relative changes, explicit denominators and support domains; the same results feed response figures, host-written sections, native tables/formulas and current-source continuation. |
 | Heterogeneous real-task evaluation | Experimental | Known-project single-phase flow/pressure and conjugate-heat-transfer paths have been exercised. Suitable mature real transient/multiphase CFD materials remain unavailable; battery control-model tests do not fill that gap. |
 | External drawing tasks and mechanism attachment | Available | Studio-guided conceptual/hybrid tasks, editable-source import and manuscript attachment. Explicit `raster_concept` is schematic-only and reports no editable source; it cannot replace computed fields. Import does not approve figures. |

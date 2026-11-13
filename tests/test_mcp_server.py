@@ -60,6 +60,7 @@ def test_server_registers_only_named_task_functions_and_runs_stdio(monkeypatch):
         "inspect_materials",
         "prepare_analysis_task",
         "run_analysis_task",
+        "refresh_section_task",
         "report_task",
         "research_task",
         "writing_context",
@@ -92,7 +93,10 @@ def test_sdk_protocol_lists_and_calls_same_business_function(tmp_path):
         async with create_connected_server_and_client_session(server) as session:
             assert isinstance(session, ClientSession)
             tools = await session.list_tools()
-            assert len(tools.tools) == 9
+            assert {tool.name for tool in tools.tools} >= {
+                "run_analysis_task",
+                "refresh_section_task",
+            }
             response = await session.call_tool("inspect_materials", {"root": str(tmp_path)})
             assert not response.isError
             actual = response.structuredContent

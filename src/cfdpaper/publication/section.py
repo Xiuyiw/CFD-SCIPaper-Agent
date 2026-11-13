@@ -631,7 +631,11 @@ def _stage(output: Path):
 
 
 def _load_input(
-    path: Path, *, evidence_overrides: dict | None = None, bound_evidence: dict | None = None
+    path: Path,
+    *,
+    evidence_overrides: dict | None = None,
+    bound_evidence: dict | None = None,
+    check_images: bool = True,
 ) -> _Input:
     raw = _read(path)
     # Manuscript bindings are resolved from their owning section before local validation.
@@ -685,7 +689,7 @@ def _load_input(
     for duty in data.duties:
         _references(duty.evidence_ids, evidence)
         _references(duty.figure_ids, figures)
-    for figure in data.figures:
+    for figure in data.figures if check_images else ():
         image_path = (path.parent / figure.path).resolve()
         if image_path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".tif", ".tiff"}:
             raise ValueError("Section figures must be PNG, JPEG or TIFF")
@@ -914,6 +918,24 @@ def assemble_section(
     bound_evidence: dict | None = None,
 ) -> Path:
     """Resolve declared references without synthesizing or approving the draft prose."""
+    return _assemble_section(
+        package_dir,
+        draft_path,
+        output_dir,
+        evidence_overrides=evidence_overrides,
+        bound_evidence=bound_evidence,
+    )
+
+
+def _assemble_section(
+    package_dir,
+    draft_path,
+    output_dir,
+    *,
+    evidence_overrides=None,
+    bound_evidence=None,
+    computed_reports=None,
+):
     package_dir, draft_path, output_dir = map(Path, (package_dir, draft_path, output_dir))
     _fresh(output_dir)
     data = _load_input(
@@ -930,7 +952,13 @@ def assemble_section(
     if any(not text.strip() for text in draft.observation_notes.values()):
         raise ValueError("Observation notes must not be blank")
     used_evidence, used_figures, citations = set(), set(), []
-    reports = _calculate_sources(data, package_dir, write=False)
+    # A linked local build calculates from its staged sources before running the renderer.
+    # Reuse those exact results for text rather than evaluating the study a second time.
+    reports = (
+        _calculate_sources(data, package_dir, write=False)
+        if computed_reports is None
+        else computed_reports
+    )
     resolved_values = {}
     table_ids = [t.table_id for t in draft.tables]
     equation_ids = [e.equation_id for e in draft.equations]

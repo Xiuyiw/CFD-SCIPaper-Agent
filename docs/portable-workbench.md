@@ -66,13 +66,14 @@ is needed by the server; the host supplies its own research intelligence.
 SDK 1.x is optional and constrained to `<2` to retain the package's Python
 3.10–3.12 support. See the [official maintained SDK documentation](https://py.sdk.modelcontextprotocol.io/v1/).
 
-The nine task functions in `cfdpaper.host_tools` are also usable directly:
+The task functions in `cfdpaper.host_tools` are also usable directly:
 
 | Task | Function |
 |---|---|
 | Locate definitions and records | `inspect_materials` |
 | Prepare portable analysis inputs and skills | `prepare_analysis_task` |
 | Compute a selected analysis and continue to writing inputs | `run_analysis_task` |
+| Refresh an existing scientific section using its current local figure scripts | `refresh_section_task` |
 | Saved JSON reports to bound calculations and three-section writing | `report_task` |
 | Surface research, diagnostics, figures and refresh | `research_task` |
 | Current section context | `writing_context` |

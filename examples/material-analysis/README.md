@@ -126,9 +126,61 @@ package and DOCX. Body defaults are `body_first_line_indent_chars: 2`,
 `space_after_pt` remains the existing non-body spacing setting; `line_spacing` is independent.
 No whitespace is inserted to indent paragraphs, and captions/tables/headings do not inherit it.
 
-For new data, rebuild the analysis and writing package in a new output directory.
-The preserved plotting entry point can be edited locally; rerunning only that script
-updates figures, **not** an already assembled manuscript or its copied source snapshot.
+For a fresh analysis, build the analysis and writing package in a new directory. Running a
+plot script by itself **does not** update an assembled manuscript. When the figure already
+has an author's layout, use the linked section workflow below to update the data,
+artwork and author-written text together.
+
+## Refresh an author's figure, caption and section
+
+For a runnable, synthetic before/after, run
+`python examples/material-analysis/run_linked_refresh.py demo-refresh`. Its source table
+contains regions with different areas. Changing one regional heat rate changes the
+integrated rate, its plot, its bound caption and its paragraph. The area comparison is
+not redrawn. A locally refined plot colour and wording in the other paragraph survive.
+
+For an existing study:
+
+1. Start from the existing `section-input/input.json`, its declared `sources/`, and the
+   **current** author-local `draft.json`. Captions and paragraphs use the existing
+   `{{value:...}}` bindings. Do not copy old computed numbers into the prose. Add the
+   actual plot script, named input table and required helpers. Set each figure's
+   relative preview path in `input.json` to its real recipe output and preserve its sizing.
+2. Use the existing `figure-recipes.json` format, with one `section_id` and `figure_id`
+   per owned figure. Add `result_tables` to the recipe, e.g.
+   `[{"path":"rate/display.csv","row_key":"case","columns":{"reading":{"unit":"W","by_row":{"Reference":"rate-Reference","Modified":"rate-Modified"}}}}]`.
+   The table is a declared recipe **input**, distinct from the raw sources. Each bound
+   column must cover its actual row keys; a genuinely fixed cell (e.g. a reference
+   change relative to itself) can be declared as `"fixed":{"Reference":0}` alongside
+   `by_row`. Only named cells are filled; row order, unbound columns and author code
+   are retained. Scientific definitions, the percent denominator and raw numerical
+   precision come from the calculation, not the author's tick labels. Any display
+   processing done by a script is not a new scientific observation.
+3. Build a fresh candidate:
+
+       cfdpaper refresh-section author-workspace --output before --docx
+       cfdpaper refresh-section current-author-workspace --baseline before --output after --docx
+
+   For the second call, continue from a copy of `before/workspace` with the current
+   sources/author edits. The program executes only **explicitly trusted local scripts**;
+   it does not import or discover scripts in manuscripts or archives. Provide their
+   table, assets and dependencies. The build is published only after its figure and
+   text assembly succeeds. The `section.docx` is a new section candidate, not an
+   in-place edit of an arbitrary Word document.
+
+The host/Python/MCP entry is `refresh_section_task`. Read `refresh.json` for changed
+results, changed images and the specific readers to revisit. Unchanged calculation
+inputs and figure dependencies need no recalculation or redraw on a prose-only return.
+Figures without a linked recipe are listed separately as unlinked; retaining an image or
+an unbound data column does not verify it against a changed source.
+An image change invalidates its previous visual reading, not the wording in other
+paragraphs. The tool never infers a new mechanism. Where wording depends on an
+ordering, declare it in the optional `reading-relations.json`, e.g.
+`[{"kind":"paragraph","id":"rate","left":"rate-Modified","op":">","right":"rate-Reference"}]`.
+A reversal stops this build and names the exact object and its new values. Edit just
+that interpretation in the author's current draft. If the physical definition rather
+than a value changes, reconcile the figure's labels, readout and text before starting
+a new baseline. Only declared conditions are checked; free prose still needs a reader.
 
 ## Continue into a manuscript
 
