@@ -209,7 +209,7 @@ def calculate_table(
     ):
         raise ValueError(
             "Use scalar/value, weighted_population or weighted_exceedance/value,weight, "
-            "partition/area,rate "
+            "activated_response_mean/concentration,temperature,area, partition/area,rate "
             "or temporal/time,value or reference_range/paired_reference_change/"
             "value,reference,bounds or temporal_difference/time,reference,comparison"
         )
@@ -743,6 +743,11 @@ def calculate_result_comparison(
             "weight_kind": parent.get("weight_kind"),
             "quantity_kind": kind,
             "definition_source": parent.get("definition_source"),
+            **(
+                {"response_model": parent["response_model"]}
+                if operation == "activated_response_mean"
+                else {}
+            ),
             **({"support": parent["support"]} if parent.get("support") is not None else {}),
             **temporal_metadata,
         }

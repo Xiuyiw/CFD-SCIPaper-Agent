@@ -234,6 +234,7 @@ class _TableCalculation(_Record):
     units: dict[str, StrictStr]
     domain: str
     response_model: _ResponseModel | None = None
+    definition_source: StrictStr | None = None
     support: dict | None = None
     group_by: str | None = None
     pair_by: StrictStr | None = None
@@ -279,6 +280,8 @@ class _TableCalculation(_Record):
         result = handler(self)
         if self.response_model is None:
             result.pop("response_model", None)
+        if self.definition_source is None:
+            result.pop("definition_source", None)
         if self.support is None:
             result.pop("support", None)
         if not self.row_filters:
@@ -346,12 +349,17 @@ class _TableCalculation(_Record):
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
         if self.operation == "activated_response_mean":
-            if not self.group_by or self.response_model is None:
-                raise ValueError("activated_response_mean requires group_by and response_model")
+            if not self.group_by or self.response_model is None or not self.definition_source:
+                raise ValueError(
+                    "activated_response_mean requires group_by, response_model "
+                    "and definition_source"
+                )
             if len({*self.columns.values(), self.group_by, self.response_model.member}) != 5:
                 raise ValueError("Activated response needs distinct group, member and data columns")
         elif self.response_model is not None:
             raise ValueError("response_model is only for activated_response_mean")
+        elif self.definition_source is not None:
+            raise ValueError("This table definition_source is only for activated_response_mean")
         if self.operation in {"temporal", "temporal_difference"}:
             if self.units["time"] != "s":
                 raise ValueError("Temporal calculations require time in seconds")
@@ -645,6 +653,10 @@ def _load_input(
     for calculation in data.table_calculations:
         if calculation.source not in data.source_files:
             data.source_files.append(calculation.source)
+        if isinstance(calculation, _TableCalculation) and calculation.definition_source:
+            name = _check_comparison_definition(path.parent, calculation.definition_source)
+            if name not in data.source_files:
+                data.source_files.append(name)
         if isinstance(calculation, _FieldCalculation):
             companion = calculation.field_options.get("reference_source")
             if companion:

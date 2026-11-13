@@ -161,9 +161,14 @@ class _Calculation(_Record):
     def table_calculation(self) -> _TableCalculation:
         # Validate supplied semantics before legacy serialization omits default fields.
         fields = (set(_TableCalculation.model_fields) & set(type(self).model_fields)) - {
-            "comparison"
+            "comparison",
+            "definition_source",
         }
         data = {name: getattr(self, name) for name in fields}
+        if self.operation == "activated_response_mean":
+            data["definition_source"] = (
+                f"{self.definition_source.path}:{self.definition_source.locator}"
+            )
         if self.paired_selector is not None:
             if self.operation not in {"paired_change", "paired_reference_change"}:
                 raise ValueError(

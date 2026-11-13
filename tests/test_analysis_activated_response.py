@@ -123,6 +123,8 @@ def test_activated_response_reaches_plot_and_writing_with_source_rows(tmp_path, 
     assert comparison["upstream"]["reference"]["csv_records"] == [2, 5]
     assert comparison["upstream"]["comparison"]["csv_records"] == [3, 6]
     assert comparison["upstream"]["reference"]["unit"] == "1"
+    assert comparison["upstream"]["reference"]["definition_source"] == "sources/method.md:L1-L2"
+    assert comparison["upstream"]["reference"]["response_model"] == report["response_model"]
     rendered = output / "section-input/figures"
     with (rendered / "analysis-1-source-data.csv").open(encoding="utf-8") as stream:
         points = list(csv.DictReader(stream))
