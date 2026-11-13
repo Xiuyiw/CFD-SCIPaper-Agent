@@ -22,6 +22,13 @@ new approval sequence. Keep numerical CFD plots and real field images data-drive
 
 ## Scientific figure selection
 
+For a computed section with an author's existing plot, use the [linked section
+refresh](../../examples/material-analysis/README.md#refresh-an-authors-figure-caption-and-section).
+Bind the selected result to its original named row and column, including the reference
+denominator. Run the author's local script; do not redraw unrelated figures or substitute
+a default template. Compare the changed panel at the intended insertion width. A change
+in a displayed image is not an independent change in the underlying scientific quantity.
+
 For a planar temperature partition comparison, the research tool's
 `diagnostic_figure={"surface_partition_panel": PANEL_ID}` links two/four original Kelvin face maps
 to their actual region outlines and contribution panel. Select the existing `partition_change`

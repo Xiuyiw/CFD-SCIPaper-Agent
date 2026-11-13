@@ -100,13 +100,16 @@ def _check_output(root, name):
         json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def execute_figure_recipes(working_root, recipes, *, baseline_root=None, baseline_states=None):
+def execute_figure_recipes(
+    working_root, recipes, *, baseline_root=None, baseline_states=None, baseline_definitions=None
+):
     """Run only changed registered recipes, using the CURRENT local script verbatim.
 
     Paths are relative to ``working_root``; the script runs with that root as cwd.
     ``inputs`` names raw data and helpers, and ``outputs`` names generated source
     data, previews and exports. The script itself is an implicit input. Baseline
-    definitions are read from its ``figure-recipes.json`` list. Missing baseline,
+    definitions come from a saved build when provided, else its ``figure-recipes.json``.
+    Missing baseline,
     changed definitions/dependency bytes, or a missing output cause execution.
 
     The caller supplies an isolated working copy and publishes it atomically only
@@ -123,7 +126,9 @@ def execute_figure_recipes(working_root, recipes, *, baseline_root=None, baselin
             raise ValueError("Figure recipe baseline must be a separate existing directory")
     definitions = _definitions(recipes)
     old = {}
-    if baseline_root is not None and (baseline_root / _REGISTRY).is_file():
+    if baseline_definitions is not None:
+        old = {item["id"]: item for item in _definitions(baseline_definitions)}
+    elif baseline_root is not None and (baseline_root / _REGISTRY).is_file():
         old = {
             item["id"]: item
             for item in _definitions(

@@ -19,6 +19,9 @@ The task-sized tools are:
 - `run_analysis_task`: compute a supported host-selected comparison and prepare
   its source-bound writing input. Read its returned artifact paths and current
   physical definitions; do not type its values into a second evidence list.
+- `refresh_section_task`: update an author's declared result tables, local figure recipes,
+  captions and paragraphs in a fresh output. Pass the previous build as baseline and
+  reread the affected interpretations; do not run unknown scripts from an external archive.
 - `report_task`: for saved JSON scalar reports, select exact pointers and physical
   definitions once; the tool projects the records, calculates bound quantities
   and prepares Methods/Results/Discussion drafts with a native Results table.

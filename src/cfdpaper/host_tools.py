@@ -217,6 +217,70 @@ def run_analysis_task(
     )
 
 
+def refresh_section_task(
+    workspace: Path,
+    output: Path,
+    *,
+    baseline: Path | None = None,
+    docx: bool = False,
+    inspect_change: bool = False,
+    reconciliation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Refresh an evidence-bound section with the explicitly selected trusted local recipes.
+
+    Workspace contains input.json, the author's draft.json and figure-recipes.json.
+    Use a previous build as baseline; current author edits belong in workspace.
+    Each result table binds a named CSV row and column to computed evidence IDs.
+    Returns actual updated objects and the readers of changed evidence to revisit.
+    Never send an untrusted downloaded recipe for execution.
+    """
+    from cfdpaper.publication.linked_section import refresh_section
+
+    result = refresh_section(
+        workspace,
+        output,
+        baseline=baseline,
+        docx=docx,
+        inspect_change=inspect_change,
+        reconciliation=reconciliation,
+    )
+    if inspect_change:
+        return _response(
+            "section-change-inspection",
+            output,
+            _existing(output, {"reconciliation": "reconcile.json"}),
+            result,
+        )
+    return _response(
+        "section-refresh",
+        output,
+        _existing(
+            output,
+            {
+                "section": "section/section.md",
+                "word": "section.docx",
+                "workspace": "workspace",
+                "refresh": "refresh.json",
+            },
+        ),
+        {
+            "section_id": result["section_id"],
+            "calculation": result["calculation"],
+            "changed_results": result["changed_results"],
+            "display_evidence": result["display_evidence"],
+            "changed_panel_readings": result["changed_panel_readings"],
+            "mechanism_questions": result["mechanism_questions"],
+            "changed_images": result["changed_images"],
+            "unlinked_figures": result["unlinked_figures"],
+            "readers_to_review": result["readers_to_review"],
+            "figure_recipes": [
+                {k: item[k] for k in ("recipe_id", "status", "figure_id")}
+                for item in result["figure_recipes"]
+            ],
+        },
+    )
+
+
 def _report_context(writing: dict) -> dict:
     from cfdpaper.publication.report_writing import report_context
 

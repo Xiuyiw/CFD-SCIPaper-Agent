@@ -21,6 +21,7 @@ from cfdpaper.publication.section import (
     _Evidence,
     _Figure,
     _Record,
+    _ResponseModel,
     _ResultComparison,
     _ResultRef,
     _stage,
@@ -62,6 +63,7 @@ class _Calculation(_Record):
         "partition",
         "weighted_population",
         "weighted_exceedance",
+        "activated_response_mean",
         "scalar_select",
         "paired_change",
         "temporal",
@@ -72,6 +74,7 @@ class _Calculation(_Record):
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
+    response_model: _ResponseModel | None = None
     group_by: str | None = None
     paired_selector: _PairedSelector | None = None
     temperature_reference: float | None = Field(default=None, allow_inf_nan=False)
@@ -119,6 +122,8 @@ class _Calculation(_Record):
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if self.response_model is None:
+            result.pop("response_model", None)
         if not self.row_filters:
             result.pop("row_filters", None)
         if self.unit_column is None:
@@ -156,9 +161,14 @@ class _Calculation(_Record):
     def table_calculation(self) -> _TableCalculation:
         # Validate supplied semantics before legacy serialization omits default fields.
         fields = (set(_TableCalculation.model_fields) & set(type(self).model_fields)) - {
-            "comparison"
+            "comparison",
+            "definition_source",
         }
         data = {name: getattr(self, name) for name in fields}
+        if self.operation == "activated_response_mean":
+            data["definition_source"] = (
+                f"{self.definition_source.path}:{self.definition_source.locator}"
+            )
         if self.paired_selector is not None:
             if self.operation not in {"paired_change", "paired_reference_change"}:
                 raise ValueError(
@@ -170,6 +180,8 @@ class _Calculation(_Record):
     @model_validator(mode="after")
     def explicit_definition(self):
         self.table_calculation()
+        if self.response_model and self.member_id != [self.response_model.member]:
+            raise ValueError("member_id must select the response_model member column")
         return self
 
 
@@ -285,7 +297,15 @@ definition gap or change comparison status merely to make the command succeed.
 The executable operators are population (equal-record count/sum/mean/population CV, ddof=0),
 partition (sum of area and already-integrated rate, mean_flux=rate/area, regional flux and
 shares), and weighted_population (value plus positive area/volume weights, giving weighted_mean,
-weighted_std and weight_sum). weighted_exceedance uses the same value/weight roles and an explicit
+weighted_std and weight_sum). activated_response_mean takes columns/units concentration,
+temperature (K), area (m2), group_by and one member_id. Declare response_model with member
+(the same face ID column), prefactor, concentration_ref, concentration_power, activation_K,
+output_power, reference_unit and concentration_basis shared by concentration and reference.
+Use only supplied definitions: at each face evaluate
+(prefactor*(C/concentration_ref)^concentration_power*exp(-activation_K/T))^output_power,
+then average those dimensionless responses by area. The scalars are weighted_mean, area, count.
+Only compare weighted_mean between groups of the same calculation; do not compare separate laws.
+weighted_exceedance uses the same value/weight roles and an explicit
 finite numeric threshold in the value unit, with exceedance_relation above (strict >) or
 at-or-above (>=). Its fields are weight_sum, measure_above, exceedance_fraction and count;
 exceedance_fraction stores a 0-1 fraction, with percentage=true for percent display. This is a
@@ -762,6 +782,7 @@ def _automatic_metrics(reports: list[dict]) -> list[_Metric]:
             "population": ("mean", "cv"),
             "partition": ("area", "rate", "mean_flux"),
             "weighted_population": ("weighted_mean", "weighted_std", "weight_sum"),
+            "activated_response_mean": ("weighted_mean",),
             "weighted_exceedance": ("weight_sum", "measure_above", "exceedance_fraction"),
             "scalar_select": ("value",),
             "paired_change": ("difference",),

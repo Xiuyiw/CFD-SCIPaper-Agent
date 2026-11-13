@@ -88,11 +88,12 @@ jobs:
           $cfdpaper = Join-Path $smoke "Scripts\cfdpaper.exe"
           & $smokePython -m pip install --no-cache-dir "$($wheel.FullName)[docs,geometry,mcp]"
           Set-Location $env:RUNNER_TEMP
-          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.29.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
+          & $smokePython -c "import importlib.metadata as m, pathlib, sys; import cfdpaper; import cfdpaper.topic_generation; root=pathlib.Path(sys.prefix).resolve(); module=pathlib.Path(cfdpaper.__file__).resolve(); dist=m.distribution('cfd-paper-agent'); files=tuple(item.as_posix() for item in (dist.files or ())); assert module.is_relative_to(root), (module, root); assert dist.version == cfdpaper.__version__ == '0.30.0'; assert any(item.endswith('licenses/LICENSE') for item in files), files; assert any(item.endswith('licenses/NOTICE') for item in files), files; print(module)"
           & $cfdpaper --help
           & $cfdpaper portable --help
           & $cfdpaper mcp --help
           & $cfdpaper report --help
+          & $cfdpaper refresh-section --help
           & $smokePython -c "from cfdpaper.mcp_server import create_server; assert create_server().name == 'CFD-Paper-Agent'"
           New-Item -ItemType Directory -Path $project | Out-Null
           [IO.File]::WriteAllText(
@@ -230,6 +231,8 @@ jobs:
           Copy-Item (Join-Path $env:GITHUB_WORKSPACE "examples\material-analysis") $example -Recurse
           Set-Location $env:RUNNER_TEMP
           & $smokePython (Join-Path $example "prepare_manuscript.py") $output
+          & $smokePython (Join-Path $example "run_linked_refresh.py") (Join-Path $env:RUNNER_TEMP "linked-section-return")
+          & $smokePython (Join-Path $example "run_definition_refresh.py") (Join-Path $env:RUNNER_TEMP "linked-section-return/after") (Join-Path $env:RUNNER_TEMP "lower-region-return")
           Move-Item -LiteralPath "$output/manuscript" -Destination $moved
           @'
           import json
@@ -580,6 +583,6 @@ jobs:
       - name: Upload release distributions
         uses: actions/upload-artifact@v6
         with:
-          name: cfd-paper-agent-0.29.0-distributions
+          name: cfd-paper-agent-0.30.0-distributions
           path: ${{ runner.temp }}/cfdpaper-dist/*
           if-no-files-found: error

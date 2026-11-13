@@ -31,6 +31,7 @@ _LABELS = {
     "difference": "Comparison minus reference",
     "relative_change": "Relative change from reference",
     "relative_reduction": "Relative reduction from reference",
+    "ratio": "Comparison / reference",
     "weighted_mean": "Measure-weighted mean",
     "weighted_std": "Measure-weighted spatial standard deviation",
     "weight_sum": "Total supplied measure",
@@ -103,6 +104,9 @@ def render_analysis_figures(input_path: Path, *, style: PlotStyle | None = None)
     root = input_path.parent
     data = json.loads(input_path.read_text(encoding="utf-8"))
     points = _points(data, root)
+    response_ids = {
+        c["id"] for c in data["table_calculations"] if c["operation"] == "activated_response_mean"
+    }
     groups = OrderedDict()
     # Even equal units do not make different quantities or statistical domains interchangeable.
     for point in points:
@@ -128,6 +132,12 @@ def render_analysis_figures(input_path: Path, *, style: PlotStyle | None = None)
             fid = str(index)
             stem = f"analysis-{index}"
             label = _LABELS[field]
+            if calculation_id in response_ids:
+                label = {
+                    "weighted_mean": "Area-weighted model response",
+                    "area": "Selected face area",
+                    "count": "Selected face count",
+                }[field]
             title = plan.get("title") if len(groups) == 1 else None
             y_label = plan.get("y_label") if len(groups) == 1 else None
             # A host label describes the quantity, never replaces the computed unit.

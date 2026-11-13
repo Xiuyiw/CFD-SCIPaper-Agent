@@ -200,6 +200,20 @@ class _Duty(_Record):
     figure_ids: list[str]
 
 
+class _ResponseModel(_Record):
+    """Author-declared dimensionless law; concentration_basis applies to C and C_ref."""
+
+    member: StrictStr
+    prefactor: float = Field(strict=True, ge=0, allow_inf_nan=False)
+    concentration_ref: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    concentration_power: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    activation_K: float = Field(strict=True, ge=0, allow_inf_nan=False)
+    output_power: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    reference_unit: StrictStr
+    concentration_basis: StrictStr
+    output_unit: Literal["1"] = "1"
+
+
 class _TableCalculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
@@ -210,6 +224,7 @@ class _TableCalculation(_Record):
         "paired_change",
         "weighted_population",
         "weighted_exceedance",
+        "activated_response_mean",
         "temporal",
         "temporal_difference",
         "reference_range",
@@ -218,6 +233,8 @@ class _TableCalculation(_Record):
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
+    response_model: _ResponseModel | None = None
+    definition_source: StrictStr | None = None
     support: dict | None = None
     group_by: str | None = None
     pair_by: StrictStr | None = None
@@ -261,6 +278,10 @@ class _TableCalculation(_Record):
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if self.response_model is None:
+            result.pop("response_model", None)
+        if self.definition_source is None:
+            result.pop("definition_source", None)
         if self.support is None:
             result.pop("support", None)
         if not self.row_filters:
@@ -308,6 +329,7 @@ class _TableCalculation(_Record):
             "partition": {"area", "rate"},
             "weighted_population": {"value", "weight"},
             "weighted_exceedance": {"value", "weight"},
+            "activated_response_mean": {"concentration", "temperature", "area"},
             "temporal": {"time", "value"},
             "temporal_difference": {"time", "reference", "comparison"},
         }.get(self.operation, {"value"})
@@ -326,6 +348,18 @@ class _TableCalculation(_Record):
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
+        if self.operation == "activated_response_mean":
+            if not self.group_by or self.response_model is None or not self.definition_source:
+                raise ValueError(
+                    "activated_response_mean requires group_by, response_model "
+                    "and definition_source"
+                )
+            if len({*self.columns.values(), self.group_by, self.response_model.member}) != 5:
+                raise ValueError("Activated response needs distinct group, member and data columns")
+        elif self.response_model is not None:
+            raise ValueError("response_model is only for activated_response_mean")
+        elif self.definition_source is not None:
+            raise ValueError("This table definition_source is only for activated_response_mean")
         if self.operation in {"temporal", "temporal_difference"}:
             if self.units["time"] != "s":
                 raise ValueError("Temporal calculations require time in seconds")
@@ -511,6 +545,7 @@ class _Input(_Record):
     evidence: list[_Evidence] = Field(min_length=1)
     duties: list[_Duty] = Field(min_length=1)
     context: str = ""
+    mechanism_questions: list[dict] = Field(default_factory=list)
     source_files: list[str] = Field(default_factory=list)
     table_calculations: list[_TableCalculation | _FieldCalculation] = Field(default_factory=list)
     result_comparisons: list[_ResultComparison] = Field(default_factory=list)
@@ -521,6 +556,8 @@ class _Input(_Record):
         result = handler(self)
         if not self.result_comparisons:
             result.pop("result_comparisons", None)
+        if not self.mechanism_questions:
+            result.pop("mechanism_questions", None)
         return result
 
 
@@ -597,7 +634,11 @@ def _stage(output: Path):
 
 
 def _load_input(
-    path: Path, *, evidence_overrides: dict | None = None, bound_evidence: dict | None = None
+    path: Path,
+    *,
+    evidence_overrides: dict | None = None,
+    bound_evidence: dict | None = None,
+    check_images: bool = True,
 ) -> _Input:
     raw = _read(path)
     # Manuscript bindings are resolved from their owning section before local validation.
@@ -619,6 +660,10 @@ def _load_input(
     for calculation in data.table_calculations:
         if calculation.source not in data.source_files:
             data.source_files.append(calculation.source)
+        if isinstance(calculation, _TableCalculation) and calculation.definition_source:
+            name = _check_comparison_definition(path.parent, calculation.definition_source)
+            if name not in data.source_files:
+                data.source_files.append(name)
         if isinstance(calculation, _FieldCalculation):
             companion = calculation.field_options.get("reference_source")
             if companion:
@@ -647,7 +692,7 @@ def _load_input(
     for duty in data.duties:
         _references(duty.evidence_ids, evidence)
         _references(duty.figure_ids, figures)
-    for figure in data.figures:
+    for figure in data.figures if check_images else ():
         image_path = (path.parent / figure.path).resolve()
         if image_path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".tif", ".tiff"}:
             raise ValueError("Section figures must be PNG, JPEG or TIFF")
@@ -876,6 +921,24 @@ def assemble_section(
     bound_evidence: dict | None = None,
 ) -> Path:
     """Resolve declared references without synthesizing or approving the draft prose."""
+    return _assemble_section(
+        package_dir,
+        draft_path,
+        output_dir,
+        evidence_overrides=evidence_overrides,
+        bound_evidence=bound_evidence,
+    )
+
+
+def _assemble_section(
+    package_dir,
+    draft_path,
+    output_dir,
+    *,
+    evidence_overrides=None,
+    bound_evidence=None,
+    computed_reports=None,
+):
     package_dir, draft_path, output_dir = map(Path, (package_dir, draft_path, output_dir))
     _fresh(output_dir)
     data = _load_input(
@@ -892,7 +955,13 @@ def assemble_section(
     if any(not text.strip() for text in draft.observation_notes.values()):
         raise ValueError("Observation notes must not be blank")
     used_evidence, used_figures, citations = set(), set(), []
-    reports = _calculate_sources(data, package_dir, write=False)
+    # A linked local build calculates from its staged sources before running the renderer.
+    # Reuse those exact results for text rather than evaluating the study a second time.
+    reports = (
+        _calculate_sources(data, package_dir, write=False)
+        if computed_reports is None
+        else computed_reports
+    )
     resolved_values = {}
     table_ids = [t.table_id for t in draft.tables]
     equation_ids = [e.equation_id for e in draft.equations]

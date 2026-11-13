@@ -49,6 +49,7 @@ _TABLE_DECLARATION_KEYS = {
     "crossing_direction",
     "exceedance_relation",
     "reference_kind",
+    "response_model",
 }
 
 
@@ -127,6 +128,7 @@ def calculate_table(
     crossing_direction="at-or-above",
     exceedance_relation="above",
     reference_kind: str | None = None,
+    response_model: dict | None = None,
 ):
     """Calculate over explicitly selected records, retaining original source locations.
 
@@ -139,7 +141,32 @@ def calculate_table(
     paired_ops = {"paired_change", "paired_reference_change"}
     temporal_ops = {"temporal", "temporal_difference"}
     weighted_ops = {"weighted_population", "weighted_exceedance"}
+    response_op = operation == "activated_response_mean"
     range_roles = {"value", "reference", "lower", "upper"}
+    if response_op:
+        from .section import _ResponseModel
+
+        model = _ResponseModel.model_validate(response_model)
+        if (
+            not group_by
+            or set(units or {}) != {"concentration", "temperature", "area"}
+            or len({group_by, model.member, *columns.values()}) != 5
+        ):
+            raise ValueError(
+                "Activated response requires distinct columns, group, member and units"
+            )
+        if (
+            any(
+                x is not None
+                for x in (pair_by, reference, comparison, temperature_reference, weight_kind)
+            )
+            or quantity_kind != "ordinary"
+        ):
+            raise ValueError(
+                "Activated response does not accept alternate measure or quantity kinds"
+            )
+    elif response_model is not None:
+        raise ValueError("response_model is only for activated_response_mean")
     if operation in range_ops:
         if set(columns) not in (range_roles, {"value", "reference", "half_width"}):
             raise ValueError("Reference range requires value,reference,lower,upper or half_width")
@@ -165,17 +192,24 @@ def calculate_table(
         if operation == "temporal"
         else {"value", "weight"}
         if operation in weighted_ops
+        else {"concentration", "temperature", "area"}
+        if response_op
         else {"value"}
         if operation in scalar_ops
         else {"area", "rate"}
     )
     if (
-        operation not in scalar_ops | range_ops | temporal_ops | weighted_ops | {"partition"}
+        operation
+        not in scalar_ops
+        | range_ops
+        | temporal_ops
+        | weighted_ops
+        | {"partition", "activated_response_mean"}
         or set(columns) != required
     ):
         raise ValueError(
             "Use scalar/value, weighted_population or weighted_exceedance/value,weight, "
-            "partition/area,rate "
+            "activated_response_mean/concentration,temperature,area, partition/area,rate "
             "or temporal/time,value or reference_range/paired_reference_change/"
             "value,reference,bounds or temporal_difference/time,reference,comparison"
         )
@@ -288,6 +322,7 @@ def calculate_table(
         path,
         [
             *numeric_columns,
+            *([model.member] if response_op else []),
             *[key for key in (group_by, pair_by, unit_column) if key],
             *(row_filters or {}),
         ],
@@ -308,10 +343,15 @@ def calculate_table(
                 f"Unit mismatch at {path}:{index}:{unit_column}: "
                 f"expected {units['value']!r}, found {row[unit_column]!r}"
             )
-        _convert_numeric_row(path, index, row, numeric_columns)
+        if not response_op:
+            _convert_numeric_row(path, index, row, numeric_columns)
         if group_by and (group_by not in row or not str(row[group_by] or "").strip()):
             raise ValueError(f"Missing group at {path}:{index}")
         group = str(row[group_by]) if group_by else "all"
+        if response_op and group != group.strip():
+            raise ValueError(
+                f"Activated response group has surrounding whitespace at {path}:{index}"
+            )
         groups.setdefault(group, []).append((index, row))
     results = []
     for name, items in groups.items():
@@ -402,7 +442,33 @@ def calculate_table(
             w is None or not math.isfinite(w) or w <= 0 for w in values["weight"]
         ):
             raise ValueError(f"Group {name!r}: weights must be finite and strictly positive")
-        if operation == "reference_range":
+        if response_op:
+            from cfdpaper.scientific.activated_response import activated_response_mean
+
+            (summary,) = activated_response_mean(
+                (row for _, row in items),
+                group=group_by,
+                member=model.member,
+                **columns,
+                prefactor=model.prefactor,
+                concentration_ref=model.concentration_ref,
+                concentration_power=model.concentration_power,
+                activation_K=model.activation_K,
+                output_power=model.output_power,
+                concentration_unit=units["concentration"],
+                reference_unit=model.reference_unit,
+                temperature_unit=units["temperature"],
+                area_unit=units["area"],
+                concentration_basis=model.concentration_basis,
+                reference_basis=model.concentration_basis,
+            )
+            result = {
+                "weighted_mean": summary["mean"],
+                "area": summary["area_m2"],
+                "count": summary["count"],
+            }
+            status = "computed"
+        elif operation == "reference_range":
             result = _reference_range_result(
                 **{key: sequence[0] for key, sequence in values.items()}
             )
@@ -550,6 +616,7 @@ _COMPARABLE_FIELDS = {
     "scalar_select": {"value"},
     "paired_change": {"difference"},
     "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
+    "activated_response_mean": {"weighted_mean"},
     "partition": {"area", "rate", "mean_flux"},
     "temporal": TEMPORAL_FIELDS,
     "field_integral": {"net", "positive", "negative", "absolute", "measure", "weighted_mean"},
@@ -676,10 +743,20 @@ def calculate_result_comparison(
             "weight_kind": parent.get("weight_kind"),
             "quantity_kind": kind,
             "definition_source": parent.get("definition_source"),
+            **(
+                {"response_model": parent["response_model"]}
+                if operation == "activated_response_mean"
+                else {}
+            ),
             **({"support": parent["support"]} if parent.get("support") is not None else {}),
             **temporal_metadata,
         }
     baseline, compared = upstream["reference"], upstream["comparison"]
+    if any(item["operation"] == "activated_response_mean" for item in (baseline, compared)):
+        if baseline["calculation_id"] != compared["calculation_id"]:
+            raise ValueError(
+                "Activated response comparison requires groups of the same calculation"
+            )
     support_check = None
     if support_purpose is not None or baseline.get("support") or compared.get("support"):
         from .comparison_support import compare_observation_support
@@ -1007,6 +1084,7 @@ def resolve_table_result(
     fields = {
         "population": {"count", "sum", "mean", "cv"},
         "weighted_population": {"weighted_mean", "weighted_std", "weight_sum"},
+        "activated_response_mean": {"weighted_mean", "area", "count"},
         "weighted_exceedance": {"weight_sum", "measure_above", "exceedance_fraction", "count"},
         "scalar_select": {"value"},
         "paired_change": {"difference", "relative_change", "relative_reduction", "ratio"},
@@ -1138,6 +1216,8 @@ def resolve_table_result(
     required_units = (
         {"value", "weight"}
         if operation in {"weighted_population", "weighted_exceedance"}
+        else {"concentration", "temperature", "area"}
+        if operation == "activated_response_mean"
         else {"area", "rate"}
         if operation == "partition"
         else {"time", "value"}
@@ -1148,7 +1228,9 @@ def resolve_table_result(
     )
     if any(not isinstance(units.get(role), str) for role in required_units):
         raise ValueError(f"{location}: missing declared role units")
-    if operation in {"reference_range", "paired_reference_change"}:
+    if operation == "activated_response_mean":
+        unit = "m2" if field == "area" else "1" if field == "weighted_mean" else ""
+    elif operation in {"reference_range", "paired_reference_change"}:
         unit = units["value"]
         if report.get("quantity_kind") in {
             "absolute-temperature",

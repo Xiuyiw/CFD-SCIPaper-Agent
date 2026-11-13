@@ -740,6 +740,55 @@ def report_workspace(
         _workflow_error(error)
 
 
+@app.command("refresh-section")
+def refresh_linked_section(
+    workspace: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    output: Annotated[Path, typer.Option("--output", help="Fresh build directory")],
+    inspect_change: Annotated[
+        bool,
+        typer.Option(
+            "--inspect-change", help="Locate definition changes without running figure scripts"
+        ),
+    ] = False,
+    reconcile: Annotated[
+        Path | None, typer.Option("--reconcile", help="Host-edited reconcile.json from inspection")
+    ] = None,
+    baseline: Annotated[
+        Path | None, typer.Option("--baseline", help="Previous section build")
+    ] = None,
+    docx: Annotated[
+        bool, typer.Option("--docx", help="Export the assembled candidate as Word")
+    ] = False,
+) -> None:
+    """Render trusted local figures and bind their source results into the author's section."""
+    from cfdpaper.host_tools import refresh_section_task
+
+    try:
+        result = refresh_section_task(
+            workspace,
+            output,
+            baseline=baseline,
+            docx=docx,
+            inspect_change=inspect_change,
+            reconciliation=json.loads(reconcile.read_text(encoding="utf-8-sig"))
+            if reconcile
+            else None,
+        )
+        if inspect_change:
+            console.print(
+                f"Definition changes and current readers: {output / 'reconcile.json'}", markup=False
+            )
+            return
+        console.print(f"Section candidate: {output / 'section/section.md'}", markup=False)
+        if result["context"]["readers_to_review"]:
+            console.print(
+                f"Reread affected interpretations listed in {output / 'refresh.json'}.",
+                markup=False,
+            )
+    except Exception as error:
+        _workflow_error(error)
+
+
 @app.command("write")
 def write_project(
     root: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],

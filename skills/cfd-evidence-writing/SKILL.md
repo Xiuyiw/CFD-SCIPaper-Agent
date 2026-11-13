@@ -54,6 +54,14 @@ composition distinct from transport evidence. When a refreshed image becomes `no
 inspect it before recording a new observation. Update only affected captions and passages with
 the existing explicit revision action; retain unrelated author wording and native document objects.
 
+For a linked single-section return, read `refresh_section_task`'s changed results and
+targeted readers. A changed reference can move several relative values without changing
+any of their absolute measurements. Keep unaltered local counterexamples. Edit the
+interpretation only where the direction, magnitude or scope changes its meaning; do not
+rewrite an entire paragraph simply because it references a refreshed multi-panel figure.
+For an essential ordering in a paragraph or caption, declare its comparison in
+`reading-relations.json` so a reversal cannot silently survive a numerical update.
+
 ## Workflow
 
 ### Existing results-paragraph path

@@ -17,6 +17,10 @@ and the numbers and graphics appearing in the manuscript.
 The software does not replace scientific judgment. Authors still choose the research topic, accept
 the QoI and figure claim, and approve the final artifact.
 
+Version 0.30.0 connects nonlinear face-wise calculations to the author's own plot scripts,
+captions and prose. Try the [synthetic section-refresh example](examples/material-analysis/README.md#refresh-an-authors-figure-caption-and-section)
+or read the [v0.30 notes](docs/releases/v0.30.0.md). A successful rebuild is not approval of an interpretation.
+
 Version 0.29.0 connects original-face maps, physical-region contributions and the current figure
 reading to source-bound prose. Analysis and diagnostic requests accept host objects without extra
 proposal files. A linked figure shares the exact source arrays and region definitions with its
@@ -32,7 +36,7 @@ diagnostics and Studio-guided editable mechanism artwork continue through the ex
 exchange and manuscript attachment paths. The host chooses the scientific argument and diagram;
 these tools do not automatically discover a mechanism.
 
-The optional local MCP server shares nine task functions with CLI/Python. Existing report
+The optional local MCP server shares task functions with CLI/Python. Existing report
 bindings, explicit reference denominators, native Word formulas, portable workspaces and
 [managed Word collaboration](docs/releases/v0.23.0.md) remain available. See the
 [portable host guide](docs/portable-workbench.md) and
@@ -89,7 +93,7 @@ covers whole-manuscript feedback and selected editing.
 | Cross-section evidence updates | Available | Explicit owner-evidence bindings refresh numerical tokens; declared dependencies produce section and paragraph review suggestions without rewriting prose or figures. |
 | Numeric journal bibliography | Available | Optional local Pandoc citeproc and a standalone CSL file; bracket-number citations in first-citation order, with bold/italic reference text in Word. |
 | Portable continued editing | Available | Local drafts, sources and task context travel with the candidate. Managed Word edits return through `cfdpaper author`; other detached Word files require host reconciliation. Original returns and unresolved comments are retained. |
-| Portable workbench and host tools | Available | Selective workspace/baseline/author export, inspection and relocation recovery; nine shared CLI/Python task functions through optional local stdio MCP. This is not whole-project SQLite migration or an AI runtime. |
+| Portable workbench and host tools | Available | Selective workspace/baseline/author export, inspection and relocation recovery; shared CLI/Python task functions through optional local stdio MCP. This is not whole-project SQLite migration or an AI runtime. |
 | Saved JSON reports to bound writing | Available | Exact JSON pointers, named setup/reference sources, unit conversions, differences/ratios/relative changes, explicit denominators and support domains; the same results feed response figures, host-written sections, native tables/formulas and current-source continuation. |
 | Heterogeneous real-task evaluation | Experimental | Known-project single-phase flow/pressure and conjugate-heat-transfer paths have been exercised. Suitable mature real transient/multiphase CFD materials remain unavailable; battery control-model tests do not fill that gap. |
 | External drawing tasks and mechanism attachment | Available | Studio-guided conceptual/hybrid tasks, editable-source import and manuscript attachment. Explicit `raster_concept` is schematic-only and reports no editable source; it cannot replace computed fields. Import does not approve figures. |
@@ -101,7 +105,7 @@ the argument, assess literature support and respond to real reviewer comments.
 
 ## Installation
 
-CFD-Paper-Agent supports CPython 3.10–3.12. Use the v0.29.0 checkout or source archive
+CFD-Paper-Agent supports CPython 3.10–3.12. Use this checkout, or a matching published source archive
 from [GitHub Releases](https://github.com/Xiuyiw/CFD-SCIPaper-Agent/releases), then install
 with Word support from its root:
 
@@ -113,7 +117,7 @@ cfdpaper --help
 Alternatively, download the matching release wheel and install it with Word support:
 
 ```text
-python -m pip install "./cfd_paper_agent-0.29.0-py3-none-any.whl[docs,geometry]"
+python -m pip install "./cfd_paper_agent-0.30.0-py3-none-any.whl[docs,geometry]"
 ```
 
 The examples live in the source checkout/archive, not the wheel. Start with a complete constructed
@@ -421,6 +425,7 @@ automatic complex mechanism graphics or establish broad heterogeneous CFD valida
 - [Architecture overview](docs/architecture/overview.md)
 - [Roadmap](docs/ROADMAP.md)
 - [v0.27.0 version notes](docs/releases/v0.27.0.md)
+- [v0.30.0 candidate notes](docs/releases/v0.30.0.md)
 - [v0.29.0 version notes](docs/releases/v0.29.0.md)
 - [v0.26.0 version notes](docs/releases/v0.26.0.md)
 - [Source-bound research expression and refresh](examples/research-expression/README.md)
