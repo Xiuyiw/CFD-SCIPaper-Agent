@@ -60,6 +60,23 @@ An external host does not need this repository's chat history. A sparse contrast
 or a compact table; a mechanism comparison may need complementary quantities or custom panels.
 Selecting a presentation is not evidence that its scientific or visual quality has been approved.
 
+## Derive on each face before averaging
+
+Use `activated_response_mean` when the study defines a dimensionless, thermally activated
+response on individual faces. For concentration `C`, reference `C_ref` and absolute
+temperature `T`, the supported form is `[a (C/C_ref)^p exp(-B/T)]^q`.
+The output is the area-weighted mean of those face responses, **not** the response
+evaluated at the mean concentration and temperature. For example, two equal-area faces
+with concentration ratios 1 and 3, a square law, unit prefactor, no temperature dependence
+and unit outer exponent give a mean response of 5, not 4.
+
+Supply aligned case and face identities, concentrations on the same declared basis as the
+reference, temperatures in kelvin and retained areas in square metres. A face with zero
+concentration is still part of the physical support. The calculation does not infer constants,
+repair missing faces or establish that the selected law is scientifically appropriate.
+For previously exported scalar fields that need no per-face transformation, use the existing
+weighted calculation below.
+
 ## Spatially weighted records (v0.10.0 and later)
 
 Use `weighted_population` when exported element values have corresponding positive

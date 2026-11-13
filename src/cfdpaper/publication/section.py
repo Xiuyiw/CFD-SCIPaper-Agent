@@ -200,6 +200,20 @@ class _Duty(_Record):
     figure_ids: list[str]
 
 
+class _ResponseModel(_Record):
+    """Author-declared dimensionless law; concentration_basis applies to C and C_ref."""
+
+    member: StrictStr
+    prefactor: float = Field(strict=True, ge=0, allow_inf_nan=False)
+    concentration_ref: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    concentration_power: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    activation_K: float = Field(strict=True, ge=0, allow_inf_nan=False)
+    output_power: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    reference_unit: StrictStr
+    concentration_basis: StrictStr
+    output_unit: Literal["1"] = "1"
+
+
 class _TableCalculation(_Record):
     id: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     source: str
@@ -210,6 +224,7 @@ class _TableCalculation(_Record):
         "paired_change",
         "weighted_population",
         "weighted_exceedance",
+        "activated_response_mean",
         "temporal",
         "temporal_difference",
         "reference_range",
@@ -218,6 +233,7 @@ class _TableCalculation(_Record):
     columns: dict[str, StrictStr]
     units: dict[str, StrictStr]
     domain: str
+    response_model: _ResponseModel | None = None
     support: dict | None = None
     group_by: str | None = None
     pair_by: StrictStr | None = None
@@ -261,6 +277,8 @@ class _TableCalculation(_Record):
     @model_serializer(mode="wrap")
     def serialize_calculation(self, handler):
         result = handler(self)
+        if self.response_model is None:
+            result.pop("response_model", None)
         if self.support is None:
             result.pop("support", None)
         if not self.row_filters:
@@ -308,6 +326,7 @@ class _TableCalculation(_Record):
             "partition": {"area", "rate"},
             "weighted_population": {"value", "weight"},
             "weighted_exceedance": {"value", "weight"},
+            "activated_response_mean": {"concentration", "temperature", "area"},
             "temporal": {"time", "value"},
             "temporal_difference": {"time", "reference", "comparison"},
         }.get(self.operation, {"value"})
@@ -326,6 +345,13 @@ class _TableCalculation(_Record):
             raise ValueError("Calculation columns and units must match its operation")
         if any(not c.strip() for c in self.columns.values()):
             raise ValueError("Calculation columns must not be blank")
+        if self.operation == "activated_response_mean":
+            if not self.group_by or self.response_model is None:
+                raise ValueError("activated_response_mean requires group_by and response_model")
+            if len({*self.columns.values(), self.group_by, self.response_model.member}) != 5:
+                raise ValueError("Activated response needs distinct group, member and data columns")
+        elif self.response_model is not None:
+            raise ValueError("response_model is only for activated_response_mean")
         if self.operation in {"temporal", "temporal_difference"}:
             if self.units["time"] != "s":
                 raise ValueError("Temporal calculations require time in seconds")
